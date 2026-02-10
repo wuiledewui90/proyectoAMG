@@ -28,11 +28,11 @@ export default function HomePage() {
         />
         <div className="relative z-10 mx-auto flex w-full max-w-7xl justify-end px-4 py-20 lg:px-8">
           <div className="flex max-w-xl flex-col items-end text-right">
-            <h1 className="text-balance text-4xl font-bold leading-tight text-secondary-foreground md:text-5xl lg:text-6xl">
-              Especialistas en Radiadores y Enfriamiento Automotor
+            <h1 className="text-balance text-4xl font-bold leading-tight text-secondary-foreground md:text-3xl lg:text-4xl">
+              Especialistas en Sistemas de Enfriamiento y Radiadores Automotrices
             </h1>
             <p className="mt-5 text-lg leading-relaxed text-secondary-foreground/70">
-              Mas de 20 anos de experiencia en venta, reparacion e instalacion de
+              Mas de 30 años de experiencia en venta, reparacion e instalacion de
               radiadores para todas las marcas. Calidad garantizada.
             </p>
             <div className="mt-8 flex flex-col items-end gap-4">
@@ -43,14 +43,7 @@ export default function HomePage() {
                 Ver Catalogo
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href="https://wa.me/5491100000000"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-end gap-2 rounded-md border border-secondary-foreground/20 bg-transparent px-6 py-3 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary-foreground/10"
-              >
-                Consultar por WhatsApp
-              </a>
+
             </div>
           </div>
         </div>
