@@ -1,10 +1,22 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Shield, Truck, Award, Wrench } from "lucide-react"
-import { products, services, formatPrice } from "@/lib/data"
 
-export default function HomePage() {
-  const featuredProducts = products.filter((p) => p.active).slice(0, 4)
+// ✅ ahora SOLO services (por ahora) queda desde data
+import { services } from "@/lib/data"
+
+// ✅ productos desde DB (Prisma)
+import { getFeaturedProducts } from "@/lib/products/product-repository"
+
+// helper para precio (evita depender de formatPrice hardcodeado)
+function formatPriceARS(value: unknown) {
+  const n = typeof value === "number" ? value : Number(value)
+  return n.toLocaleString("es-AR", { style: "currency", currency: "ARS" })
+}
+
+export default async function HomePage() {
+  // ✅ trae 4 productos activos desde la base de datos
+  const featuredProducts = await getFeaturedProducts(4)
 
   return (
     <>
@@ -43,7 +55,6 @@ export default function HomePage() {
                 Ver Catalogo
                 <ArrowRight className="h-4 w-4" />
               </Link>
-
             </div>
           </div>
         </div>
@@ -102,7 +113,7 @@ export default function HomePage() {
             >
               <div className="relative aspect-square overflow-hidden bg-muted">
                 <Image
-                  src={product.images[0] || "/placeholder.svg"}
+                  src={product.images?.[0] || "/placeholder.svg"}
                   alt={product.name}
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -116,7 +127,7 @@ export default function HomePage() {
                   {product.name}
                 </h3>
                 <p className="mt-2 text-lg font-bold text-primary">
-                  {formatPrice(product.price)}
+                  {formatPriceARS(product.price)}
                 </p>
               </div>
             </Link>

@@ -8,18 +8,18 @@ import {
   useCallback,
   type ReactNode,
 } from "react"
-import type { Product } from "./data"
+import type { SerializedProduct } from "@/lib/products/product-serialize"
 
 export interface CartItem {
-  product: Product
+  product: SerializedProduct
   quantity: number
 }
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (product: Product, quantity?: number) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  addItem: (product: SerializedProduct, quantity?: number) => void
+  removeItem: (productId: number) => void
+  updateQuantity: (productId: number, quantity: number) => void
   clearCart: () => void
   totalItems: number
   totalPrice: number
@@ -35,7 +35,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("amg-cart")
     if (stored) {
       try {
-        setItems(JSON.parse(stored))
+        setItems(JSON.parse(stored) as CartItem[])
       } catch {
         // ignore parse errors
       }
@@ -49,7 +49,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, isHydrated])
 
-  const addItem = useCallback((product: Product, quantity = 1) => {
+  const addItem = useCallback((product: SerializedProduct, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id)
       if (existing) {
@@ -63,11 +63,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const removeItem = useCallback((productId: string) => {
+  const removeItem = useCallback((productId: number) => {
     setItems((prev) => prev.filter((item) => item.product.id !== productId))
   }, [])
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number) => {
     if (quantity <= 0) {
       setItems((prev) => prev.filter((item) => item.product.id !== productId))
       return

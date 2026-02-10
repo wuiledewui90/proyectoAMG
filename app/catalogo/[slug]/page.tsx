@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { products } from "@/lib/data"
+import { getProductBySlug } from "@/lib/products/product-repository"
+import { serializeProduct } from "@/lib/products/product-serialize"
 import { ProductDetail } from "./product-detail"
 
 interface Props {
@@ -9,18 +10,25 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const product = products.find((p) => p.slug === slug)
-  if (!product) return { title: "Producto no encontrado" }
+  const product = await getProductBySlug(slug)
+
+  if (!product || !product.isActive) {
+    return { title: "Producto no encontrado" }
+  }
+
   return {
     title: product.name,
-    description: product.description,
+    description: product.description ?? undefined,
   }
 }
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params
-  const product = products.find((p) => p.slug === slug && p.active)
-  if (!product) notFound()
+  const product = await getProductBySlug(slug)
 
-  return <ProductDetail product={product} />
+  if (!product || !product.isActive) notFound()
+
+  const serialized = serializeProduct(product)
+
+  return <ProductDetail product={serialized} />
 }

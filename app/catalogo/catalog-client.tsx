@@ -1,32 +1,64 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Search, X } from "lucide-react"
-import { products, categories, brands, formatPrice } from "@/lib/data"
+import type { SerializedProduct } from "@/lib/products/product-serialize"
 
-export function CatalogClient() {
+// Si querés mantener el formatPrice de lib/data, lo podés importar.
+// Pero para “desacoplar” del hardcode, lo hago local:
+function formatPriceARS(value: number) {
+  return value.toLocaleString("es-AR", { style: "currency", currency: "ARS" })
+}
+
+type Props = {
+  products: SerializedProduct[]
+}
+
+export function CatalogClient({ products }: Props) {
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [selectedBrand, setSelectedBrand] = useState("")
 
+  // ✅ categorías y marcas derivadas de la DB (no hardcode)
+  const categories = useMemo(() => {
+    return Array.from(
+      new Set(
+        products
+          .map((p) => p.category?.trim())
+          .filter((x): x is string => Boolean(x))
+      )
+    ).sort()
+  }, [products])
+
+  const brands = useMemo(() => {
+    return Array.from(
+      new Set(
+        products
+          .map((p) => p.brand?.trim())
+          .filter((x): x is string => Boolean(x))
+      )
+    ).sort()
+  }, [products])
+
   const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim()
+
     return products
-      .filter((p) => p.active)
+      .filter((p) => p.isActive)
       .filter((p) => {
-        const q = search.toLowerCase()
+        if (!q) return true
         return (
-          !q ||
           p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.model.toLowerCase().includes(q) ||
-          p.compatibility.toLowerCase().includes(q)
+          (p.brand ?? "").toLowerCase().includes(q) ||
+          (p.model ?? "").toLowerCase().includes(q) ||
+          (p.compatibility ?? "").toLowerCase().includes(q)
         )
       })
       .filter((p) => !selectedCategory || p.category === selectedCategory)
       .filter((p) => !selectedBrand || p.brand === selectedBrand)
-  }, [search, selectedCategory, selectedBrand])
+  }, [products, search, selectedCategory, selectedBrand])
 
   const hasFilters = search || selectedCategory || selectedBrand
 
@@ -57,6 +89,7 @@ export function CatalogClient() {
               aria-label="Buscar productos"
             />
           </div>
+
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -70,6 +103,7 @@ export function CatalogClient() {
               </option>
             ))}
           </select>
+
           <select
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
@@ -83,6 +117,7 @@ export function CatalogClient() {
               </option>
             ))}
           </select>
+
           {hasFilters && (
             <button
               onClick={() => {
@@ -100,8 +135,9 @@ export function CatalogClient() {
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground">
-          {filtered.length} producto{filtered.length !== 1 ? "s" : ""}{" "}
-          encontrado{filtered.length !== 1 ? "s" : ""}
+          {`${filtered.length} producto${filtered.length !== 1 ? "s" : ""} encontrado${
+            filtered.length !== 1 ? "s" : ""
+          }`}
         </p>
 
         {/* Products grid */}
@@ -124,7 +160,7 @@ export function CatalogClient() {
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <Image
-                    src={product.images[0] || "/placeholder.svg"}
+                    src={product.images?.[0] || "/placeholder.svg"}
                     alt={product.name}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -133,22 +169,24 @@ export function CatalogClient() {
                     {product.category}
                   </span>
                 </div>
+
                 <div className="p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {product.brand} {product.model}
                   </p>
+
                   <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground">
                     {product.name}
                   </h3>
+
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-lg font-bold text-primary">
-                      {formatPrice(product.price)}
+                      {formatPriceARS(product.price)}
                     </p>
+
                     <span
                       className={`text-xs font-medium ${
-                        product.stock > 0
-                          ? "text-green-600"
-                          : "text-destructive"
+                        product.stock > 0 ? "text-green-600" : "text-destructive"
                       }`}
                     >
                       {product.stock > 0 ? "En stock" : "Sin stock"}

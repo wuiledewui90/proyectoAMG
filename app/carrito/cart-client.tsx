@@ -4,7 +4,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
-import { formatPrice } from "@/lib/data"
+
+function formatPriceARS(value: number) {
+  return value.toLocaleString("es-AR", { style: "currency", currency: "ARS" })
+}
 
 export function CartClient() {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } =
@@ -52,12 +55,13 @@ export function CartClient() {
             >
               <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-muted">
                 <Image
-                  src={item.product.images[0] || "/placeholder.svg"}
+                  src={item.product.images?.[0] || "/placeholder.svg"}
                   alt={item.product.name}
                   fill
                   className="object-cover"
                 />
               </div>
+
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -71,6 +75,7 @@ export function CartClient() {
                       {item.product.brand} {item.product.model}
                     </p>
                   </div>
+
                   <button
                     onClick={() => removeItem(item.product.id)}
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
@@ -79,6 +84,7 @@ export function CartClient() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
+
                 <div className="mt-auto flex items-center justify-between pt-2">
                   <div className="flex items-center rounded-md border border-border">
                     <button
@@ -90,9 +96,11 @@ export function CartClient() {
                     >
                       <Minus className="h-3 w-3" />
                     </button>
+
                     <span className="flex h-8 w-10 items-center justify-center border-x border-border text-sm font-medium text-foreground">
                       {item.quantity}
                     </span>
+
                     <button
                       onClick={() =>
                         updateQuantity(item.product.id, item.quantity + 1)
@@ -103,8 +111,9 @@ export function CartClient() {
                       <Plus className="h-3 w-3" />
                     </button>
                   </div>
+
                   <p className="font-semibold text-foreground">
-                    {formatPrice(item.product.price * item.quantity)}
+                    {formatPriceARS(item.product.price * item.quantity)}
                   </p>
                 </div>
               </div>
@@ -117,6 +126,7 @@ export function CartClient() {
           <h2 className="text-lg font-bold text-foreground">
             Resumen del Pedido
           </h2>
+
           <div className="mt-4 space-y-3">
             {items.map((item) => (
               <div
@@ -127,19 +137,21 @@ export function CartClient() {
                   {item.product.name} x{item.quantity}
                 </span>
                 <span className="font-medium text-foreground">
-                  {formatPrice(item.product.price * item.quantity)}
+                  {formatPriceARS(item.product.price * item.quantity)}
                 </span>
               </div>
             ))}
           </div>
+
           <div className="mt-4 border-t border-border pt-4">
             <div className="flex justify-between">
               <span className="font-semibold text-foreground">Total</span>
               <span className="text-xl font-bold text-primary">
-                {formatPrice(totalPrice)}
+                {formatPriceARS(totalPrice)}
               </span>
             </div>
           </div>
+
           <Link
             href="/checkout"
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"

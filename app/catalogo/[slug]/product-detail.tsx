@@ -11,11 +11,14 @@ import {
   MessageCircle,
   Check,
 } from "lucide-react"
-import type { Product } from "@/lib/data"
-import { formatPrice } from "@/lib/data"
+import type { SerializedProduct } from "@/lib/products/product-serialize"
 import { useCart } from "@/lib/cart-context"
 
-export function ProductDetail({ product }: { product: Product }) {
+function formatPriceARS(value: number) {
+  return value.toLocaleString("es-AR", { style: "currency", currency: "ARS" })
+}
+
+export function ProductDetail({ product }: { product: SerializedProduct }) {
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const { addItem } = useCart()
@@ -40,7 +43,7 @@ export function ProductDetail({ product }: { product: Product }) {
         {/* Image */}
         <div className="relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
           <Image
-            src={product.images[0] || "/placeholder.svg"}
+            src={product.images?.[0] || "/placeholder.svg"}
             alt={product.name}
             fill
             className="object-cover"
@@ -53,15 +56,17 @@ export function ProductDetail({ product }: { product: Product }) {
           <span className="inline-block rounded bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
             {product.category}
           </span>
+
           <h1 className="mt-3 text-2xl font-bold text-foreground md:text-3xl">
             {product.name}
           </h1>
+
           <p className="mt-1 text-sm text-muted-foreground">
             {product.brand} {product.model}
           </p>
 
           <p className="mt-6 text-3xl font-bold text-primary">
-            {formatPrice(product.price)}
+            {formatPriceARS(product.price)}
           </p>
 
           <div className="mt-2 text-sm">
@@ -104,6 +109,7 @@ export function ProductDetail({ product }: { product: Product }) {
                   >
                     <Minus className="h-4 w-4" />
                   </button>
+
                   <input
                     id="quantity"
                     type="number"
@@ -120,6 +126,7 @@ export function ProductDetail({ product }: { product: Product }) {
                     }
                     className="h-10 w-14 border-x border-border bg-card text-center text-sm text-foreground focus:outline-none"
                   />
+
                   <button
                     onClick={() =>
                       setQuantity(Math.min(product.stock, quantity + 1))
@@ -149,8 +156,11 @@ export function ProductDetail({ product }: { product: Product }) {
                     </>
                   )}
                 </button>
+
                 <a
-                  href={`https://wa.me/5491100000000?text=Hola, me interesa: ${product.name}`}
+                  href={`https://wa.me/5491100000000?text=${encodeURIComponent(
+                    `Hola, me interesa: ${product.name}`
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"

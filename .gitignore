@@ -8,5 +8,11 @@ instrumentation-client.ts
 # Common ignores
 node_modules/
 .next/
+.env
 .env*.local
 .DS_Store
+/lib/generated/prisma
+
+# Local Prisma SQLite database
+prisma/*.db
+prisma/*.db-journal
