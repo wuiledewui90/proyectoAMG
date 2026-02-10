@@ -14,9 +14,14 @@ export default function AdminNewProductPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
 
+  const [slug, setSlug] = useState("")
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [sku, setSku] = useState("")
+  const [brand, setBrand] = useState("")
+  const [model, setModel] = useState("")
+  const [category, setCategory] = useState("")
+  const [compatibility, setCompatibility] = useState("")
   const [price, setPrice] = useState("0")
   const [stock, setStock] = useState("0")
   const [imageUrl, setImageUrl] = useState("")
@@ -31,9 +36,14 @@ export default function AdminNewProductPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        slug,
         name,
         description,
         sku,
+        brand,
+        model,
+        category,
+        compatibility,
         price: Number(price),
         stock: Number(stock),
         imageUrl,
@@ -76,6 +86,11 @@ export default function AdminNewProductPage() {
               )}
 
               <div className="space-y-2">
+                <label className="text-sm font-medium">Slug *</label>
+                <Input value={slug} onChange={(e) => setSlug(e.target.value)} required />
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Nombre *</label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
@@ -93,6 +108,28 @@ export default function AdminNewProductPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Imagen URL</label>
                   <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Marca</label>
+                  <Input value={brand} onChange={(e) => setBrand(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Modelo</label>
+                  <Input value={model} onChange={(e) => setModel(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Categoría</label>
+                  <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Compatibilidad</label>
+                  <Input value={compatibility} onChange={(e) => setCompatibility(e.target.value)} />
                 </div>
               </div>
 

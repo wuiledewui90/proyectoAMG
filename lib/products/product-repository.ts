@@ -1,12 +1,61 @@
-// lib/products/product-repository.ts
 import { prisma } from "@/lib/db/prisma"
 import type { Product } from "@prisma/client"
+
+export async function listProducts(params: {
+  search?: string
+  isActive?: boolean
+  page: number
+  limit: number
+}) {
+  const { search, isActive, page, limit } = params
+
+  const where: any = {
+    ...(typeof isActive === "boolean" ? { isActive } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search } },
+            { sku: { contains: search } },
+            { slug: { contains: search } },
+          ],
+        }
+      : {}),
+  }
+
+  const [total, items] = await Promise.all([
+    prisma.product.count({ where }),
+    prisma.product.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+  ])
+
+  return { total, items }
+}
+
+export async function getProductById(id: number) {
+  return prisma.product.findUnique({ where: { id } })
+}
+
+export async function createProduct(data: any) {
+  return prisma.product.create({ data })
+}
+
+export async function updateProduct(id: number, data: any) {
+  return prisma.product.update({ where: { id }, data })
+}
+
+export async function softDeleteProduct(id: number) {
+  return prisma.product.update({ where: { id }, data: { isActive: false } })
+}
 
 // Home: productos destacados (limitados)
 export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
   return prisma.product.findMany({
     where: { isActive: true },
-    orderBy: { id: "desc" },
+    orderBy: { updatedAt: "desc" },
     take: limit,
   })
 }
@@ -15,7 +64,7 @@ export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
 export async function getCatalogProducts(): Promise<Product[]> {
   return prisma.product.findMany({
     where: { isActive: true },
-    orderBy: { id: "desc" },
+    orderBy: { updatedAt: "desc" },
   })
 }
 

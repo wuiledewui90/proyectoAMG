@@ -9,10 +9,7 @@ function parseId(params: { id: string }) {
   return id
 }
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const id = parseId(params)
   if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 })
 
@@ -27,10 +24,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const id = parseId(params)
   if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 })
 
@@ -42,7 +36,7 @@ export async function PUT(
   }
 
   try {
-    const product = await service.update(id, body as any)
+    const product = await service.update(id, body) // 👈 sin as any
     return NextResponse.json(serializeProduct(product))
   } catch (err) {
     if (err instanceof service.NotFoundError) {
@@ -61,10 +55,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const id = parseId(params)
   if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 })
 

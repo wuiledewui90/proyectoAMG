@@ -11,12 +11,18 @@ import { Textarea } from "@/components/ui/textarea"
 
 type ApiProduct = {
   id: number
+  slug: string
   name: string
   description: string | null
   sku: string | null
   price: number
   stock: number
   isActive: boolean
+  brand: string | null
+  model: string | null
+  category: string | null
+  compatibility: string | null
+  images: unknown
   imageUrl: string | null
   createdAt: string
   updatedAt: string
@@ -32,6 +38,7 @@ export default function AdminEditProductPage() {
   const [error, setError] = useState<string>("")
   const [product, setProduct] = useState<ApiProduct | null>(null)
 
+  const [slug, setSlug] = useState("")
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [sku, setSku] = useState("")
@@ -56,9 +63,14 @@ export default function AdminEditProductPage() {
       .then((p) => {
         if (cancelled) return
         setProduct(p)
+        setSlug(p.slug ?? "")
         setName(p.name)
         setDescription(p.description ?? "")
         setSku(p.sku ?? "")
+        setBrand(p.brand ?? "")
+        setModel(p.model ?? "")
+        setCategory(p.category ?? "")
+        setCompatibility(p.compatibility ?? "")
         setPrice(String(p.price))
         setStock(String(p.stock))
         setImageUrl(p.imageUrl ?? "")
@@ -88,9 +100,14 @@ export default function AdminEditProductPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        slug,
         name,
         description,
         sku,
+        brand,
+        model,
+        category,
+        compatibility,
         price: Number(price),
         stock: Number(stock),
         imageUrl,
@@ -150,6 +167,11 @@ export default function AdminEditProductPage() {
             {!loading && product && (
               <form onSubmit={handleSave} className="max-w-2xl space-y-4 rounded-lg border border-border bg-card p-6">
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">Slug *</label>
+                  <Input value={slug} onChange={(e) => setSlug(e.target.value)} required />
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Nombre *</label>
                   <Input value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
@@ -167,6 +189,28 @@ export default function AdminEditProductPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Imagen URL</label>
                     <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Marca</label>
+                    <Input value={brand} onChange={(e) => setBrand(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Modelo</label>
+                    <Input value={model} onChange={(e) => setModel(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Categoría</label>
+                    <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Compatibilidad</label>
+                    <Input value={compatibility} onChange={(e) => setCompatibility(e.target.value)} />
                   </div>
                 </div>
 

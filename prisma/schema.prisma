@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -15,12 +15,12 @@ model Product {
   sku           String?  @unique
 
   // NUEVO (pro)
-  brand         String
+  brand         String?
   model         String?
-  category      String
+  category      String?
   compatibility String?
   slug          String   @unique
-  images        Json     @default("[]") // array de strings
+  images Json @default("[]")
   imageUrl      String?  // lo dejamos por compatibilidad (opcional)
 
   price         Decimal
@@ -32,6 +32,5 @@ model Product {
 
   @@index([name])
   @@index([sku])
-  @@index([brand])
-  @@index([category])
+  @@index([slug])
 }
