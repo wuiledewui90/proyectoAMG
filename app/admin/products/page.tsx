@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { RequireAuth } from "@/lib/admin-auth"
@@ -44,88 +44,89 @@ export default function AdminProductsDbPage() {
 
   const page = Number(searchParams.get("page") ?? "1")
   const limit = Number(searchParams.get("limit") ?? "20")
-  const initialSearch = searchParams.get("search") ?? ""
-  const initialIsActive = searchParams.get("isActive")
 
-  const [search, setSearch] = useState(initialSearch)
-  const [isActive, setIsActive] = useState<string>(initialIsActive ?? "")
+  const [search, setSearch] = useState(searchParams.get("search") ?? "")
+  const [isActive, setIsActive] = useState<string>(searchParams.get("isActive") ?? "")
+
   const [data, setData] = useState<ListResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>("")
 
+  // Mantener inputs sincronizados con la URL (muy importante al volver de /edit)
+  useEffect(() => {
+    setSearch(searchParams.get("search") ?? "")
+    setIsActive(searchParams.get("isActive") ?? "")
+  }, [searchParams])
+
   const queryString = useMemo(() => {
     const qs = new URLSearchParams()
-    if (search.trim()) qs.set("search", search.trim())
+    const s = (search ?? "").trim()
+    if (s) qs.set("search", s)
     if (isActive === "true" || isActive === "false") qs.set("isActive", isActive)
     qs.set("page", String(Number.isFinite(page) && page > 0 ? page : 1))
     qs.set("limit", String(Number.isFinite(limit) && limit > 0 ? limit : 20))
     return qs.toString()
   }, [search, isActive, page, limit])
 
-  useEffect(() => {
-    let cancelled = false
+  const refetch = useCallback(async (qs = queryString) => {
     setLoading(true)
     setError("")
-
-    fetch(`/api/products?${queryString}`)
-      .then(async (r) => {
-        if (!r.ok) {
-          const payload = await r.json().catch(() => null)
-          throw new Error(payload?.error ?? `Error ${r.status}`)
-        }
-        return r.json() as Promise<ListResponse>
-      })
-      .then((payload) => {
-        if (cancelled) return
-        setData(payload)
-      })
-      .catch((e: any) => {
-        if (cancelled) return
-        setError(e?.message ?? "Error")
-        setData(null)
-      })
-      .finally(() => {
-        if (cancelled) return
-        setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
+    try {
+      const r = await fetch(`/api/products?${qs}`, { cache: "no-store" })
+      if (!r.ok) {
+        const payload = await r.json().catch(() => null)
+        throw new Error(payload?.error ?? `Error ${r.status}`)
+      }
+      const payload = (await r.json()) as ListResponse
+      setData(payload)
+    } catch (e: any) {
+      setError(e?.message ?? "Error")
+      setData(null)
+    } finally {
+      setLoading(false)
     }
   }, [queryString])
 
-  function applyFilters(next: { search?: string; isActive?: string; page?: number }) {
-    const qs = new URLSearchParams(searchParams.toString())
-    if (next.search !== undefined) {
-      const v = next.search.trim()
-      if (v) qs.set("search", v)
-      else qs.delete("search")
-    }
-    if (next.isActive !== undefined) {
-      if (next.isActive === "true" || next.isActive === "false") qs.set("isActive", next.isActive)
-      else qs.delete("isActive")
-    }
-    if (next.page !== undefined) qs.set("page", String(next.page))
-    if (!qs.get("limit")) qs.set("limit", "20")
+  useEffect(() => {
+    void refetch(queryString)
+  }, [queryString, refetch])
+
+  function applyFilters(next: { search?: string; isActive?: string; page?: number; limit?: number }) {
+    // Armamos QS desde cero para evitar mezclar params viejos
+    const qs = new URLSearchParams()
+
+    const nextSearch = (next.search ?? searchParams.get("search") ?? "").trim()
+    const nextIsActive = next.isActive ?? searchParams.get("isActive") ?? ""
+    const nextPage = next.page ?? Number(searchParams.get("page") ?? "1")
+    const nextLimit = next.limit ?? Number(searchParams.get("limit") ?? "20")
+
+    if (nextSearch) qs.set("search", nextSearch)
+    if (nextIsActive === "true" || nextIsActive === "false") qs.set("isActive", nextIsActive)
+    qs.set("page", String(nextPage))
+    qs.set("limit", String(nextLimit))
+
     router.push(`/admin/products?${qs.toString()}`)
   }
 
   async function handleSoftDelete(id: number) {
-    if (!confirm("¿Desactivar (soft delete) este producto?") ) return
+    if (!confirm("¿Desactivar (soft delete) este producto?")) return
+
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
     if (!res.ok) {
       const payload = await res.json().catch(() => null)
       alert(payload?.error ?? `Error ${res.status}`)
       return
     }
-    // refetch by nudging same route
-    router.refresh()
-    // also update client data optimistically
+
+    // Optimista (rápido)
     setData((prev) =>
       prev
         ? { ...prev, items: prev.items.map((p) => (p.id === id ? { ...p, isActive: false } : p)) }
         : prev
     )
+
+    // Refetch real (actualiza total/totalPages y respeta filtros)
+    await refetch()
   }
 
   return (
@@ -165,8 +166,9 @@ export default function AdminProductsDbPage() {
                 <select
                   value={isActive}
                   onChange={(e) => {
-                    setIsActive(e.target.value)
-                    applyFilters({ isActive: e.target.value, page: 1 })
+                    const v = e.target.value
+                    setIsActive(v)
+                    applyFilters({ isActive: v, page: 1 })
                   }}
                   className="h-10 rounded-md border border-input bg-background px-3 text-sm"
                 >
