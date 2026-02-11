@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
-export function isAdminAuthenticated(): boolean {
-  return cookies().get("amg_admin")?.value === "1"
+export async function isAdminAuthenticated(): Promise<boolean> {
+  const store = await cookies()
+  return store.get("amg_admin")?.value === "1"
 }

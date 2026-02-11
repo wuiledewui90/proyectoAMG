@@ -4,13 +4,17 @@ import type { Product } from "@prisma/client"
 export async function listProducts(params: {
   search?: string
   isActive?: boolean
+  brand?: string
+  category?: string
   page: number
   limit: number
 }) {
-  const { search, isActive, page, limit } = params
+  const { search, isActive, brand, category, page, limit } = params
 
   const where: any = {
     ...(typeof isActive === "boolean" ? { isActive } : {}),
+    ...(brand ? { brand } : {}),
+    ...(category ? { category } : {}),
     ...(search
       ? {
           OR: [

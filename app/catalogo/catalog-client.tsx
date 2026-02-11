@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Search, X } from "lucide-react"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
+import { brands, categories } from "@/lib/data"
 
 // Si querés mantener el formatPrice de lib/data, lo podés importar.
 // Pero para “desacoplar” del hardcode, lo hago local:
@@ -20,27 +21,18 @@ export function CatalogClient({ products }: Props) {
   const [search, setSearch] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [selectedBrand, setSelectedBrand] = useState("")
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({})
 
   // ✅ categorías y marcas derivadas de la DB (no hardcode)
-  const categories = useMemo(() => {
-    return Array.from(
-      new Set(
-        products
-          .map((p) => p.category?.trim())
-          .filter((x): x is string => Boolean(x))
-      )
-    ).sort()
-  }, [products])
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.localeCompare(b, "es")),
+    []
+  )
 
-  const brands = useMemo(() => {
-    return Array.from(
-      new Set(
-        products
-          .map((p) => p.brand?.trim())
-          .filter((x): x is string => Boolean(x))
-      )
-    ).sort()
-  }, [products])
+  const sortedBrands = useMemo(
+    () => [...brands].sort((a, b) => a.localeCompare(b, "es")),
+    []
+  )
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
@@ -97,7 +89,7 @@ export function CatalogClient({ products }: Props) {
             aria-label="Filtrar por categoria"
           >
             <option value="">Todas las categorias</option>
-            {categories.map((c) => (
+            {sortedCategories.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -111,7 +103,7 @@ export function CatalogClient({ products }: Props) {
             aria-label="Filtrar por marca"
           >
             <option value="">Todas las marcas</option>
-            {brands.map((b) => (
+            {sortedBrands.map((b) => (
               <option key={b} value={b}>
                 {b}
               </option>
@@ -153,6 +145,13 @@ export function CatalogClient({ products }: Props) {
         ) : (
           <div className="mt-6 grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((product) => (
+              (() => {
+                const imageSrc =
+                  imageErrors[product.id] || !product.images?.[0]
+                    ? "/placeholder.svg"
+                    : product.images[0]
+
+                return (
               <Link
                 key={product.id}
                 href={`/catalogo/${product.slug}`}
@@ -160,10 +159,16 @@ export function CatalogClient({ products }: Props) {
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <Image
-                    src={product.images?.[0] || "/placeholder.svg"}
+                    src={imageSrc}
                     alt={product.name}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-102"
+                    onError={() =>
+                      setImageErrors((current) => ({
+                        ...current,
+                        [product.id]: true,
+                      }))
+                    }
                   />
                   <span className="absolute bottom-3 left-3 rounded bg-secondary/90 px-2 py-0.5 text-xs font-medium text-secondary-foreground shadow-sm">
                     {product.category}
@@ -194,6 +199,8 @@ export function CatalogClient({ products }: Props) {
                   </div>
                 </div>
               </Link>
+                )
+              })()
             ))}
           </div>
         )}

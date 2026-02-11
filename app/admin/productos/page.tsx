@@ -101,7 +101,10 @@ export default function AdminProductosPage() {
   const limit = Number(searchParams.get("limit") ?? "20")
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const [isActive, setIsActive] = useState(searchParams.get("isActive") ?? "")
-  const [orderMode, setOrderMode] = useState<"updated" | "category">("updated")
+  const [brandFilter, setBrandFilter] = useState(searchParams.get("brand") ?? "")
+  const [categoryFilter, setCategoryFilter] = useState(
+    searchParams.get("category") ?? ""
+  )
 
   // ========================
   // Datos
@@ -118,6 +121,8 @@ export default function AdminProductosPage() {
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
   const [importError, setImportError] = useState("")
 
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+
   // ========================
   // QueryString alineado a API
   // ========================
@@ -125,10 +130,12 @@ export default function AdminProductosPage() {
     const qs = new URLSearchParams()
     if (search.trim()) qs.set("search", search.trim())
     if (isActive === "true" || isActive === "false") qs.set("isActive", isActive)
+    if (brandFilter.trim()) qs.set("brand", brandFilter.trim())
+    if (categoryFilter.trim()) qs.set("category", categoryFilter.trim())
     qs.set("page", String(page))
     qs.set("limit", String(limit))
     return qs.toString()
-  }, [search, isActive, page, limit])
+  }, [search, isActive, brandFilter, categoryFilter, page, limit])
 
   // ========================
   // Fetch REAL a la DB
@@ -164,20 +171,47 @@ export default function AdminProductosPage() {
     }
   }, [queryString])
 
-  const orderedItems = useMemo(() => {
-    const items = data?.items ? [...data.items] : []
-    if (orderMode === "category") {
-      items.sort((a, b) => {
-        const categoryCompare = (a.category ?? "").localeCompare(
-          b.category ?? "",
-          "es"
-        )
-        if (categoryCompare !== 0) return categoryCompare
-        return a.name.localeCompare(b.name, "es")
-      })
+  const orderedItems = useMemo(() => data?.items ?? [], [data?.items])
+
+  const allSelected =
+    orderedItems.length > 0 &&
+    orderedItems.every((item) => selectedIds.includes(item.id))
+
+  const totalPages = data?.totalPages ?? 1
+
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.localeCompare(b, "es")),
+    []
+  )
+  const sortedBrands = useMemo(
+    () => [...brands].sort((a, b) => a.localeCompare(b, "es")),
+    []
+  )
+
+  function buildQueryString(next: {
+    page?: number
+    brand?: string
+    category?: string
+    search?: string
+    isActive?: string
+  }) {
+    const qs = new URLSearchParams()
+    const nextSearch = next.search ?? search
+    const nextIsActive = next.isActive ?? isActive
+    const nextBrand = next.brand ?? brandFilter
+    const nextCategory = next.category ?? categoryFilter
+
+    if (nextSearch.trim()) qs.set("search", nextSearch.trim())
+    if (nextIsActive === "true" || nextIsActive === "false") {
+      qs.set("isActive", nextIsActive)
     }
-    return items
-  }, [data?.items, orderMode])
+    if (nextBrand.trim()) qs.set("brand", nextBrand.trim())
+    if (nextCategory.trim()) qs.set("category", nextCategory.trim())
+
+    qs.set("page", String(next.page ?? page))
+    qs.set("limit", String(limit))
+    return qs.toString()
+  }
 
   // ========================
   // Acciones
@@ -283,6 +317,44 @@ export default function AdminProductosPage() {
     router.refresh()
   }
 
+  async function handleBulkDelete(mode: "soft" | "hard") {
+    if (selectedIds.length === 0) return
+
+    const actionLabel = mode === "hard" ? "borrar" : "desactivar"
+    if (!confirm(`¿${actionLabel} ${selectedIds.length} productos?`)) return
+
+    const idsToDelete = selectedIds
+    setSelectedIds([])
+
+    const results = await Promise.all(
+      idsToDelete.map((id) => {
+        const url = mode === "hard" ? `/api/products/${id}?hard=true` : `/api/products/${id}`
+        return fetch(url, { method: "DELETE" }).then((res) => res.ok)
+      })
+    )
+
+    const failures = results.filter((ok) => !ok).length
+    if (failures > 0) {
+      alert(`No se pudieron ${actionLabel} ${failures} productos.`)
+    }
+
+    router.refresh()
+  }
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedIds([])
+      return
+    }
+    setSelectedIds(orderedItems.map((item) => item.id))
+  }
+
+  function toggleSelectOne(id: number) {
+    setSelectedIds((current) =>
+      current.includes(id) ? current.filter((value) => value !== id) : [...current, id]
+    )
+  }
+
   async function handleHardDelete(id: number) {
     const validId = toValidId(id)
     if (!validId) {
@@ -371,16 +443,41 @@ export default function AdminProductosPage() {
             aria-label="Buscar producto"
           />
           <div className="flex items-center gap-2 text-sm">
-            <label className="text-muted-foreground">Orden</label>
+            <label className="text-muted-foreground">Categoria</label>
             <select
               className="rounded border px-2 py-1 text-sm"
-              value={orderMode}
-              onChange={(e) =>
-                setOrderMode(e.target.value === "category" ? "category" : "updated")
-              }
+              value={categoryFilter}
+              onChange={(e) => {
+                const value = e.target.value
+                setCategoryFilter(value)
+                router.push(`?${buildQueryString({ page: 1, category: value })}`)
+              }}
             >
-              <option value="updated">Recientes</option>
-              <option value="category">Categoria</option>
+              <option value="">Todas</option>
+              {sortedCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <label className="text-muted-foreground">Marca</label>
+            <select
+              className="rounded border px-2 py-1 text-sm"
+              value={brandFilter}
+              onChange={(e) => {
+                const value = e.target.value
+                setBrandFilter(value)
+                router.push(`?${buildQueryString({ page: 1, brand: value })}`)
+              }}
+            >
+              <option value="">Todas</option>
+              {sortedBrands.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
             </select>
           </div>
           <label className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
@@ -401,6 +498,20 @@ export default function AdminProductosPage() {
             Cerrar sesion
           </button>
           <button
+            onClick={() => handleBulkDelete("hard")}
+            disabled={selectedIds.length === 0}
+            className="rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            Borrar definitivo
+          </button>
+          <button
+            onClick={() => handleBulkDelete("soft")}
+            disabled={selectedIds.length === 0}
+            className="rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            Dejar inactivo
+          </button>
+          <button
             onClick={handleNew}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
@@ -416,6 +527,9 @@ export default function AdminProductosPage() {
         <div className="text-sm text-muted-foreground">
           Importados: {importSummary.created} · Actualizados: {importSummary.updated} ·
           Errores: {importSummary.errors.length}
+          {importSummary.errors.length === 0 && (
+            <div className="mt-1 text-xs text-green-600">Importacion completa.</div>
+          )}
           {importSummary.errors.length > 0 && (
             <ul className="mt-1 text-xs text-red-600">
               {importSummary.errors.slice(0, 10).map((item) => (
@@ -571,6 +685,14 @@ export default function AdminProductosPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
+              <th className="p-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  aria-label="Seleccionar todos"
+                />
+              </th>
               <th className="p-3 text-left">Imagen</th>
               <th className="p-3 text-left">Nombre</th>
               <th className="p-3 text-left">Precio</th>
@@ -583,6 +705,14 @@ export default function AdminProductosPage() {
           <tbody>
             {orderedItems.map((p) => (
               <tr key={p.id} className="border-b last:border-0">
+                <td className="p-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(p.id)}
+                    onChange={() => toggleSelectOne(p.id)}
+                    aria-label={`Seleccionar ${p.name}`}
+                  />
+                </td>
                 <td className="p-3">
                   <div className="relative h-10 w-10 overflow-hidden rounded bg-muted">
                     <Image
@@ -636,6 +766,34 @@ export default function AdminProductosPage() {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <button
+            className="rounded border px-2 py-1 disabled:opacity-50"
+            onClick={() => router.push(`?${buildQueryString({ page: page - 1 })}`)}
+            disabled={page <= 1}
+          >
+            Anterior
+          </button>
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map((p) => (
+            <button
+              key={p}
+              className={`rounded border px-2 py-1 ${p === page ? "bg-muted" : ""}`}
+              onClick={() => router.push(`?${buildQueryString({ page: p })}`)}
+            >
+              {p}
+            </button>
+          ))}
+          <button
+            className="rounded border px-2 py-1 disabled:opacity-50"
+            onClick={() => router.push(`?${buildQueryString({ page: page + 1 })}`)}
+            disabled={page >= totalPages}
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
     </div>
   )
 }

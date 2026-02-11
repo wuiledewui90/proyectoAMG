@@ -89,7 +89,23 @@ export const services: Service[] = [
 
 // ✅ Categorías/marcas (si en tu UI las usás para filtros estáticos, ok)
 // ⚠️ Si querés que sean “reales”, lo ideal es derivarlas desde DB o tener tablas Category/Brand.
-export const categories = ["Radiadores", "Electroventiladores", "Mangueras", "Accesorios"]
+export const categories = [
+  "Radiadores",
+  "Radiadores de aceite",
+  "Intercoolers",
+  "Electroventiladores",
+  "Ventiladores",
+  "Mangueras",
+  "Abrazaderas",
+  "Bombas de agua",
+  "Correas",
+  "Termostatos",
+  "Tapas de radiador",
+  "Depositos",
+  "Sensores",
+  "Refrigerantes",
+  "Accesorios",
+]
 
 export const brands = [
   "Chevrolet",

@@ -21,6 +21,8 @@ function normalizeOptionalString(value: unknown): string | undefined {
 export async function list(params: {
   search?: string
   isActive?: boolean
+  brand?: string
+  category?: string
   page: number
   limit: number
 }) {

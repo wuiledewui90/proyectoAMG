@@ -34,6 +34,16 @@ export type ProductUpdateInput = z.infer<typeof productUpdateSchema>
 
 export const productListQuerySchema = z.object({
   search: z.string().trim().optional(),
+  brand: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value && value.length ? value : undefined)),
+  category: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value && value.length ? value : undefined)),
   isActive: z
     .enum(["true", "false"])
     .optional()

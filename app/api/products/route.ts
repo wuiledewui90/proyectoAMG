@@ -13,6 +13,8 @@ export async function GET(req: Request) {
 
   const parsed = productListQuerySchema.safeParse({
     search: searchParams.get("search") ?? searchParams.get("q") ?? undefined,
+    brand: searchParams.get("brand") ?? undefined,
+    category: searchParams.get("category") ?? undefined,
     isActive: searchParams.get("isActive") ?? searchParams.get("active") ?? undefined,
     page: searchParams.get("page") ?? undefined,
     limit: searchParams.get("limit") ?? undefined,
@@ -25,8 +27,8 @@ export async function GET(req: Request) {
     )
   }
 
-  const { search, isActive, page, limit } = parsed.data
-  const { total, items } = await service.list({ search, isActive, page, limit })
+  const { search, isActive, brand, category, page, limit } = parsed.data
+  const { total, items } = await service.list({ search, isActive, brand, category, page, limit })
 
   if (!wantsPaged) {
     return NextResponse.json(serializeProducts(items), {

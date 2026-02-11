@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { Decimal } from "@prisma/client/runtime/library"
+import { Decimal, PrismaClientKnownRequestError } from "@prisma/client/runtime/library"
 import { prisma } from "@/lib/db/prisma"
 import { isAdminAuthenticated } from "@/lib/admin/server-auth"
 
@@ -129,60 +129,61 @@ function parseCsv(content: string): string[][] {
 }
 
 export async function POST(req: Request) {
-  if (!isAdminAuthenticated()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const formData = await req.formData().catch(() => null)
-  const file = formData?.get("file")
-
-  if (!file || !(file instanceof File)) {
-    return NextResponse.json({ error: "Archivo CSV requerido" }, { status: 400 })
-  }
-
-  if (file.size === 0) {
-    return NextResponse.json({ error: "El archivo CSV esta vacio" }, { status: 400 })
-  }
-
-  const text = (await file.text()).replace(/^\uFEFF/, "")
-  const rows = parseCsv(text)
-
-  if (rows.length < 2) {
-    return NextResponse.json({ error: "CSV sin datos" }, { status: 400 })
-  }
-
-  const headers = rows[0].map((value) => value.trim().toLowerCase())
-  const headerMap = new Map<string, number>()
-  headers.forEach((header, index) => {
-    if (!header) return
-    if (!SUPPORTED_HEADERS.has(header)) return
-    headerMap.set(header, index)
-  })
-
-  const missing = REQUIRED_HEADERS.filter((header) => !headerMap.has(header))
-  if (missing.length) {
-    return NextResponse.json(
-      { error: `Faltan headers: ${missing.join(", ")}` },
-      { status: 400 }
-    )
-  }
-
-  let created = 0
-  let updated = 0
-  const errors: RowError[] = []
-
-  for (let i = 1; i < rows.length; i += 1) {
-    const rawRow = rows[i]
-    const rowNumber = i + 1
-
-    if (rawRow.every((cell) => !cell || !cell.trim())) {
-      continue
+  try {
+    if (!(await isAdminAuthenticated())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const getValue = (key: string) => {
-      const index = headerMap.get(key)
-      return index === undefined ? "" : rawRow[index] ?? ""
+    const formData = await req.formData().catch(() => null)
+    const file = formData?.get("file")
+
+    if (!file || !(file instanceof File)) {
+      return NextResponse.json({ error: "Archivo CSV requerido" }, { status: 400 })
     }
+
+    if (file.size === 0) {
+      return NextResponse.json({ error: "El archivo CSV esta vacio" }, { status: 400 })
+    }
+
+    const text = (await file.text()).replace(/^\uFEFF/, "")
+    const rows = parseCsv(text)
+
+    if (rows.length < 2) {
+      return NextResponse.json({ error: "CSV sin datos" }, { status: 400 })
+    }
+
+    const headers = rows[0].map((value) => value.trim().toLowerCase())
+    const headerMap = new Map<string, number>()
+    headers.forEach((header, index) => {
+      if (!header) return
+      if (!SUPPORTED_HEADERS.has(header)) return
+      headerMap.set(header, index)
+    })
+
+    const missing = REQUIRED_HEADERS.filter((header) => !headerMap.has(header))
+    if (missing.length) {
+      return NextResponse.json(
+        { error: `Faltan headers: ${missing.join(", ")}` },
+        { status: 400 }
+      )
+    }
+
+    let created = 0
+    let updated = 0
+    const errors: RowError[] = []
+
+    for (let i = 1; i < rows.length; i += 1) {
+      const rawRow = rows[i]
+      const rowNumber = i + 1
+
+      if (rawRow.every((cell) => !cell || !cell.trim())) {
+        continue
+      }
+
+      const getValue = (key: string) => {
+        const index = headerMap.get(key)
+        return index === undefined ? "" : rawRow[index] ?? ""
+      }
 
     const name = getValue("name").trim()
     const slug = getValue("slug").trim()
@@ -204,8 +205,8 @@ export async function POST(req: Request) {
     }
 
     const stockRaw = getValue("stock").trim()
-    const stock = stockRaw ? Number.parseInt(stockRaw, 10) : undefined
-    if (stockRaw && (!Number.isFinite(stock) || stock < 0)) {
+    const stockValue = stockRaw ? Number.parseInt(stockRaw, 10) : null
+    if (stockValue !== null && (!Number.isFinite(stockValue) || stockValue < 0)) {
       if (errors.length < MAX_ERRORS) {
         errors.push({ row: rowNumber, message: "stock invalido" })
       }
@@ -243,9 +244,10 @@ export async function POST(req: Request) {
     const sku = normalizeOptionalString(getValue("sku"))
     const lookupSku = sku ?? undefined
 
-    const existing = lookupSku
-      ? await prisma.product.findUnique({ where: { sku: lookupSku } })
-      : await prisma.product.findUnique({ where: { slug } })
+    try {
+      const existing = lookupSku
+        ? await prisma.product.findUnique({ where: { sku: lookupSku } })
+        : await prisma.product.findUnique({ where: { slug } })
 
     const baseData = {
       name,
@@ -259,36 +261,50 @@ export async function POST(req: Request) {
       price: new Decimal(price),
     }
 
-    if (existing) {
-      const updateData: Record<string, unknown> = { ...baseData }
-      if (stock !== undefined) updateData.stock = stock
-      if (isActiveParsed !== undefined) updateData.isActive = isActiveParsed
+      if (existing) {
+        const updateData: Record<string, unknown> = { ...baseData }
+        if (stockValue !== null) updateData.stock = stockValue
+        if (isActiveParsed !== undefined) updateData.isActive = isActiveParsed
 
-      if (imagesResult.provided || hasImageUrl) {
-        const imagesForUpdate = imagesResult.images.length
-          ? imagesResult.images
-          : imageUrl
-            ? [imageUrl]
-            : []
-        updateData.images = imagesForUpdate
-        updateData.imageUrl = imageUrl ?? imagesForUpdate[0]
-      }
+        if (imagesResult.provided || hasImageUrl) {
+          const imagesForUpdate = imagesResult.images.length
+            ? imagesResult.images
+            : imageUrl
+              ? [imageUrl]
+              : []
+          updateData.images = imagesForUpdate
+          updateData.imageUrl = imageUrl ?? imagesForUpdate[0]
+        }
 
-      await prisma.product.update({ where: { id: existing.id }, data: updateData })
-      updated += 1
-    } else {
-      const createData = {
-        ...baseData,
-        stock: stock ?? 0,
-        isActive: isActiveParsed ?? true,
-        images: imagesForCreate,
-        imageUrl: imageUrlForCreate,
+        await prisma.product.update({ where: { id: existing.id }, data: updateData })
+        updated += 1
+      } else {
+        const createData = {
+          ...baseData,
+          stock: stockValue ?? 0,
+          isActive: isActiveParsed ?? true,
+          images: imagesForCreate,
+          imageUrl: imageUrlForCreate,
+        }
+        await prisma.product.create({ data: createData })
+        created += 1
       }
-      await prisma.product.create({ data: createData })
-      created += 1
+    } catch (err) {
+      if (errors.length < MAX_ERRORS) {
+        if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+          errors.push({ row: rowNumber, message: "SKU o slug ya existe" })
+        } else {
+          errors.push({ row: rowNumber, message: "Error al guardar la fila" })
+        }
+      }
     }
-  }
+    }
 
-  const summary: ImportSummary = { created, updated, errors }
-  return NextResponse.json(summary)
+    const summary: ImportSummary = { created, updated, errors }
+    return NextResponse.json(summary)
+  } catch (err) {
+    console.error("[csv import] error", err)
+    const message = err instanceof Error ? err.message : "Error interno"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
