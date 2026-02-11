@@ -1,7 +1,7 @@
 // app/admin/productos/page.tsx
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Plus, Pencil, Ban, X, Save } from "lucide-react"
@@ -34,6 +34,17 @@ type ListResponse = {
   limit: number
   total: number
   totalPages: number
+}
+
+type ImportError = {
+  row: number
+  message: string
+}
+
+type ImportSummary = {
+  created: number
+  updated: number
+  errors: ImportError[]
 }
 
 // ========================
@@ -81,6 +92,7 @@ function toValidId(value: unknown): number | null {
 export default function AdminProductosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
   // ========================
   // Filtros por URL
@@ -101,6 +113,10 @@ export default function AdminProductosPage() {
   // Editor
   const [editing, setEditing] = useState<EditorState | null>(null)
   const [isNew, setIsNew] = useState(false)
+
+  const [importing, setImporting] = useState(false)
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null)
+  const [importError, setImportError] = useState("")
 
   // ========================
   // QueryString alineado a API
@@ -298,6 +314,46 @@ export default function AdminProductosPage() {
     router.replace("/admin/login")
   }
 
+  async function handleImportCsv(file: File) {
+    setImporting(true)
+    setImportError("")
+    setImportSummary(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const res = await fetch("/api/admin/products/import", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      })
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null)
+        setImportError(payload?.error ?? `Error ${res.status}`)
+        return
+      }
+
+      const payload = (await res.json()) as ImportSummary
+      setImportSummary(payload)
+      router.refresh()
+    } catch {
+      setImportError("No se pudo importar el CSV")
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  async function handleImportInputChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+    await handleImportCsv(file)
+  }
+
   // ========================
   // Render
   // ========================
@@ -327,6 +383,17 @@ export default function AdminProductosPage() {
               <option value="category">Categoria</option>
             </select>
           </div>
+          <label className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleImportInputChange}
+              disabled={importing}
+            />
+            {importing ? "Importando..." : "Importar CSV"}
+          </label>
           <button
             onClick={handleLogout}
             className="rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -344,6 +411,22 @@ export default function AdminProductosPage() {
 
       {loading && <p>Cargando…</p>}
       {error && <p className="text-red-600">{error}</p>}
+      {importError && <p className="text-red-600">{importError}</p>}
+      {importSummary && (
+        <div className="text-sm text-muted-foreground">
+          Importados: {importSummary.created} · Actualizados: {importSummary.updated} ·
+          Errores: {importSummary.errors.length}
+          {importSummary.errors.length > 0 && (
+            <ul className="mt-1 text-xs text-red-600">
+              {importSummary.errors.slice(0, 10).map((item) => (
+                <li key={`${item.row}-${item.message}`}>
+                  Fila {item.row}: {item.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Modal */}
       {editing && (

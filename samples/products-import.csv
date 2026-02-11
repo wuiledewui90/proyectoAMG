@@ -1,0 +1,4 @@
+name,description,sku,brand,model,category,compatibility,slug,imageUrl,images,price,stock,isActive
+Radiador Compacto,"Radiador aluminio para city cars",RAD-1001,AMG,City 1.0,Compactos,"2015-2022",radiador-compacto,/images/radiador-1.jpg,"[""/images/radiador-1.jpg"",""/images/radiador-2.jpg""]",145000,8,true
+Radiador SUV,"Radiador reforzado",RAD-2002,AMG,SUV 2.0,SUV,"2018-2024",radiador-suv,/images/radiador-3.jpg,,"$145.000",5,true
+Radiador Clasico,"Modelo clasico",,AMG,Classic,Clasicos,"1980-1995",radiador-clasico,,/images/radiador-4.jpg,98000,,false
