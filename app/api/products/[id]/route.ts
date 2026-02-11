@@ -92,7 +92,11 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   }
 
   try {
-    const product = await service.softDelete(parsed.id)
+    const { searchParams } = new URL(_req.url)
+    const hard = searchParams.get("hard") === "true"
+    const product = hard
+      ? await service.hardDelete(parsed.id)
+      : await service.softDelete(parsed.id)
     return NextResponse.json(serializeProduct(product))
   } catch (err) {
     if (err instanceof service.NotFoundError) {

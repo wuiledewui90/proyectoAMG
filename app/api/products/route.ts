@@ -41,3 +41,28 @@ export async function GET(req: Request) {
     { headers: { "Cache-Control": "no-store" } }
   )
 }
+
+export async function POST(req: Request) {
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+  }
+
+  try {
+    const product = await service.create(body)
+    return NextResponse.json(serializeProduct(product))
+  } catch (err) {
+    if (err instanceof service.ConflictError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation error", issues: err.issues },
+        { status: 400 }
+      )
+    }
+    throw err
+  }
+}

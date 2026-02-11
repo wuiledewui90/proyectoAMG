@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Plus, Pencil, Trash2, X, Save } from "lucide-react"
+import { Plus, Pencil, Ban, X, Save } from "lucide-react"
 
 import { categories, brands, formatPrice } from "@/lib/data"
 
@@ -89,6 +89,7 @@ export default function AdminProductosPage() {
   const limit = Number(searchParams.get("limit") ?? "20")
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const [isActive, setIsActive] = useState(searchParams.get("isActive") ?? "")
+  const [orderMode, setOrderMode] = useState<"updated" | "category">("updated")
 
   // ========================
   // Datos
@@ -147,6 +148,21 @@ export default function AdminProductosPage() {
     }
   }, [queryString])
 
+  const orderedItems = useMemo(() => {
+    const items = data?.items ? [...data.items] : []
+    if (orderMode === "category") {
+      items.sort((a, b) => {
+        const categoryCompare = (a.category ?? "").localeCompare(
+          b.category ?? "",
+          "es"
+        )
+        if (categoryCompare !== 0) return categoryCompare
+        return a.name.localeCompare(b.name, "es")
+      })
+    }
+    return items
+  }, [data?.items, orderMode])
+
   // ========================
   // Acciones
   // ========================
@@ -187,15 +203,15 @@ export default function AdminProductosPage() {
     const payload = {
       name: editing.name,
       slug: editing.slug,
-      description: editing.description || null,
-      sku: editing.sku || null,
-      brand: editing.brand || null,
-      model: editing.model || null,
-      category: editing.category || null,
-      compatibility: editing.compatibility || null,
+      description: editing.description || "",
+      sku: editing.sku || "",
+      brand: editing.brand || "",
+      model: editing.model || "",
+      category: editing.category || "",
+      compatibility: editing.compatibility || "",
       price: editing.price,
       stock: editing.stock,
-      imageUrl: editing.imageUrl || null,
+      imageUrl: editing.imageUrl || "",
       images: editing.imageUrl ? [editing.imageUrl] : [],
       isActive: editing.isActive,
     }
@@ -251,19 +267,79 @@ export default function AdminProductosPage() {
     router.refresh()
   }
 
+  async function handleHardDelete(id: number) {
+    const validId = toValidId(id)
+    if (!validId) {
+      alert("ID inválido para eliminar.")
+      return
+    }
+
+    if (!confirm("¿Eliminar definitivamente este producto?")) return
+
+    const res = await fetch(`/api/products/${validId}?hard=true`, {
+      method: "DELETE",
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      alert(err?.error ?? `Error ${res.status}`)
+      return
+    }
+
+    router.refresh()
+  }
+
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST" })
+
+    try {
+      localStorage.removeItem("amg-admin-session")
+    } catch {}
+
+    router.replace("/admin/login")
+  }
+
   // ========================
   // Render
   // ========================
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold">Productos (DB)</h1>
-        <button
-          onClick={handleNew}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-        >
-          <Plus className="h-4 w-4" /> Nuevo
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            type="search"
+            className="w-full rounded border px-3 py-2 text-sm sm:w-56"
+            placeholder="Buscar producto..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar producto"
+          />
+          <div className="flex items-center gap-2 text-sm">
+            <label className="text-muted-foreground">Orden</label>
+            <select
+              className="rounded border px-2 py-1 text-sm"
+              value={orderMode}
+              onChange={(e) =>
+                setOrderMode(e.target.value === "category" ? "category" : "updated")
+              }
+            >
+              <option value="updated">Recientes</option>
+              <option value="category">Categoria</option>
+            </select>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Cerrar sesion
+          </button>
+          <button
+            onClick={handleNew}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            <Plus className="h-4 w-4" /> Nuevo
+          </button>
+        </div>
       </div>
 
       {loading && <p>Cargando…</p>}
@@ -422,7 +498,7 @@ export default function AdminProductosPage() {
           </thead>
 
           <tbody>
-            {data?.items?.map((p) => (
+            {orderedItems.map((p) => (
               <tr key={p.id} className="border-b last:border-0">
                 <td className="p-3">
                   <div className="relative h-10 w-10 overflow-hidden rounded bg-muted">
@@ -450,8 +526,17 @@ export default function AdminProductosPage() {
                       onClick={() => handleSoftDelete(p.id)}
                       disabled={!p.isActive}
                       aria-label="Desactivar"
+                      title="Desactivar"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Ban className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleHardDelete(p.id)}
+                      aria-label="Eliminar definitivamente"
+                      title="Eliminar definitivamente"
+                    >
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

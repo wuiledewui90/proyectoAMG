@@ -3,6 +3,9 @@ import { CatalogClient } from "./catalog-client"
 import { getCatalogProducts } from "@/lib/products/product-repository"
 import { serializeProducts } from "@/lib/products/product-serialize"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: "Catalogo",
   description:

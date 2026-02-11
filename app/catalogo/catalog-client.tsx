@@ -151,21 +151,21 @@ export function CatalogClient({ products }: Props) {
             </p>
           </div>
         ) : (
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-6 grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((product) => (
               <Link
                 key={product.id}
                 href={`/catalogo/${product.slug}`}
-                className="group overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
+                className="group rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <Image
                     src={product.images?.[0] || "/placeholder.svg"}
                     alt={product.name}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-102"
                   />
-                  <span className="absolute left-3 top-3 rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                  <span className="absolute bottom-3 left-3 rounded bg-secondary/90 px-2 py-0.5 text-xs font-medium text-secondary-foreground shadow-sm">
                     {product.category}
                   </span>
                 </div>
@@ -175,7 +175,7 @@ export function CatalogClient({ products }: Props) {
                     {product.brand} {product.model}
                   </p>
 
-                  <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground">
+                  <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground line-clamp-2 min-h-[2.5rem]">
                     {product.name}
                   </h3>
 

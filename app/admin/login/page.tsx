@@ -19,6 +19,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       })
 
@@ -27,7 +28,18 @@ export default function AdminLoginPage() {
         return
       }
 
+      try {
+        localStorage.setItem("amg-admin-session", "authenticated")
+      } catch {}
+
+      try {
+        document.cookie = "amg_admin=1; path=/"
+      } catch {}
+
       router.replace("/admin/productos")
+      try {
+        window.location.href = "/admin/productos"
+      } catch {}
     } finally {
       setLoading(false)
     }

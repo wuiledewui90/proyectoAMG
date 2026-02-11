@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { ShoppingCart, Menu, X, Phone } from "lucide-react"
+import { ShoppingCart, Menu, X } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { cn } from "@/lib/utils"
 
@@ -35,7 +35,10 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-6 lg:flex" aria-label="Principal">
+        <nav
+          className="hidden flex-1 items-center justify-center gap-6 lg:flex"
+          aria-label="Principal"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -48,16 +51,13 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
-            href="https://wa.me/5491100000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden items-center gap-1.5 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/90 md:flex"
-            aria-label="Contactar por WhatsApp"
+          <Link
+            href="/admin/productos"
+            className="hidden items-center rounded-full border border-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground md:inline-flex"
+            aria-label="Acceso al panel de administracion"
           >
-            <Phone className="h-4 w-4" />
-            WhatsApp
-          </a>
+            Administracion
+          </Link>
           <Link
             href="/carrito"
             className="relative flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted"
@@ -103,15 +103,13 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
-          <a
-            href="https://wa.me/5491100000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 flex items-center gap-2 rounded-md bg-secondary px-3 py-2.5 text-sm font-medium text-secondary-foreground"
+          <Link
+            href="/admin/productos"
+            className="mt-2 rounded-md border border-border px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => setMobileOpen(false)}
           >
-            <Phone className="h-4 w-4" />
-            Contactar por WhatsApp
-          </a>
+            Administracion
+          </Link>
         </nav>
       </div>
     </header>

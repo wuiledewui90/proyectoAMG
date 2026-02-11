@@ -13,6 +13,7 @@ interface AdminAuthContextType {
   isAuthenticated: boolean
   login: (username: string, password: string) => boolean
   logout: () => void
+  isHydrated: boolean
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
@@ -54,7 +55,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AdminAuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AdminAuthContext.Provider
+      value={{ isAuthenticated, login, logout, isHydrated }}
+    >
       {children}
     </AdminAuthContext.Provider>
   )
@@ -69,16 +72,17 @@ export function useAdminAuth() {
 }
 
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAdminAuth()
+  const { isAuthenticated, isHydrated } = useAdminAuth()
   const router = useRouter()
 
   useEffect(() => {
+    if (!isHydrated) return
     if (!isAuthenticated) {
       router.replace("/admin/login")
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isHydrated, router])
 
-  if (!isAuthenticated) return null
+  if (!isHydrated || !isAuthenticated) return null
 
   return <>{children}</>
 }

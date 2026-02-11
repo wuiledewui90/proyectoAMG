@@ -122,3 +122,14 @@ export async function softDelete(id: number) {
     throw err
   }
 }
+
+export async function hardDelete(id: number) {
+  try {
+    return await repo.deleteProduct(id)
+  } catch (err) {
+    if (err instanceof PrismaClientKnownRequestError && err.code === "P2025") {
+      throw new NotFoundError("Producto no encontrado")
+    }
+    throw err
+  }
+}

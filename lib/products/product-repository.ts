@@ -51,6 +51,10 @@ export async function softDeleteProduct(id: number) {
   return prisma.product.update({ where: { id }, data: { isActive: false } })
 }
 
+export async function deleteProduct(id: number) {
+  return prisma.product.delete({ where: { id } })
+}
+
 // Home: productos destacados (limitados)
 export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
   return prisma.product.findMany({
