@@ -1,5 +1,13 @@
 import { z } from "zod"
 
+const imageUrlSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value === "" || value.startsWith("/") || /^https?:\/\//i.test(value),
+    "imageUrl debe ser URL o ruta relativa"
+  )
+
 export const productCreateSchema = z.object({
   slug: z.string().trim().min(1, "slug requerido"),
   name: z.string().trim().min(1, "name requerido"),
@@ -13,7 +21,7 @@ export const productCreateSchema = z.object({
   category: z.string().trim().min(1).optional().or(z.literal("")),
   compatibility: z.string().trim().min(1).optional().or(z.literal("")),
   images: z.array(z.string().trim().min(1)).optional(),
-  imageUrl: z.string().trim().url().optional().or(z.literal("")),
+  imageUrl: imageUrlSchema.optional(),
 })
 
 export const productUpdateSchema = productCreateSchema.partial().extend({

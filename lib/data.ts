@@ -1,17 +1,19 @@
-export interface Product {
-  id: string
-  slug: string
-  name: string
-  description: string
-  price: number
-  stock: number
-  images: string[]
-  brand: string
-  model: string
-  category: string
-  compatibility: string
-  active: boolean
-}
+// lib/data.ts
+// ✅ Este archivo queda SOLO para contenido estático (por ahora).
+// 🚫 IMPORTANTE: Los PRODUCTOS YA NO VAN ACÁ. Los productos ahora vienen de la DB (Prisma) vía /api/products.
+
+// ============================================================
+// ❌ BORRADO: interface Product y export const products: Product[]
+// ------------------------------------------------------------
+// Antes tenías:
+//  - export interface Product { ... }
+//  - export const products: Product[] = [ ... ]   <-- MOCK
+//
+// Eso generaba 2 fuentes distintas:
+//  - Catálogo/Admin usando data.ts (mock)
+//  - API usando Prisma (DB)
+// Resultado: “no se guardan cambios” y listados distintos.
+// ============================================================
 
 export interface Service {
   id: string
@@ -49,129 +51,7 @@ export interface ContactMessage {
   read: boolean
 }
 
-export const products: Product[] = [
-  {
-    id: "1",
-    slug: "radiador-aluminio-chevrolet-corsa",
-    name: "Radiador de Aluminio Chevrolet Corsa",
-    description:
-      "Radiador de aluminio de alta eficiencia para Chevrolet Corsa. Fabricado con materiales de primera calidad que garantizan una excelente disipacion termica y mayor durabilidad. Compatible con modelos 2002-2012.",
-    price: 85000,
-    stock: 15,
-    images: ["/images/radiador-1.jpg"],
-    brand: "Chevrolet",
-    model: "Corsa",
-    category: "Radiadores",
-    compatibility: "Chevrolet Corsa 2002-2012 1.4/1.6/1.8",
-    active: true,
-  },
-  {
-    id: "2",
-    slug: "radiador-volkswagen-gol-trend",
-    name: "Radiador Volkswagen Gol Trend",
-    description:
-      "Radiador completo para Volkswagen Gol Trend. Construccion robusta con nucleo de aluminio y tanques de plastico reforzado. Optima capacidad de refrigeracion para uso urbano y ruta.",
-    price: 92000,
-    stock: 8,
-    images: ["/images/radiador-2.jpg"],
-    brand: "Volkswagen",
-    model: "Gol Trend",
-    category: "Radiadores",
-    compatibility: "VW Gol Trend 2008-2020 1.6",
-    active: true,
-  },
-  {
-    id: "3",
-    slug: "radiador-ford-focus-aluminio",
-    name: "Radiador Ford Focus Aluminio",
-    description:
-      "Radiador de alta performance para Ford Focus. Nucleo completamente de aluminio para maxima eficiencia de enfriamiento. Ideal para reemplazo directo sin modificaciones.",
-    price: 110000,
-    stock: 5,
-    images: ["/images/radiador-3.jpg"],
-    brand: "Ford",
-    model: "Focus",
-    category: "Radiadores",
-    compatibility: "Ford Focus 2008-2019 1.6/2.0",
-    active: true,
-  },
-  {
-    id: "4",
-    slug: "electroventilador-fiat-palio",
-    name: "Electroventilador Fiat Palio",
-    description:
-      "Electroventilador completo con motor y aspa para Fiat Palio. Motor de alta durabilidad con rodamientos sellados. Incluye ficha de conexion original.",
-    price: 45000,
-    stock: 20,
-    images: ["/images/electro-1.jpg"],
-    brand: "Fiat",
-    model: "Palio",
-    category: "Electroventiladores",
-    compatibility: "Fiat Palio/Siena 2004-2017 1.4/1.6/1.8",
-    active: true,
-  },
-  {
-    id: "5",
-    slug: "tapa-radiador-universal-1bar",
-    name: "Tapa de Radiador Universal 1 Bar",
-    description:
-      "Tapa de radiador universal de 1 bar de presion. Fabricada en acero inoxidable con junta de silicona de alta temperatura. Compatible con la mayoria de los radiadores del mercado.",
-    price: 5500,
-    stock: 50,
-    images: ["/images/tapa-1.jpg"],
-    brand: "Universal",
-    model: "Universal",
-    category: "Accesorios",
-    compatibility: "Universal - Verificar diametro de boca",
-    active: true,
-  },
-  {
-    id: "6",
-    slug: "manguera-superior-renault-clio",
-    name: "Manguera Superior Renault Clio",
-    description:
-      "Manguera superior de refrigeracion para Renault Clio. Material EPDM de alta resistencia a temperaturas extremas. Abrazaderas incluidas.",
-    price: 12000,
-    stock: 30,
-    images: ["/images/manguera-1.jpg"],
-    brand: "Renault",
-    model: "Clio",
-    category: "Mangueras",
-    compatibility: "Renault Clio 2001-2016 1.2/1.6",
-    active: true,
-  },
-  {
-    id: "7",
-    slug: "radiador-toyota-hilux-diesel",
-    name: "Radiador Toyota Hilux Diesel",
-    description:
-      "Radiador de alto rendimiento para Toyota Hilux Diesel. Diseñado para soportar las exigencias del motor diesel con mayor capacidad de intercambio termico.",
-    price: 165000,
-    stock: 3,
-    images: ["/images/radiador-4.jpg"],
-    brand: "Toyota",
-    model: "Hilux",
-    category: "Radiadores",
-    compatibility: "Toyota Hilux 2005-2015 2.5/3.0 Diesel",
-    active: true,
-  },
-  {
-    id: "8",
-    slug: "deposito-agua-peugeot-208",
-    name: "Deposito de Agua Peugeot 208",
-    description:
-      "Deposito de expansion de agua para Peugeot 208. Plastico de ingenieria resistente a alta temperatura y presion. Incluye tapa y sensor de nivel.",
-    price: 18000,
-    stock: 12,
-    images: ["/images/deposito-1.jpg"],
-    brand: "Peugeot",
-    model: "208",
-    category: "Accesorios",
-    compatibility: "Peugeot 208 2013-2023 1.2/1.6",
-    active: true,
-  },
-]
-
+// ✅ Servicios (pueden quedarse estáticos hasta que los pases a DB)
 export const services: Service[] = [
   {
     id: "1",
@@ -207,12 +87,9 @@ export const services: Service[] = [
   },
 ]
 
-export const categories = [
-  "Radiadores",
-  "Electroventiladores",
-  "Mangueras",
-  "Accesorios",
-]
+// ✅ Categorías/marcas (si en tu UI las usás para filtros estáticos, ok)
+// ⚠️ Si querés que sean “reales”, lo ideal es derivarlas desde DB o tener tablas Category/Brand.
+export const categories = ["Radiadores", "Electroventiladores", "Mangueras", "Accesorios"]
 
 export const brands = [
   "Chevrolet",
@@ -225,7 +102,7 @@ export const brands = [
   "Universal",
 ]
 
-// Simulated orders for admin
+// ✅ Datos simulados (si todavía no implementaste órdenes/mensajes en DB)
 export const sampleOrders: Order[] = [
   {
     id: "ORD-001",
@@ -292,6 +169,7 @@ export const sampleMessages: ContactMessage[] = [
   },
 ]
 
+// ✅ Esto sí puede quedarse (es una utilidad, no datos mock)
 export function formatPrice(price: number): string {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
