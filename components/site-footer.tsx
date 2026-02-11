@@ -82,77 +82,81 @@ export function SiteFooter() {
           {new Date().getFullYear()} © RADIADORES AMG. Todos los derechos reservados..
         </div>
       </div>
-      <div className="mx-auto max-w-7xl px-1 py-1 flex items-center justify-end gap-14">
-        <a target="_blank" href="https://www.facebook.com/share/1Dx9Yeb5ti/" >
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-3 px-4 pb-6 pt-2 sm:gap-4 lg:justify-end lg:px-8">
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.facebook.com/share/1Dx9Yeb5ti/"
+          aria-label="Facebook"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:h-12 sm:w-12"
+        >
           <svg
-  width="64"
-  height="64"
-  viewBox="0 0 64 64"
-  xmlns="http://www.w3.org/2000/svg"
-  role="img"
-  aria-label="Facebook"
->
-<style>{`
-  svg:hover {
-    transform: scale(1.12);
-    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
-    transition: 0.25s ease;
-  }
-`}</style>
-  <circle cx="32" cy="32" r="30" fill="#1877F2"/>
-  <path
-    d="M35.3 20H39V14.3h-5c-5.6 0-9.3 3.6-9.3 9.4v4.3H20v6.1h4.7V50h6.2V34.1h4.9l.7-6.1h-5.6v-3.7c0-1.8.5-4.3 3.4-4.3Z"
-    fill="#FFFFFF"
-  />
-</svg>
+            viewBox="0 0 64 64"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            className="h-9 w-9 sm:h-10 sm:w-10"
+            aria-hidden="true"
+          >
+            <circle cx="32" cy="32" r="30" fill="#1877F2" />
+            <path
+              d="M35.3 20H39V14.3h-5c-5.6 0-9.3 3.6-9.3 9.4v4.3H20v6.1h4.7V50h6.2V34.1h4.9l.7-6.1h-5.6v-3.7c0-1.8.5-4.3 3.4-4.3Z"
+              fill="#FFFFFF"
+            />
+          </svg>
         </a>
-        <a target="_blank"  href="https://www.instagram.com/radiadoresamg/?igsh=YXFkdXM4ZDI3c2g5" >
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.instagram.com/radiadoresamg/?igsh=YXFkdXM4ZDI3c2g5"
+          aria-label="Instagram"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:h-12 sm:w-12"
+        >
           <svg
-  width="64"
-  height="64"
-  viewBox="0 0 64 64"
-  xmlns="http://www.w3.org/2000/svg"
-  role="img"
-  aria-label="Instagram"
->
-  <defs>
-    <linearGradient id="igGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F58529"/>
-      <stop offset="25%" stop-color="#FEDA77"/>
-      <stop offset="50%" stop-color="#DD2A7B"/>
-      <stop offset="75%" stop-color="#8134AF"/>
-      <stop offset="100%" stop-color="#515BD4"/>
-    </linearGradient>
-  </defs>
-  <g fill="none" fill-rule="evenodd">
-    <circle cx="32" cy="32" r="30" fill="url(#igGradient)"/>
-    <rect
-      x="20"
-      y="20"
-      width="24"
-      height="24"
-      rx="7"
-      ry="7"
-      stroke="#FFFFFF"
-      stroke-width="2.6"
-      fill="none"
-    />
-    <circle
-      cx="32"
-      cy="32"
-      r="6"
-      stroke="#FFFFFF"
-      stroke-width="2.6"
-      fill="none"
-    />
-    <circle
-      cx="39"
-      cy="25"
-      r="1.8"
-      fill="#FFFFFF"
-    />
-  </g>
-</svg>
+            viewBox="0 0 64 64"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            className="h-9 w-9 sm:h-10 sm:w-10"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient
+                id="igGradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="#F58529" />
+                <stop offset="25%" stopColor="#FEDA77" />
+                <stop offset="50%" stopColor="#DD2A7B" />
+                <stop offset="75%" stopColor="#8134AF" />
+                <stop offset="100%" stopColor="#515BD4" />
+              </linearGradient>
+            </defs>
+            <g fill="none" fillRule="evenodd">
+              <circle cx="32" cy="32" r="30" fill="url(#igGradient)" />
+              <rect
+                x="20"
+                y="20"
+                width="24"
+                height="24"
+                rx="7"
+                ry="7"
+                stroke="#FFFFFF"
+                strokeWidth="2.6"
+                fill="none"
+              />
+              <circle
+                cx="32"
+                cy="32"
+                r="6"
+                stroke="#FFFFFF"
+                strokeWidth="2.6"
+                fill="none"
+              />
+              <circle cx="39" cy="25" r="1.8" fill="#FFFFFF" />
+            </g>
+          </svg>
         </a>
       </div>
     </footer>
