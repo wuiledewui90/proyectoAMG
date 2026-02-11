@@ -16,8 +16,12 @@ export default function SobreNosotrosPage() {
             Sobre Nosotros
           </h1>
           <p className="mt-3 max-w-2xl text-lg text-secondary-foreground/70">
-            Mas de dos decadas de experiencia nos respaldan como especialistas en
-            sistemas de refrigeracion automotor.
+                RADIADORES AMG se fundo en la ciudad de La Rioja con una mision clara:
+                ofrecer soluciones de calidad para el sistema de enfriamiento de
+                todo tipo de vehiculos. Desde nuestros inicios, nos enfocamos en
+                brindar productos de primera linea y un servicio tecnico
+                profesional.
+            
           </p>
         </div>
       </section>
@@ -26,18 +30,14 @@ export default function SobreNosotrosPage() {
         <div className="grid gap-12 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              Nuestra Historia
+              Más de 30 Años de Confianza y Calidad
             </h2>
             <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
               <p>
-                RADIADORES AMG nacio en Buenos Aires con una mision clara:
-                ofrecer soluciones de calidad para el sistema de enfriamiento de
-                todo tipo de vehiculos. Desde nuestros inicios, nos enfocamos en
-                brindar productos de primera linea y un servicio tecnico
-                profesional.
+                Contamos con un equipo de técnicos altamente capacitados y equipos de última generación para garantizar reparaciones de la más alta calidad. Trabajamos con todas las marcas y modelos, desde autos compactos hasta camiones y maquinarias de carga pesada.
               </p>
               <p>
-                Con mas de 20 anos en el mercado, hemos construido una
+                A lo largo de nuestra trayectoria en el mercado, hemos construido una
                 reputacion basada en la confianza, la honestidad y el
                 conocimiento tecnico. Trabajamos con las mejores marcas del
                 mercado y contamos con un equipo de tecnicos altamente
@@ -55,12 +55,12 @@ export default function SobreNosotrosPage() {
             {[
               {
                 icon: Clock,
-                title: "+20 Anos",
+                title: "+30 Años",
                 desc: "De experiencia en el rubro automotor",
               },
               {
                 icon: Users,
-                title: "+5000 Clientes",
+                title: "Clientes",
                 desc: "Satisfechos en todo el pais",
               },
               {
@@ -96,7 +96,7 @@ export default function SobreNosotrosPage() {
       <section className="bg-muted">
         <div className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
           <h2 className="text-2xl font-bold text-foreground">
-            {"Por que elegirnos?"}
+            {"¿Por qué elegirnos?"}
           </h2>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             {[

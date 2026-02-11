@@ -36,8 +36,8 @@ export default function ContactoPage() {
                 {
                   icon: Phone,
                   title: "Telefono / WhatsApp",
-                  value: "+54 11 0000-0000",
-                  href: "https://wa.me/5491100000000",
+                  value: "3804555277",
+                  href: "https://wa.me/5493804555277",
                 },
                 {
                   icon: Mail,
@@ -48,13 +48,13 @@ export default function ContactoPage() {
                 {
                   icon: MapPin,
                   title: "Direccion",
-                  value: "Buenos Aires, Argentina",
+                  value: "Cerro de la Cruz, 810 La Rioja Capital",
                   href: undefined,
                 },
                 {
                   icon: Clock,
                   title: "Horarios",
-                  value: "Lun-Vie 8:00-18:00 | Sab 8:00-13:00",
+                  value: "Lun-Vie 6:00-14:00 | Sab Cerrado",
                   href: undefined,
                 },
               ].map((item) => (
@@ -84,10 +84,9 @@ export default function ContactoPage() {
                 </div>
               ))}
             </div>
-
             <div className="mt-8">
               <a
-                href="https://wa.me/5491100000000"
+                href="https://wa.me/5493804524590"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"

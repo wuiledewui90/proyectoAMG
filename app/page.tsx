@@ -7,6 +7,7 @@ import { services } from "@/lib/data"
 
 // ✅ productos desde DB (Prisma)
 import { getFeaturedProducts } from "@/lib/products/product-repository"
+import { serializeProducts } from "@/lib/products/product-serialize"
 
 // helper para precio (evita depender de formatPrice hardcodeado)
 function formatPriceARS(value: unknown) {
@@ -16,7 +17,7 @@ function formatPriceARS(value: unknown) {
 
 export default async function HomePage() {
   // ✅ trae 4 productos activos desde la base de datos
-  const featuredProducts = await getFeaturedProducts(4)
+  const featuredProducts = serializeProducts(await getFeaturedProducts(4))
 
   return (
     <>
@@ -47,13 +48,20 @@ export default async function HomePage() {
               Mas de 30 años de experiencia en venta, reparacion e instalacion de
               radiadores para todas las marcas. Calidad garantizada.
             </p>
-            <div className="mt-8 flex flex-col items-end gap-4">
+            <div className="mt-8 flex items-end gap-4">
               <Link
                 href="/catalogo"
                 className="inline-flex items-center justify-end gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 Ver Catalogo
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+              <Link
+                href="https://maps.app.goo.gl/Pji5UPnbmQHGQKJ99" target="blank"
+                className="inline-flex items-center justify-end gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Como LLlegar
+                <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -190,14 +198,14 @@ export default async function HomePage() {
       <section className="bg-secondary">
         <div className="mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center lg:px-8">
           <h2 className="text-2xl font-bold text-secondary-foreground md:text-3xl">
-            {"Necesitas ayuda con tu radiador?"}
+            {"¿Necesitas ayuda con tu radiador?"}
           </h2>
           <p className="mt-3 max-w-md text-secondary-foreground/70">
             Escribinos por WhatsApp y te asesoramos sin compromiso. Respuesta
             inmediata.
           </p>
           <a
-            href="https://wa.me/5491100000000"
+            href="https://wa.me/5493804524590"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"

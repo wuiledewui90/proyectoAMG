@@ -51,7 +51,7 @@ export default function ServiciosPage() {
                   {service.description}
                 </p>
                 <a
-                  href={`https://wa.me/5491100000000?text=Hola, me interesa el servicio de ${service.title}`}
+                  href={`https://wa.me/5493804524590?text=Hola, me interesa el servicio de ${service.title}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
@@ -75,7 +75,7 @@ export default function ServiciosPage() {
             medida sin compromiso.
           </p>
           <a
-            href="https://wa.me/5491100000000"
+            href="https://wa.me/5493804524590"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
