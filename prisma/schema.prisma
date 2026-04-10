@@ -7,30 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-model Product {
+model product {
   id            Int      @id @default(autoincrement())
   name          String
   description   String?
-  sku           String?  @unique
-
-  // NUEVO (pro)
+  sku           String?  @unique(map: "Product_sku_key")
   brand         String?
   model         String?
   category      String?
   compatibility String?
-  slug          String   @unique
-  images Json @default("[]")
-  imageUrl      String?  // lo dejamos por compatibilidad (opcional)
-
+  slug          String   @unique(map: "Product_slug_key")
+  images        String   @db.LongText
+  imageUrl      String?
   price         Decimal
   stock         Int      @default(0)
   isActive      Boolean  @default(true)
-
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime
 
-  @@index([name])
-  @@index([sku])
-  @@index([slug])
+  @@index([name], map: "Product_name_idx")
+  @@index([sku], map: "Product_sku_idx")
+  @@index([slug], map: "Product_slug_idx")
 }

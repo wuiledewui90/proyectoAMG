@@ -117,41 +117,43 @@ export function SiteFooter() {
 >
   <defs>
     <linearGradient id="igGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F58529"/>
-      <stop offset="25%" stop-color="#FEDA77"/>
-      <stop offset="50%" stop-color="#DD2A7B"/>
-      <stop offset="75%" stop-color="#8134AF"/>
-      <stop offset="100%" stop-color="#515BD4"/>
+<stop offset="0%" stopColor="#F58529" />
+<stop offset="25%" stopColor="#FEDA77" />
+<stop offset="50%" stopColor="#DD2A7B" />
+<stop offset="75%" stopColor="#8134AF" />
     </linearGradient>
   </defs>
-  <g fill="none" fill-rule="evenodd">
-    <circle cx="32" cy="32" r="30" fill="url(#igGradient)"/>
-    <rect
-      x="20"
-      y="20"
-      width="24"
-      height="24"
-      rx="7"
-      ry="7"
-      stroke="#FFFFFF"
-      stroke-width="2.6"
-      fill="none"
-    />
-    <circle
-      cx="32"
-      cy="32"
-      r="6"
-      stroke="#FFFFFF"
-      stroke-width="2.6"
-      fill="none"
-    />
-    <circle
-      cx="39"
-      cy="25"
-      r="1.8"
-      fill="#FFFFFF"
-    />
-  </g>
+  <g fill="none" fillRule="evenodd">
+  <circle cx="32" cy="32" r="30" fill="url(#igGradient)" />
+  
+  <rect
+    x="20"
+    y="20"
+    width="24"
+    height="24"
+    rx="7"
+    ry="7"
+    stroke="#FFFFFF"
+    strokeWidth="2.6"
+    fill="none"
+  />
+
+  <circle
+    cx="32"
+    cy="32"
+    r="6"
+    stroke="#FFFFFF"
+    strokeWidth="2.6"
+    fill="none"
+  />
+
+  <circle
+    cx="39"
+    cy="25"
+    r="1.8"
+    fill="#FFFFFF"
+  />
+</g>
 </svg>
         </a>
       </div>
