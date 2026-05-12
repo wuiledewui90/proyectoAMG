@@ -1,16 +1,12 @@
-// app/admin/productos/page.tsx
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Plus, Pencil, Ban, X, Save } from "lucide-react"
+import { Ban, FileUp, Loader2, Pencil, Plus, Save, Search, Trash2, X } from "lucide-react"
 
-import { categories, brands, formatPrice } from "@/lib/data"
+import { brands, categories, formatPrice } from "@/lib/data"
 
-// ========================
-// Tipos que vienen de la API (DB)
-// ========================
 type ApiProduct = {
   id: number
   name: string
@@ -36,9 +32,14 @@ type ListResponse = {
   totalPages: number
 }
 
-// ========================
-// Estado del formulario (editor)
-// ========================
+type ImportResponse = {
+  created: number
+  updated: number
+  failed: number
+  total: number
+  errors: Array<{ row: number; error: string }>
+}
+
 type EditorState = {
   id?: number
   name: string
@@ -70,7 +71,6 @@ const emptyEditor: EditorState = {
   isActive: true,
 }
 
-// ✅ Helper para asegurar que el id sea un number válido
 function toValidId(value: unknown): number | null {
   const raw = String(value ?? "").trim()
   const id = Number.parseInt(raw, 10)
@@ -81,30 +81,24 @@ function toValidId(value: unknown): number | null {
 export default function AdminProductosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
-  // ========================
-  // Filtros por URL
-  // ========================
   const page = Number(searchParams.get("page") ?? "1")
   const limit = Number(searchParams.get("limit") ?? "20")
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const [isActive, setIsActive] = useState(searchParams.get("isActive") ?? "")
   const [orderMode, setOrderMode] = useState<"updated" | "category">("updated")
 
-  // ========================
-  // Datos
-  // ========================
   const [data, setData] = useState<ListResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [reloadKey, setReloadKey] = useState(0)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<ImportResponse | null>(null)
 
-  // Editor
   const [editing, setEditing] = useState<EditorState | null>(null)
   const [isNew, setIsNew] = useState(false)
 
-  // ========================
-  // QueryString alineado a API
-  // ========================
   const queryString = useMemo(() => {
     const qs = new URLSearchParams()
     if (search.trim()) qs.set("search", search.trim())
@@ -114,9 +108,6 @@ export default function AdminProductosPage() {
     return qs.toString()
   }, [search, isActive, page, limit])
 
-  // ========================
-  // Fetch REAL a la DB
-  // ========================
   useEffect(() => {
     let cancel = false
     setLoading(true)
@@ -131,31 +122,25 @@ export default function AdminProductosPage() {
         return r.json() as Promise<ListResponse>
       })
       .then((json) => {
-        if (cancel) return
-        setData(json)
+        if (!cancel) setData(json)
       })
-      .catch((e: any) => {
-        if (cancel) return
-        setError(e?.message ?? "Error")
+      .catch((e: unknown) => {
+        if (!cancel) setError(e instanceof Error ? e.message : "Error")
       })
       .finally(() => {
-        if (cancel) return
-        setLoading(false)
+        if (!cancel) setLoading(false)
       })
 
     return () => {
       cancel = true
     }
-  }, [queryString])
+  }, [queryString, reloadKey])
 
   const orderedItems = useMemo(() => {
     const items = data?.items ? [...data.items] : []
     if (orderMode === "category") {
       items.sort((a, b) => {
-        const categoryCompare = (a.category ?? "").localeCompare(
-          b.category ?? "",
-          "es"
-        )
+        const categoryCompare = (a.category ?? "").localeCompare(b.category ?? "", "es")
         if (categoryCompare !== 0) return categoryCompare
         return a.name.localeCompare(b.name, "es")
       })
@@ -163,37 +148,33 @@ export default function AdminProductosPage() {
     return items
   }, [data?.items, orderMode])
 
-  // ========================
-  // Acciones
-  // ========================
   function handleNew() {
     setEditing({ ...emptyEditor })
     setIsNew(true)
   }
 
-  function handleEdit(p: ApiProduct) {
-    const id = toValidId(p.id)
+  function handleEdit(product: ApiProduct) {
+    const id = toValidId(product.id)
     if (!id) {
-      alert("ID inválido del producto.")
+      alert("ID invalido del producto.")
       return
     }
 
     setEditing({
       id,
-      name: p.name,
-      slug: p.slug,
-      description: p.description ?? "",
-      sku: p.sku ?? "",
-      brand: p.brand ?? "",
-      model: p.model ?? "",
-      category: p.category ?? "",
-      compatibility: p.compatibility ?? "",
-      price: p.price,
-      stock: p.stock,
-      imageUrl: p.imageUrl ?? p.images?.[0] ?? "/images/radiador-1.jpg",
-      isActive: p.isActive,
+      name: product.name,
+      slug: product.slug,
+      description: product.description ?? "",
+      sku: product.sku ?? "",
+      brand: product.brand ?? "",
+      model: product.model ?? "",
+      category: product.category ?? "",
+      compatibility: product.compatibility ?? "",
+      price: product.price,
+      stock: product.stock,
+      imageUrl: product.imageUrl ?? product.images?.[0] ?? "/images/radiador-1.jpg",
+      isActive: product.isActive,
     })
-
     setIsNew(false)
   }
 
@@ -216,17 +197,15 @@ export default function AdminProductosPage() {
       isActive: editing.isActive,
     }
 
-    // ✅ URL y método correctos
     let url = "/api/products"
     let method: "POST" | "PUT" = "POST"
 
     if (!isNew) {
       const id = toValidId(editing.id)
       if (!id) {
-        alert("ID inválido para actualizar.")
+        alert("ID invalido para actualizar.")
         return
       }
-      console.log("[admin productos] update id", id)
       url = `/api/products/${id}`
       method = "PUT"
     }
@@ -245,17 +224,18 @@ export default function AdminProductosPage() {
 
     setEditing(null)
     setIsNew(false)
+    setReloadKey((key) => key + 1)
     router.refresh()
   }
 
   async function handleSoftDelete(id: number) {
     const validId = toValidId(id)
     if (!validId) {
-      alert("ID inválido para eliminar.")
+      alert("ID invalido para eliminar.")
       return
     }
 
-    if (!confirm("¿Desactivar producto?")) return
+    if (!confirm("Desactivar producto?")) return
 
     const res = await fetch(`/api/products/${validId}`, { method: "DELETE" })
     if (!res.ok) {
@@ -264,195 +244,261 @@ export default function AdminProductosPage() {
       return
     }
 
+    setReloadKey((key) => key + 1)
     router.refresh()
   }
 
   async function handleHardDelete(id: number) {
     const validId = toValidId(id)
     if (!validId) {
-      alert("ID inválido para eliminar.")
+      alert("ID invalido para eliminar.")
       return
     }
 
-    if (!confirm("¿Eliminar definitivamente este producto?")) return
+    if (!confirm("Eliminar definitivamente este producto?")) return
 
-    const res = await fetch(`/api/products/${validId}?hard=true`, {
-      method: "DELETE",
-    })
+    const res = await fetch(`/api/products/${validId}?hard=true`, { method: "DELETE" })
     if (!res.ok) {
       const err = await res.json().catch(() => null)
       alert(err?.error ?? `Error ${res.status}`)
       return
     }
 
+    setReloadKey((key) => key + 1)
     router.refresh()
   }
 
-  async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" })
+  async function handleImportProducts(file: File | null) {
+    if (!file) return
+
+    setImporting(true)
+    setImportResult(null)
+    setError("")
+
+    const formData = new FormData()
+    formData.append("file", file)
 
     try {
-      localStorage.removeItem("amg-admin-session")
-    } catch {}
+      const res = await fetch("/api/products/import", {
+        method: "POST",
+        body: formData,
+      })
+      const payload = await res.json().catch(() => null)
 
-    router.replace("/admin/login")
+      if (!res.ok) {
+        throw new Error(payload?.error ?? `Error ${res.status}`)
+      }
+
+      setImportResult(payload as ImportResponse)
+      setReloadKey((key) => key + 1)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo importar el archivo.")
+    } finally {
+      setImporting(false)
+      if (importInputRef.current) importInputRef.current.value = ""
+    }
   }
 
-  // ========================
-  // Render
-  // ========================
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold">Productos (DB)</h1>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="mx-auto w-full max-w-7xl space-y-5">
+      <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold leading-tight">Productos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {data ? `${data.total} productos cargados` : "Listado de productos de la base de datos"}
+          </p>
+        </div>
+        <div className="grid gap-2 sm:flex sm:items-center">
           <input
-            type="search"
-            className="w-full rounded border px-3 py-2 text-sm sm:w-56"
-            placeholder="Buscar producto..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Buscar producto"
+            ref={importInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={(e) => void handleImportProducts(e.target.files?.[0] ?? null)}
           />
-          <div className="flex items-center gap-2 text-sm">
-            <label className="text-muted-foreground">Orden</label>
-            <select
-              className="rounded border px-2 py-1 text-sm"
-              value={orderMode}
-              onChange={(e) =>
-                setOrderMode(e.target.value === "category" ? "category" : "updated")
-              }
-            >
-              <option value="updated">Recientes</option>
-              <option value="category">Categoria</option>
-            </select>
-          </div>
           <button
-            onClick={handleLogout}
-            className="rounded-md border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => importInputRef.current?.click()}
+            disabled={importing}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-60 sm:w-auto"
           >
-            Cerrar sesion
+            {importing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileUp className="h-4 w-4" />
+            )}
+            {importing ? "Importando..." : "Importar Excel/CSV"}
           </button>
           <button
             onClick={handleNew}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
           >
-            <Plus className="h-4 w-4" /> Nuevo
+            <Plus className="h-4 w-4" />
+            Nuevo producto
           </button>
         </div>
       </div>
 
-      {loading && <p>Cargando…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      <div className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[minmax(260px,1fr)_180px_180px]">
+        <div className="relative sm:col-span-2 lg:col-span-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            placeholder="Buscar por nombre, SKU o slug"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar producto"
+          />
+        </div>
 
-      {/* Modal */}
+        <label className="space-y-1 text-sm">
+          <span className="text-xs font-medium text-muted-foreground">Estado</span>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            value={isActive}
+            onChange={(e) => setIsActive(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="true">Activos</option>
+            <option value="false">Inactivos</option>
+          </select>
+        </label>
+
+        <label className="space-y-1 text-sm">
+          <span className="text-xs font-medium text-muted-foreground">Orden</span>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            value={orderMode}
+            onChange={(e) => setOrderMode(e.target.value === "category" ? "category" : "updated")}
+          >
+            <option value="updated">Recientes</option>
+            <option value="category">Categoria</option>
+          </select>
+        </label>
+      </div>
+
+      {loading && (
+        <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+          Cargando productos...
+        </div>
+      )}
+      {error && (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+      {importResult && (
+        <div className="rounded-lg border bg-card p-4 text-sm">
+          <p className="font-medium">
+            Importacion finalizada: {importResult.created} creados, {importResult.updated}{" "}
+            actualizados, {importResult.failed} con error.
+          </p>
+          {importResult.errors.length > 0 && (
+            <ul className="mt-2 space-y-1 text-red-600">
+              {importResult.errors.slice(0, 5).map((item) => (
+                <li key={`${item.row}-${item.error}`}>
+                  Fila {item.row}: {item.error}
+                </li>
+              ))}
+              {importResult.errors.length > 5 && (
+                <li>Hay {importResult.errors.length - 5} errores mas.</li>
+              )}
+            </ul>
+          )}
+        </div>
+      )}
+
       {editing && (
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">{isNew ? "Nuevo" : "Editar"}</h2>
+        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">{isNew ? "Nuevo producto" : "Editar producto"}</h2>
             <button
               onClick={() => {
                 setEditing(null)
                 setIsNew(false)
               }}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Nombre">
               <input
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.name}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
               />
             </Field>
-
             <Field label="Slug">
               <input
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.slug}
                 onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
               />
             </Field>
-
             <Field label="SKU">
               <input
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.sku}
                 onChange={(e) => setEditing({ ...editing, sku: e.target.value })}
               />
             </Field>
-
             <Field label="Imagen URL">
               <input
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.imageUrl}
                 onChange={(e) => setEditing({ ...editing, imageUrl: e.target.value })}
               />
             </Field>
-
-            <div className="md:col-span-2">
-              <label className="text-sm font-medium">Descripción</label>
-              <textarea
-                className="w-full rounded border p-2"
-                rows={3}
-                value={editing.description}
-                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-              />
-            </div>
-
             <Field label="Precio">
               <input
                 type="number"
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.price}
                 onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
               />
             </Field>
-
             <Field label="Stock">
               <input
                 type="number"
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.stock}
                 onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
               />
             </Field>
-
             <Field label="Marca">
               <select
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.brand}
                 onChange={(e) => setEditing({ ...editing, brand: e.target.value })}
               >
                 <option value="">Seleccionar</option>
-                {brands.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
+                {brands.map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand}
                   </option>
                 ))}
               </select>
             </Field>
-
-            <Field label="Categoría">
+            <Field label="Categoria">
               <select
-                className="w-full rounded border p-2"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 value={editing.category}
                 onChange={(e) => setEditing({ ...editing, category: e.target.value })}
               >
                 <option value="">Seleccionar</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
                   </option>
                 ))}
               </select>
             </Field>
-
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm md:mt-6">
               <input
                 type="checkbox"
                 checked={editing.isActive}
@@ -460,22 +506,31 @@ export default function AdminProductosPage() {
               />
               Activo
             </label>
+            <div className="space-y-1 md:col-span-2 xl:col-span-3">
+              <label className="text-sm font-medium">Descripcion</label>
+              <textarea
+                className="min-h-24 w-full rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                rows={3}
+                value={editing.description}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+              />
+            </div>
           </div>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button
               onClick={handleSave}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
             >
-              <Save className="h-4 w-4" /> Guardar
+              <Save className="h-4 w-4" />
+              Guardar
             </button>
-
             <button
               onClick={() => {
                 setEditing(null)
                 setIsNew(false)
               }}
-              className="rounded-md border px-4 py-2 text-sm"
+              className="h-10 rounded-md border px-4 text-sm transition-colors hover:bg-muted"
             >
               Cancelar
             </button>
@@ -483,69 +538,60 @@ export default function AdminProductosPage() {
         </div>
       )}
 
-      {/* Tabla */}
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full text-sm">
+      <div className="hidden overflow-hidden rounded-lg border bg-card lg:block">
+        <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="p-3 text-left">Imagen</th>
-              <th className="p-3 text-left">Nombre</th>
-              <th className="p-3 text-left">Precio</th>
-              <th className="p-3 text-left">Stock</th>
-              <th className="p-3 text-left">Estado</th>
-              <th className="p-3 text-left">Acciones</th>
+            <tr className="border-b bg-muted/50 text-left text-muted-foreground">
+              <th className="w-24 px-4 py-3 font-medium">Imagen</th>
+              <th className="px-4 py-3 font-medium">Producto</th>
+              <th className="w-36 px-4 py-3 font-medium">Precio</th>
+              <th className="w-24 px-4 py-3 font-medium">Stock</th>
+              <th className="w-28 px-4 py-3 font-medium">Estado</th>
+              <th className="w-32 px-4 py-3 font-medium">Acciones</th>
             </tr>
           </thead>
-
           <tbody>
-            {orderedItems.map((p) => (
-              <tr key={p.id} className="border-b last:border-0">
-                <td className="p-3">
-                  <div className="relative h-10 w-10 overflow-hidden rounded bg-muted">
-                    <Image
-                      src={p.imageUrl ?? "/placeholder.svg"}
-                      alt=""
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+            {orderedItems.map((product) => (
+              <tr key={product.id} className="border-b last:border-0">
+                <td className="px-4 py-3">
+                  <ProductImage product={product} size="sm" />
                 </td>
-
-                <td className="p-3">{p.name}</td>
-                <td className="p-3">{formatPrice(p.price)}</td>
-                <td className="p-3">{p.stock}</td>
-                <td className="p-3">{p.isActive ? "Activo" : "Inactivo"}</td>
-
-                <td className="p-3">
+                <td className="min-w-0 px-4 py-3">
+                  <p className="truncate font-medium text-foreground">{product.name}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
+                    {productSubtitle(product)}
+                  </p>
+                </td>
+                <td className="px-4 py-3 font-semibold">{formatPrice(product.price)}</td>
+                <td className="px-4 py-3">{product.stock}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge active={product.isActive} />
+                </td>
+                <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button onClick={() => handleEdit(p)} aria-label="Editar">
+                    <ActionButton onClick={() => handleEdit(product)} label="Editar">
                       <Pencil className="h-4 w-4" />
-                    </button>
-
-                    <button
-                      onClick={() => handleSoftDelete(p.id)}
-                      disabled={!p.isActive}
-                      aria-label="Desactivar"
-                      title="Desactivar"
+                    </ActionButton>
+                    <ActionButton
+                      onClick={() => handleSoftDelete(product.id)}
+                      disabled={!product.isActive}
+                      label="Desactivar"
                     >
                       <Ban className="h-4 w-4" />
-                    </button>
-
-                    <button
-                      onClick={() => handleHardDelete(p.id)}
-                      aria-label="Eliminar definitivamente"
-                      title="Eliminar definitivamente"
+                    </ActionButton>
+                    <ActionButton
+                      onClick={() => handleHardDelete(product.id)}
+                      label="Eliminar definitivamente"
                     >
-                      <X className="h-4 w-4" />
-                    </button>
+                      <Trash2 className="h-4 w-4" />
+                    </ActionButton>
                   </div>
                 </td>
               </tr>
             ))}
-
             {!loading && data?.items?.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
                   No hay productos.
                 </td>
               </tr>
@@ -553,8 +599,73 @@ export default function AdminProductosPage() {
           </tbody>
         </table>
       </div>
+
+      <div className="grid gap-3 lg:hidden">
+        {orderedItems.map((product) => (
+          <article key={product.id} className="overflow-hidden rounded-lg border bg-card p-3">
+            <div className="flex gap-3">
+              <ProductImage product={product} size="md" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h2 className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug">
+                    {product.name}
+                  </h2>
+                  <StatusBadge active={product.isActive} />
+                </div>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {productSubtitle(product)}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Precio</p>
+                    <p className="font-semibold">{formatPrice(product.price)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Stock</p>
+                    <p className="font-semibold">{product.stock}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleEdit(product)}
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-md border text-xs font-medium"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </button>
+              <button
+                onClick={() => handleSoftDelete(product.id)}
+                disabled={!product.isActive}
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-md border text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Ban className="h-3.5 w-3.5" />
+                Pausar
+              </button>
+              <button
+                onClick={() => handleHardDelete(product.id)}
+                className="col-span-2 inline-flex h-9 items-center justify-center gap-1 rounded-md border text-xs font-medium text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Borrar
+              </button>
+            </div>
+          </article>
+        ))}
+
+        {!loading && data?.items?.length === 0 && (
+          <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+            No hay productos.
+          </div>
+        )}
+      </div>
     </div>
   )
+}
+
+function productSubtitle(product: ApiProduct) {
+  return [product.brand, product.model, product.category].filter(Boolean).join(" · ") || "Sin categoria"
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -563,5 +674,52 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <label className="text-sm font-medium">{label}</label>
       {children}
     </div>
+  )
+}
+
+function ProductImage({ product, size }: { product: ApiProduct; size: "sm" | "md" }) {
+  const image = product.imageUrl ?? product.images?.[0] ?? "/placeholder.svg"
+  const sizeClass = size === "sm" ? "h-14 w-14" : "h-20 w-20"
+
+  return (
+    <div className={`relative shrink-0 overflow-hidden rounded-md border bg-white ${sizeClass}`}>
+      <Image src={image} alt={product.name} fill sizes="96px" className="object-contain p-1" />
+    </div>
+  )
+}
+
+function StatusBadge({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+        active ? "bg-green-50 text-green-700" : "bg-muted text-muted-foreground"
+      }`}
+    >
+      {active ? "Activo" : "Inactivo"}
+    </span>
+  )
+}
+
+function ActionButton({
+  children,
+  disabled,
+  label,
+  onClick,
+}: {
+  children: React.ReactNode
+  disabled?: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
   )
 }

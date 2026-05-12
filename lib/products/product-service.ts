@@ -2,6 +2,7 @@ import { Decimal, PrismaClientKnownRequestError } from "@prisma/client/runtime/l
 import { z } from "zod"
 import { productCreateSchema, productUpdateSchema } from "@/lib/products/product-schemas"
 import * as repo from "@/lib/products/product-repository"
+import { stringifyProductImages } from "@/lib/products/product-serialize"
 
 export class ConflictError extends Error {
   status = 409
@@ -35,10 +36,12 @@ export async function getById(id: number) {
 
 export async function create(input: unknown) {
   const parsed = productCreateSchema.parse(input)
+  const now = new Date()
 
   const normalizedImages =
     parsed.images ??
     (parsed.imageUrl && parsed.imageUrl.trim().length ? [parsed.imageUrl.trim()] : [])
+  const imageUrl = normalizeOptionalString(parsed.imageUrl) ?? normalizedImages[0]
 
   const data = {
     slug: parsed.slug,
@@ -52,8 +55,9 @@ export async function create(input: unknown) {
     model: normalizeOptionalString(parsed.model),
     category: normalizeOptionalString(parsed.category),
     compatibility: normalizeOptionalString(parsed.compatibility),
-    images: normalizedImages,
-    imageUrl: normalizeOptionalString(parsed.imageUrl),
+    images: stringifyProductImages(normalizedImages, imageUrl),
+    imageUrl,
+    updatedAt: now,
   }
 
   try {
@@ -94,8 +98,11 @@ export async function update(id: number, input: unknown) {
     ...(parsed.compatibility !== undefined
       ? { compatibility: normalizeOptionalString(parsed.compatibility) }
       : {}),
-    ...(normalizedImages !== undefined ? { images: normalizedImages } : {}),
+    ...(normalizedImages !== undefined
+      ? { images: stringifyProductImages(normalizedImages, normalizeOptionalString(parsed.imageUrl)) }
+      : {}),
     ...(parsed.imageUrl !== undefined ? { imageUrl: normalizeOptionalString(parsed.imageUrl) } : {}),
+    updatedAt: new Date(),
   }
 
   try {

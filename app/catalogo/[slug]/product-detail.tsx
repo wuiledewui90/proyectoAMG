@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
 import { useCart } from "@/lib/cart-context"
+import { getWhatsAppUrl } from "@/lib/whatsapp"
 
 function formatPriceARS(value: number) {
   return value.toLocaleString("es-AR", { style: "currency", currency: "ARS" })
@@ -158,9 +159,21 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                 </button>
 
                 <a
-                  href={`https://wa.me/5491100000000?text=${encodeURIComponent(
-                    `Hola, me interesa: ${product.name}`
-                  )}`}
+                  href={getWhatsAppUrl(
+                    [
+                      "Hola, me interesa este producto:",
+                      product.name,
+                      product.sku ? `SKU: ${product.sku}` : null,
+                      product.brand ? `Marca: ${product.brand}` : null,
+                      product.model ? `Modelo: ${product.model}` : null,
+                      product.category ? `Categoria: ${product.category}` : null,
+                      product.compatibility
+                        ? `Compatibilidad: ${product.compatibility}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join("\n")
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"

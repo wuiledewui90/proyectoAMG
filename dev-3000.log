@@ -1,0 +1,427 @@
+
+> my-project@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.22:3000
+- Environments: .env
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 1275ms
+ POST /api/admin/login 401 in 278ms (compile: 248ms, render: 30ms)
+ GET /admin/login 200 in 1965ms (compile: 1541ms, proxy.ts: 103ms, render: 321ms)
+✓ Compiled in 27ms
+[admin-auth] bcrypt compare result { username: 'pancho', matches: false, hashPrefix: '/hM.lj7' }
+ POST /api/admin/login 401 in 91ms (compile: 62ms, render: 29ms)
+✓ Compiled in 6ms
+ POST /api/admin/login 200 in 38ms (compile: 24ms, render: 14ms)
+ POST /api/admin/login 200 in 8ms (compile: 3ms, render: 6ms)
+ GET /admin/login 200 in 140ms (compile: 13ms, proxy.ts: 23ms, render: 103ms)
+ GET /admin/login 200 in 78ms (compile: 5ms, proxy.ts: 4ms, render: 69ms)
+ POST /api/admin/login 200 in 10ms (compile: 3ms, render: 6ms)
+ GET /admin/productos 200 in 134ms (compile: 110ms, proxy.ts: 6ms, render: 18ms)
+ GET /admin/productos 200 in 40ms (compile: 5ms, proxy.ts: 4ms, render: 31ms)
+ GET /api/products?page=1&limit=20 200 in 173ms (compile: 153ms, render: 20ms)
+ GET /api/products?page=1&limit=20 200 in 175ms (compile: 162ms, render: 13ms)
+ GET /images/products/radiadores/ra-ford-ecosport-12-ka-15-aa.jpg 404 in 391ms (compile: 86ms, render: 305ms)
+ GET /images/products/radiadores/vw-golf-vii-vento-virtus-polo-tt.jpg 404 in 404ms (compile: 71ms, render: 333ms)
+ GET /images/products/radiadores/rad-ford-ka-99-rocam-zetec-aa-34mm.jpg 404 in 391ms (compile: 218ms, render: 174ms)
+ GET /images/products/radiadores/cruze-1-8-nafta-manual.jpg 404 in 396ms (compile: 198ms, render: 198ms)
+ GET /images/products/radiadores/s10-blazer-2-8-duramax-2012.jpg 404 in 398ms (compile: 179ms, render: 220ms)
+ GET /images/products/radiadores/ra-ford-fiesta-vii-ecosport-dragon-1-5.jpg 404 in 399ms (compile: 241ms, render: 158ms)
+ GET /images/products/radiadores/rad-fiat-toro-jeep-renegade-2-0-jtd-cryomax.jpg 404 in 307ms (compile: 19ms, render: 288ms)
+ GET /images/products/radiadores/calefacc-chevr-onix-montana-tracker-2020.jpg 404 in 302ms (compile: 119ms, render: 183ms)
+ GET /images/products/radiadores/rad-chery-tiggo-2-0-08.jpg 404 in 306ms (compile: 100ms, render: 206ms)
+ GET /images/products/radiadores/rad-ford-ranger-2012-2-2-3-2-dsl-2-5-nft.jpg 404 in 305ms (compile: 79ms, render: 226ms)
+ GET /images/products/radiadores/rad-chery-tiggo-iii-1-6-2016.jpg 404 in 309ms (compile: 62ms, render: 247ms)
+ GET /images/products/radiadores/calefactor-chev-spin-cobalt-prisma-onix.jpg 404 in 300ms (compile: 224ms, render: 76ms)
+ GET /images/products/radiadores/chev-agile-montana.jpg 404 in 303ms (compile: 15ms, render: 288ms)
+ GET /images/products/radiadores/chev-classic-2012-spirit-1-4.jpg 404 in 301ms (compile: 75ms, render: 226ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 300ms (compile: 53ms, render: 247ms)
+ GET /images/products/radiadores/chev-meriva-1-7-1-8.jpg 404 in 300ms (compile: 160ms, render: 141ms)
+ GET /images/products/radiadores/chev-cruze-1-4-17.jpg 404 in 303ms (compile: 139ms, render: 164ms)
+ GET /images/products/radiadores/chev-onix-1-0-1-2-2020-at.jpg 404 in 259ms (compile: 186ms, render: 73ms)
+ GET /images/products/radiadores/chev-onix-joy-spin-cobalt-prisma-17.jpg 404 in 125ms (compile: 33ms, render: 92ms)
+ GET /images/products/radiadores/chev-prisma-celta-07-aa.jpg 404 in 124ms (compile: 72ms, render: 52ms)
+ GET /api/products?search=c&page=1&limit=20 200 in 15ms (compile: 3ms, render: 11ms)
+ GET /api/products?search=co&page=1&limit=20 200 in 14ms (compile: 2ms, render: 12ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-aut.jpg 404 in 128ms (compile: 34ms, render: 94ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-mexico.jpg 404 in 130ms (compile: 9ms, render: 122ms)
+ GET /images/products/radiadores/chevr-corsa-1-6-1-4-aa-2-bulbos-konas.jpg 404 in 316ms (compile: 44ms, render: 272ms)
+ GET /images/products/radiadores/chev-spin-onix-cobalt-prisma-2012-mt.jpg 404 in 319ms (compile: 25ms, render: 294ms)
+ GET /images/products/radiadores/rad-calefacc-chevr-spin-onix-prisma-cobalt-2015-chico.jpg 404 in 319ms (compile: 129ms, render: 190ms)
+ GET /images/products/radiadores/chevr-corsa-ii-02-al-exp-frontech.jpg 404 in 321ms (compile: 109ms, render: 212ms)
+ GET /api/products?search=cor&page=1&limit=20 200 in 18ms (compile: 6ms, render: 12ms)
+ GET /images/products/radiadores/rad-citroen-c3-1-4-dsl-spico-inf-lat.jpg 404 in 267ms (compile: 39ms, render: 229ms)
+ GET /images/products/radiadores/rad-chevr-onix-prisma-spin-cobalt-16-aut-behr.jpg 404 in 269ms (compile: 17ms, render: 252ms)
+ GET /api/products?search=cors&page=1&limit=20 200 in 24ms (compile: 9ms, render: 15ms)
+ GET /images/products/radiadores/fiat-uno-fire-fioruno-04-aa.jpg 404 in 220ms (compile: 33ms, render: 187ms)
+ GET /images/products/radiadores/citroen-c3-aircross-picasso-peugeot-208-pico-l.jpg 404 in 226ms (compile: 16ms, render: 209ms)
+ GET /images/products/radiadores/ford-fiesta-courier-99-ka-08.jpg 404 in 266ms (compile: 95ms, render: 170ms)
+ GET /api/products?search=corsa&page=1&limit=20 200 in 53ms (compile: 44ms, render: 9ms)
+ GET /images/products/radiadores/ford-fiesta-ecosport-03-aa.jpg 404 in 138ms (compile: 27ms, render: 111ms)
+ GET /images/products/radiadores/rad-peugeot-206-207-307-e27mm-p8m-bulbo-partner-2010.jpg 404 in 203ms (compile: 58ms, render: 146ms)
+ GET /images/products/radiadores/renault-clio-ii-b-pico.jpg 404 in 104ms (compile: 15ms, render: 88ms)
+ GET /images/products/radiadores/calefacc-toyota-hilux-2005-2016-canos.jpg 404 in 100ms (compile: 52ms, render: 48ms)
+ GET /admin/productos 200 in 21ms (compile: 3ms, proxy.ts: 4ms, render: 14ms)
+ GET / 200 in 77ms (compile: 25ms, render: 52ms)
+ GET / 200 in 208ms (compile: 4ms, render: 204ms)
+ GET / 200 in 84ms (compile: 2ms, render: 82ms)
+ GET /admin/login 200 in 61ms (compile: 5ms, proxy.ts: 4ms, render: 53ms)
+ GET /admin/login 200 in 62ms (compile: 8ms, proxy.ts: 4ms, render: 50ms)
+ GET / 200 in 144ms (compile: 2ms, render: 142ms)
+ GET /catalogo/ra-ford-ecosport-12-ka-15-aa 200 in 533ms (compile: 483ms, render: 50ms)
+ GET /carrito 200 in 71ms (compile: 54ms, render: 17ms)
+ GET /checkout 200 in 53ms (compile: 35ms, render: 18ms)
+ GET /admin/productos 200 in 51ms (compile: 7ms, proxy.ts: 10ms, render: 34ms)
+ GET /api/products?page=1&limit=20 200 in 45ms (compile: 12ms, render: 33ms)
+ GET /api/products?page=1&limit=20 200 in 58ms (compile: 28ms, render: 31ms)
+ GET /images/products/radiadores/vw-golf-vii-vento-virtus-polo-tt.jpg 404 in 414ms (compile: 22ms, render: 391ms)
+ GET /images/products/radiadores/s10-blazer-2-8-duramax-2012.jpg 404 in 417ms (compile: 140ms, render: 276ms)
+ GET /images/products/radiadores/ra-ford-ecosport-12-ka-15-aa.jpg 404 in 421ms (compile: 109ms, render: 312ms)
+ GET /images/products/radiadores/cruze-1-8-nafta-manual.jpg 404 in 411ms (compile: 222ms, render: 188ms)
+ GET /images/products/radiadores/rad-ford-ka-99-rocam-zetec-aa-34mm.jpg 404 in 331ms (compile: 223ms, render: 108ms)
+ GET /images/products/radiadores/ra-ford-fiesta-vii-ecosport-dragon-1-5.jpg 404 in 334ms (compile: 199ms, render: 135ms)
+ GET /images/products/radiadores/rad-chery-tiggo-2-0-08.jpg 404 in 357ms (compile: 91ms, render: 266ms)
+ GET /images/products/radiadores/rad-chery-tiggo-iii-1-6-2016.jpg 404 in 359ms (compile: 64ms, render: 296ms)
+ GET /images/products/radiadores/rad-fiat-toro-jeep-renegade-2-0-jtd-cryomax.jpg 404 in 365ms (compile: 28ms, render: 337ms)
+ GET /images/products/radiadores/rad-ford-ranger-2012-2-2-3-2-dsl-2-5-nft.jpg 404 in 352ms (compile: 184ms, render: 168ms)
+ GET /images/products/radiadores/calefacc-chevr-onix-montana-tracker-2020.jpg 404 in 311ms (compile: 182ms, render: 128ms)
+ GET /images/products/radiadores/calefactor-chev-spin-cobalt-prisma-onix.jpg 404 in 179ms (compile: 98ms, render: 80ms)
+ GET /images/products/radiadores/chev-classic-2012-spirit-1-4.jpg 404 in 330ms (compile: 44ms, render: 286ms)
+ GET /images/products/radiadores/chev-agile-montana.jpg 404 in 331ms (compile: 22ms, render: 309ms)
+ GET /images/products/radiadores/chev-cruze-1-4-17.jpg 404 in 328ms (compile: 127ms, render: 200ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 333ms (compile: 112ms, render: 221ms)
+ GET /images/products/radiadores/chev-meriva-1-7-1-8.jpg 404 in 231ms (compile: 122ms, render: 108ms)
+ GET /images/products/radiadores/chev-onix-1-0-1-2-2020-at.jpg 404 in 118ms (compile: 58ms, render: 60ms)
+ GET /images/products/radiadores/chev-onix-joy-spin-cobalt-prisma-17.jpg 404 in 97ms (compile: 29ms, render: 69ms)
+ GET /images/products/radiadores/chev-prisma-celta-07-aa.jpg 404 in 97ms (compile: 8ms, render: 89ms)
+ GET /admin/productos 200 in 22ms (compile: 3ms, proxy.ts: 4ms, render: 15ms)
+ GET /api/products?search=c&page=1&limit=20 200 in 11ms (compile: 4ms, render: 7ms)
+ GET /api/products?search=co&page=1&limit=20 200 in 12ms (compile: 3ms, render: 9ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-mexico.jpg 404 in 311ms (compile: 12ms, render: 299ms)
+ GET /images/products/radiadores/rad-calefacc-chevr-spin-onix-prisma-cobalt-2015-chico.jpg 404 in 282ms (compile: 97ms, render: 185ms)
+ GET /images/products/radiadores/chevr-corsa-1-6-1-4-aa-2-bulbos-konas.jpg 404 in 287ms (compile: 80ms, render: 207ms)
+ GET /images/products/radiadores/chevr-corsa-ii-02-al-exp-frontech.jpg 404 in 286ms (compile: 58ms, render: 228ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-aut.jpg 404 in 291ms (compile: 42ms, render: 249ms)
+ GET /images/products/radiadores/chev-spin-onix-cobalt-prisma-2012-mt.jpg 404 in 290ms (compile: 20ms, render: 270ms)
+ GET /api/products?search=cor&page=1&limit=20 200 in 16ms (compile: 6ms, render: 10ms)
+ GET /api/products?search=cort&page=1&limit=20 200 in 17ms (compile: 5ms, render: 12ms)
+ GET /images/products/radiadores/rad-citroen-c3-1-4-dsl-spico-inf-lat.jpg 404 in 258ms (compile: 38ms, render: 220ms)
+ GET /images/products/radiadores/rad-chevr-onix-prisma-spin-cobalt-16-aut-behr.jpg 404 in 260ms (compile: 18ms, render: 242ms)
+ GET /images/products/radiadores/fiat-uno-fire-fioruno-04-aa.jpg 404 in 298ms (compile: 118ms, render: 179ms)
+ GET /images/products/radiadores/citroen-c3-aircross-picasso-peugeot-208-pico-l.jpg 404 in 301ms (compile: 98ms, render: 203ms)
+ GET /api/products?search=cortr&page=1&limit=20 200 in 14ms (compile: 5ms, render: 9ms)
+ GET /images/products/radiadores/ford-fiesta-courier-99-ka-08.jpg 404 in 306ms (compile: 174ms, render: 132ms)
+ GET /images/products/radiadores/ford-fiesta-ecosport-03-aa.jpg 404 in 214ms (compile: 16ms, render: 197ms)
+ GET /api/products?search=cort&page=1&limit=20 200 in 130ms (compile: 45ms, render: 85ms)
+ GET /images/products/radiadores/rad-peugeot-206-207-307-e27mm-p8m-bulbo-partner-2010.jpg 404 in 156ms (compile: 20ms, render: 136ms)
+ GET /images/products/radiadores/renault-clio-ii-b-pico.jpg 404 in 151ms (compile: 59ms, render: 92ms)
+ GET /images/products/radiadores/calefacc-toyota-hilux-2005-2016-canos.jpg 404 in 150ms (compile: 77ms, render: 74ms)
+ GET /api/products?search=cor&page=1&limit=20 200 in 7ms (compile: 1495µs, render: 5ms)
+ GET /images/products/radiadores/chevr-corsa-ii-02-al-exp-frontech.jpg 404 in 290ms (compile: 53ms, render: 237ms)
+ GET /images/products/radiadores/chevr-corsa-1-6-1-4-aa-2-bulbos-konas.jpg 404 in 292ms (compile: 34ms, render: 257ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 293ms (compile: 16ms, render: 277ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-1-pico.jpg 404 in 290ms (compile: 180ms, render: 110ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-2-pico.jpg 404 in 292ms (compile: 71ms, render: 220ms)
+ GET /images/products/radiadores/polo-cordoba-2005.jpg 404 in 291ms (compile: 199ms, render: 92ms)
+ GET /api/products?search=cord&page=1&limit=20 200 in 10ms (compile: 3ms, render: 7ms)
+ GET /images/products/radiadores/vw-polo-caddy-seat-cordoba-ibiza.jpg 404 in 54ms (compile: 8ms, render: 46ms)
+ GET /api/products?search=cor&page=1&limit=20 200 in 7ms (compile: 2ms, render: 5ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 266ms (compile: 19ms, render: 247ms)
+ GET /api/products?search=cors&page=1&limit=20 200 in 18ms (compile: 7ms, render: 11ms)
+ GET /images/products/radiadores/chevr-corsa-1-6-1-4-aa-2-bulbos-konas.jpg 404 in 256ms (compile: 74ms, render: 182ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-1-pico.jpg 404 in 266ms (compile: 57ms, render: 208ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-2-pico.jpg 404 in 254ms (compile: 159ms, render: 95ms)
+ GET /images/products/radiadores/chevr-corsa-ii-02-al-exp-frontech.jpg 404 in 256ms (compile: 139ms, render: 117ms)
+ GET /api/products?search=corsa&page=1&limit=20 200 in 8ms (compile: 3ms, render: 5ms)
+ GET /admin/productos 200 in 24ms (compile: 4ms, proxy.ts: 3ms, render: 16ms)
+ GET /api/products?page=1&limit=20 200 in 15ms (compile: 3ms, render: 12ms)
+ GET /api/products?page=1&limit=20 200 in 9ms (compile: 3ms, render: 7ms)
+ GET /images/products/radiadores/vw-golf-vii-vento-virtus-polo-tt.jpg 404 in 337ms (compile: 12ms, render: 325ms)
+ GET /images/products/radiadores/ra-ford-ecosport-12-ka-15-aa.jpg 404 in 313ms (compile: 47ms, render: 267ms)
+ GET /images/products/radiadores/ra-ford-fiesta-vii-ecosport-dragon-1-5.jpg 404 in 291ms (compile: 94ms, render: 197ms)
+ GET /images/products/radiadores/rad-ford-ka-99-rocam-zetec-aa-34mm.jpg 404 in 290ms (compile: 69ms, render: 222ms)
+ GET /images/products/radiadores/cruze-1-8-nafta-manual.jpg 404 in 294ms (compile: 142ms, render: 152ms)
+ GET /images/products/radiadores/s10-blazer-2-8-duramax-2012.jpg 404 in 296ms (compile: 113ms, render: 183ms)
+ GET /images/products/radiadores/rad-fiat-toro-jeep-renegade-2-0-jtd-cryomax.jpg 404 in 332ms (compile: 19ms, render: 313ms)
+ GET /images/products/radiadores/rad-ford-ranger-2012-2-2-3-2-dsl-2-5-nft.jpg 404 in 341ms (compile: 65ms, render: 276ms)
+ GET /images/products/radiadores/rad-chery-tiggo-2-0-08.jpg 404 in 296ms (compile: 65ms, render: 230ms)
+ GET /images/products/radiadores/rad-chery-tiggo-iii-1-6-2016.jpg 404 in 293ms (compile: 141ms, render: 153ms)
+ GET /images/products/radiadores/calefacc-chevr-onix-montana-tracker-2020.jpg 404 in 296ms (compile: 114ms, render: 182ms)
+ GET /images/products/radiadores/calefactor-chev-spin-cobalt-prisma-onix.jpg 404 in 254ms (compile: 162ms, render: 91ms)
+ GET /images/products/radiadores/chev-agile-montana.jpg 404 in 317ms (compile: 22ms, render: 295ms)
+ GET /images/products/radiadores/chev-classic-2012-spirit-1-4.jpg 404 in 314ms (compile: 73ms, render: 241ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 257ms (compile: 59ms, render: 198ms)
+ GET /images/products/radiadores/chev-meriva-1-7-1-8.jpg 404 in 253ms (compile: 125ms, render: 128ms)
+ GET /images/products/radiadores/chev-cruze-1-4-17.jpg 404 in 255ms (compile: 104ms, render: 151ms)
+ GET /images/products/radiadores/chev-onix-1-0-1-2-2020-at.jpg 404 in 211ms (compile: 142ms, render: 69ms)
+ GET /images/products/radiadores/chev-onix-joy-spin-cobalt-prisma-17.jpg 404 in 130ms (compile: 11ms, render: 119ms)
+ GET /images/products/radiadores/chev-prisma-celta-07-aa.jpg 404 in 124ms (compile: 75ms, render: 49ms)
+ GET / 200 in 50ms (compile: 5ms, render: 45ms)
+ GET /catalogo 200 in 63ms (compile: 31ms, render: 32ms)
+ GET /catalogo/ra-ford-fiesta-vii-ecosport-dragon-1-5 200 in 58ms (compile: 15ms, render: 43ms)
+ GET /admin/productos 200 in 41ms (compile: 6ms, proxy.ts: 8ms, render: 27ms)
+ GET /api/products?page=1&limit=20 200 in 27ms (compile: 5ms, render: 22ms)
+ GET /api/products?page=1&limit=20 200 in 17ms (compile: 4ms, render: 14ms)
+ GET /images/products/radiadores/vw-golf-vii-vento-virtus-polo-tt.jpg 404 in 525ms (compile: 36ms, render: 488ms)
+ GET /images/products/radiadores/ra-ford-fiesta-vii-ecosport-dragon-1-5.jpg 404 in 503ms (compile: 246ms, render: 257ms)
+ GET /images/products/radiadores/cruze-1-8-nafta-manual.jpg 404 in 506ms (compile: 186ms, render: 320ms)
+ GET /images/products/radiadores/ra-ford-ecosport-12-ka-15-aa.jpg 404 in 512ms (compile: 158ms, render: 354ms)
+ GET /images/products/radiadores/s10-blazer-2-8-duramax-2012.jpg 404 in 509ms (compile: 366ms, render: 143ms)
+ GET /images/products/radiadores/rad-ford-ka-99-rocam-zetec-aa-34mm.jpg 404 in 463ms (compile: 345ms, render: 118ms)
+ GET /images/products/radiadores/rad-chery-tiggo-2-0-08.jpg 404 in 343ms (compile: 88ms, render: 256ms)
+ GET /images/products/radiadores/calefacc-chevr-onix-montana-tracker-2020.jpg 404 in 346ms (compile: 58ms, render: 288ms)
+ GET /images/products/radiadores/rad-fiat-toro-jeep-renegade-2-0-jtd-cryomax.jpg 404 in 351ms (compile: 36ms, render: 315ms)
+ GET /images/products/radiadores/rad-ford-ranger-2012-2-2-3-2-dsl-2-5-nft.jpg 404 in 336ms (compile: 196ms, render: 140ms)
+ GET /images/products/radiadores/rad-chery-tiggo-iii-1-6-2016.jpg 404 in 345ms (compile: 180ms, render: 165ms)
+ GET /images/products/radiadores/calefactor-chev-spin-cobalt-prisma-onix.jpg 404 in 331ms (compile: 254ms, render: 77ms)
+ GET /images/products/radiadores/chev-agile-montana.jpg 404 in 318ms (compile: 17ms, render: 301ms)
+ GET /images/products/radiadores/chev-cruze-1-4-17.jpg 404 in 319ms (compile: 94ms, render: 225ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 324ms (compile: 78ms, render: 246ms)
+ GET /images/products/radiadores/chev-classic-2012-spirit-1-4.jpg 404 in 326ms (compile: 56ms, render: 270ms)
+ GET /images/products/radiadores/chev-meriva-1-7-1-8.jpg 404 in 321ms (compile: 178ms, render: 144ms)
+ GET /images/products/radiadores/chev-onix-1-0-1-2-2020-at.jpg 404 in 279ms (compile: 156ms, render: 123ms)
+ GET /images/products/radiadores/chev-onix-joy-spin-cobalt-prisma-17.jpg 404 in 96ms (compile: 8ms, render: 88ms)
+ GET /images/products/radiadores/chev-prisma-celta-07-aa.jpg 404 in 96ms (compile: 27ms, render: 69ms)
+ GET /api/products?search=c&page=1&limit=20 200 in 10ms (compile: 3ms, render: 7ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-mexico.jpg 404 in 97ms (compile: 8ms, render: 89ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-aut.jpg 404 in 98ms (compile: 45ms, render: 53ms)
+ GET /api/products?search=co&page=1&limit=20 200 in 7ms (compile: 2ms, render: 5ms)
+ GET /images/products/radiadores/chev-spin-onix-cobalt-prisma-2012-mt.jpg 404 in 332ms (compile: 17ms, render: 316ms)
+ GET /images/products/radiadores/rad-citroen-c3-1-4-dsl-spico-inf-lat.jpg 404 in 264ms (compile: 91ms, render: 173ms)
+ GET /images/products/radiadores/rad-chevr-onix-prisma-spin-cobalt-16-aut-behr.jpg 404 in 267ms (compile: 73ms, render: 194ms)
+ GET /images/products/radiadores/rad-calefacc-chevr-spin-onix-prisma-cobalt-2015-chico.jpg 404 in 269ms (compile: 56ms, render: 214ms)
+ GET /images/products/radiadores/chevr-corsa-ii-02-al-exp-frontech.jpg 404 in 271ms (compile: 38ms, render: 234ms)
+ GET /images/products/radiadores/chevr-corsa-1-6-1-4-aa-2-bulbos-konas.jpg 404 in 273ms (compile: 19ms, render: 254ms)
+ GET /api/products?search=cor&page=1&limit=20 200 in 20ms (compile: 4ms, render: 16ms)
+ GET /images/products/radiadores/fiat-uno-fire-fioruno-04-aa.jpg 404 in 293ms (compile: 40ms, render: 253ms)
+ GET /images/products/radiadores/citroen-c3-aircross-picasso-peugeot-208-pico-l.jpg 404 in 295ms (compile: 19ms, render: 275ms)
+ GET /images/products/radiadores/ford-fiesta-ecosport-03-aa.jpg 404 in 294ms (compile: 118ms, render: 176ms)
+ GET /images/products/radiadores/ford-fiesta-courier-99-ka-08.jpg 404 in 297ms (compile: 101ms, render: 196ms)
+ GET /images/products/radiadores/rad-peugeot-206-207-307-e27mm-p8m-bulbo-partner-2010.jpg 404 in 298ms (compile: 135ms, render: 162ms)
+ GET /api/products?search=co&page=1&limit=20 200 in 18ms (compile: 8ms, render: 11ms)
+ GET /images/products/radiadores/renault-clio-ii-b-pico.jpg 404 in 184ms (compile: 19ms, render: 165ms)
+ GET /api/products?search=cos&page=1&limit=20 200 in 18ms (compile: 7ms, render: 11ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-2-pico.jpg 404 in 214ms (compile: 39ms, render: 175ms)
+ GET /images/products/radiadores/calefacc-toyota-hilux-2005-2016-canos.jpg 404 in 218ms (compile: 20ms, render: 198ms)
+ GET /images/products/radiadores/polo-cordoba-2005.jpg 404 in 258ms (compile: 117ms, render: 141ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-1-pico.jpg 404 in 263ms (compile: 100ms, render: 163ms)
+ GET /images/products/radiadores/vw-polo-caddy-seat-cordoba-ibiza.jpg 404 in 81ms (compile: 12ms, render: 69ms)
+ GET /images/products/radiadores/ra-ford-ecosport-12-ka-15-aa.jpg 404 in 184ms (compile: 24ms, render: 160ms)
+ GET /images/products/radiadores/ra-ford-fiesta-vii-ecosport-dragon-1-5.jpg 404 in 183ms (compile: 90ms, render: 93ms)
+ GET /images/products/radiadores/ford-fiesta-ecosport-03-aa.jpg 404 in 180ms (compile: 107ms, render: 74ms)
+ GET /api/products?search=co&page=1&limit=20 200 in 10ms (compile: 1952µs, render: 8ms)
+ GET /images/products/radiadores/calefactor-chev-spin-cobalt-prisma-onix.jpg 404 in 307ms (compile: 10ms, render: 297ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-mexico.jpg 404 in 263ms (compile: 57ms, render: 206ms)
+ GET /images/products/radiadores/chev-onix-joy-spin-cobalt-prisma-17.jpg 404 in 264ms (compile: 36ms, render: 228ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 265ms (compile: 18ms, render: 248ms)
+ GET /images/products/radiadores/chev-spin-onix-cobalt-prisma-2012-mt.jpg 404 in 266ms (compile: 175ms, render: 92ms)
+ GET /images/products/radiadores/chev-sonic-1-6-tracker-cruze-1-8-2015-aut.jpg 404 in 270ms (compile: 158ms, render: 112ms)
+ GET /api/products?search=cor&page=1&limit=20 200 in 15ms (compile: 6ms, render: 8ms)
+ GET /images/products/radiadores/chevr-corsa-ii-02-al-exp-frontech.jpg 404 in 324ms (compile: 44ms, render: 280ms)
+ GET /images/products/radiadores/chevr-corsa-1-6-1-4-aa-2-bulbos-konas.jpg 404 in 326ms (compile: 21ms, render: 304ms)
+ GET /images/products/radiadores/rad-chevr-onix-prisma-spin-cobalt-16-aut-behr.jpg 404 in 324ms (compile: 132ms, render: 192ms)
+ GET /images/products/radiadores/rad-calefacc-chevr-spin-onix-prisma-cobalt-2015-chico.jpg 404 in 328ms (compile: 115ms, render: 213ms)
+ GET /images/products/radiadores/rad-citroen-c3-1-4-dsl-spico-inf-lat.jpg 404 in 331ms (compile: 151ms, render: 180ms)
+ GET /images/products/radiadores/citroen-c3-aircross-picasso-peugeot-208-pico-l.jpg 404 in 114ms (compile: 22ms, render: 92ms)
+ GET /api/products?search=cors&page=1&limit=20 200 in 34ms (compile: 12ms, render: 23ms)
+ GET /images/products/radiadores/fiat-uno-fire-fioruno-04-aa.jpg 404 in 289ms (compile: 56ms, render: 233ms)
+ GET /images/products/radiadores/rad-peugeot-206-207-307-e27mm-p8m-bulbo-partner-2010.jpg 404 in 324ms (compile: 109ms, render: 215ms)
+ GET /images/products/radiadores/ford-fiesta-courier-99-ka-08.jpg 404 in 326ms (compile: 92ms, render: 234ms)
+ GET /images/products/radiadores/renault-clio-ii-b-pico.jpg 404 in 316ms (compile: 163ms, render: 153ms)
+ GET /api/products?search=corsa&page=1&limit=20 200 in 13ms (compile: 7ms, render: 6ms)
+ GET /images/products/radiadores/calefacc-toyota-hilux-2005-2016-canos.jpg 404 in 167ms (compile: 58ms, render: 109ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-2-pico.jpg 404 in 256ms (compile: 55ms, render: 201ms)
+ GET /images/products/radiadores/polo-cordoba-2005.jpg 404 in 157ms (compile: 33ms, render: 124ms)
+ GET /images/products/radiadores/toyota-corolla-avensis-at-1-pico.jpg 404 in 159ms (compile: 12ms, render: 147ms)
+ GET /images/products/radiadores/vw-polo-caddy-seat-cordoba-ibiza.jpg 404 in 157ms (compile: 95ms, render: 62ms)
+ POST /api/admin/logout 200 in 113ms (compile: 107ms, render: 6ms)
+ GET /admin/login 200 in 23ms (compile: 3ms, proxy.ts: 3ms, render: 17ms)
+ POST /api/admin/login 200 in 7ms (compile: 1652µs, render: 6ms)
+ GET /admin/productos 200 in 18ms (compile: 3ms, proxy.ts: 3ms, render: 13ms)
+ GET /admin/productos 200 in 29ms (compile: 2ms, proxy.ts: 2ms, render: 24ms)
+ GET /api/products?page=1&limit=20 200 in 13ms (compile: 2ms, render: 11ms)
+ GET /api/products?page=1&limit=20 200 in 8ms (compile: 2ms, render: 6ms)
+ GET /images/products/radiadores/vw-golf-vii-vento-virtus-polo-tt.jpg 404 in 293ms (compile: 11ms, render: 282ms)
+ GET /images/products/radiadores/s10-blazer-2-8-duramax-2012.jpg 404 in 278ms (compile: 37ms, render: 241ms)
+ GET /images/products/radiadores/ra-ford-ecosport-12-ka-15-aa.jpg 404 in 280ms (compile: 19ms, render: 262ms)
+ GET /images/products/radiadores/ra-ford-fiesta-vii-ecosport-dragon-1-5.jpg 404 in 283ms (compile: 120ms, render: 163ms)
+ GET /images/products/radiadores/cruze-1-8-nafta-manual.jpg 404 in 285ms (compile: 101ms, render: 185ms)
+ GET /images/products/radiadores/rad-ford-ka-99-rocam-zetec-aa-34mm.jpg 404 in 336ms (compile: 139ms, render: 196ms)
+ GET /images/products/radiadores/rad-fiat-toro-jeep-renegade-2-0-jtd-cryomax.jpg 404 in 282ms (compile: 22ms, render: 260ms)
+ GET /images/products/radiadores/rad-ford-ranger-2012-2-2-3-2-dsl-2-5-nft.jpg 404 in 244ms (compile: 39ms, render: 205ms)
+ GET /images/products/radiadores/calefacc-chevr-onix-montana-tracker-2020.jpg 404 in 245ms (compile: 18ms, render: 227ms)
+ GET /images/products/radiadores/rad-chery-tiggo-iii-1-6-2016.jpg 404 in 244ms (compile: 115ms, render: 129ms)
+ GET /images/products/radiadores/rad-chery-tiggo-2-0-08.jpg 404 in 246ms (compile: 97ms, render: 148ms)
+ GET /images/products/radiadores/calefactor-chev-spin-cobalt-prisma-onix.jpg 404 in 285ms (compile: 173ms, render: 112ms)
+ GET /images/products/radiadores/chev-agile-montana.jpg 404 in 262ms (compile: 15ms, render: 247ms)
+ GET /images/products/radiadores/chev-classic-2012-spirit-1-4.jpg 404 in 259ms (compile: 38ms, render: 221ms)
+ GET /images/products/radiadores/chev-corsa-saa-bulbo.jpg 404 in 258ms (compile: 15ms, render: 243ms)
+ GET /images/products/radiadores/chev-meriva-1-7-1-8.jpg 404 in 258ms (compile: 117ms, render: 141ms)
+ GET /images/products/radiadores/chev-cruze-1-4-17.jpg 404 in 261ms (compile: 97ms, render: 164ms)
+ GET /images/products/radiadores/chev-onix-1-0-1-2-2020-at.jpg 404 in 171ms (compile: 106ms, render: 65ms)
+ GET /images/products/radiadores/chev-onix-joy-spin-cobalt-prisma-17.jpg 404 in 104ms (compile: 14ms, render: 91ms)
+ GET /images/products/radiadores/chev-prisma-celta-07-aa.jpg 404 in 96ms (compile: 49ms, render: 46ms)
+prisma:error 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].product.update()` invocation in
+D:\proyectoAMG\.next\dev\server\chunks\[root-of-the-server]__7ec4e0d0._.js:189:148
+
+  186     });
+  187 }
+  188 async function updateProduct(id, data) {
+→ 189     return __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].product.update({
+            where: {
+              id: 170
+            },
+            data: {
+              slug: "vw-golf-vii-vento-virtus-polo-tt",
+              name: "VW GOLF VII VENTO VIRTUS POLO TT",
+              description: "Radiador VW Golf VII, Vento, Virtus, Polo y TT.",
+              sku: "RM4678FA",
+              price: new Prisma.Decimal("190000"),
+              stock: 0,
+              isActive: true,
+              brand: "Volskwagen",
+              model: "vw-golf-vii-vento-virtus-polo-tt",
+              category: "Radiadores",
+              compatibility: undefined,
+              images: [
+                "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+              ],
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              imageUrl: "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+            }
+          })
+
+Argument `images`: Invalid value provided. Expected String or StringFieldUpdateOperationsInput, provided (String).
+⨯ Error [PrismaClientValidationError]: 
+Invalid `{imported module ./lib/db/prisma.ts}["prisma"].product.update()` invocation in
+D:\proyectoAMG\.next\dev\server\chunks\[root-of-the-server]__7ec4e0d0._.js:189:148
+
+  186     });
+  187 }
+  188 async function updateProduct(id, data) {
+→ 189     return {imported module ./lib/db/prisma.ts}["prisma"].product.update({
+            where: {
+              id: 170
+            },
+            data: {
+              slug: "vw-golf-vii-vento-virtus-polo-tt",
+              name: "VW GOLF VII VENTO VIRTUS POLO TT",
+              description: "Radiador VW Golf VII, Vento, Virtus, Polo y TT.",
+              sku: "RM4678FA",
+              price: new Prisma.Decimal("190000"),
+              stock: 0,
+              isActive: true,
+              brand: "Volskwagen",
+              model: "vw-golf-vii-vento-virtus-polo-tt",
+              category: "Radiadores",
+              compatibility: undefined,
+              images: [
+                "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+              ],
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              imageUrl: "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+            }
+          })
+
+Argument `images`: Invalid value provided. Expected String or StringFieldUpdateOperationsInput, provided (String).
+    at <unknown> (lib\products\product-repository.ts:47:25)
+    at async Module.update (lib\products\product-service.ts:102:12)
+    at async PUT (app\api\products\[id]\route.ts:64:21)
+  45 |
+  46 | export async function updateProduct(id: number, data: any) {
+> 47 |   return prisma.product.update({ where: { id }, data })
+     |                         ^
+  48 | }
+  49 |
+  50 | export async function softDeleteProduct(id: number) { {
+  clientVersion: '6.19.3'
+}
+ PUT /api/products/170 500 in 1000ms (compile: 808ms, render: 192ms)
+prisma:error 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].product.update()` invocation in
+D:\proyectoAMG\.next\dev\server\chunks\[root-of-the-server]__7ec4e0d0._.js:189:148
+
+  186     });
+  187 }
+  188 async function updateProduct(id, data) {
+→ 189     return __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].product.update({
+            where: {
+              id: 170
+            },
+            data: {
+              slug: "vw-golf-vii-vento-virtus-polo-tt",
+              name: "VW GOLF VII VENTO VIRTUS POLO TT",
+              description: "Radiador VW Golf VII, Vento, Virtus, Polo y TT.",
+              sku: "RM4678FA",
+              price: new Prisma.Decimal("190000"),
+              stock: 0,
+              isActive: true,
+              brand: "Volskwagen",
+              model: "vw-golf-vii-vento-virtus-polo-tt",
+              category: "Radiadores",
+              compatibility: undefined,
+              images: [
+                "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+              ],
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              imageUrl: "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+            }
+          })
+
+Argument `images`: Invalid value provided. Expected String or StringFieldUpdateOperationsInput, provided (String).
+⨯ Error [PrismaClientValidationError]: 
+Invalid `{imported module ./lib/db/prisma.ts}["prisma"].product.update()` invocation in
+D:\proyectoAMG\.next\dev\server\chunks\[root-of-the-server]__7ec4e0d0._.js:189:148
+
+  186     });
+  187 }
+  188 async function updateProduct(id, data) {
+→ 189     return {imported module ./lib/db/prisma.ts}["prisma"].product.update({
+            where: {
+              id: 170
+            },
+            data: {
+              slug: "vw-golf-vii-vento-virtus-polo-tt",
+              name: "VW GOLF VII VENTO VIRTUS POLO TT",
+              description: "Radiador VW Golf VII, Vento, Virtus, Polo y TT.",
+              sku: "RM4678FA",
+              price: new Prisma.Decimal("190000"),
+              stock: 0,
+              isActive: true,
+              brand: "Volskwagen",
+              model: "vw-golf-vii-vento-virtus-polo-tt",
+              category: "Radiadores",
+              compatibility: undefined,
+              images: [
+                "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+              ],
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              imageUrl: "https://drive.google.com/drive/u/1/folders/1zRb1LSBn-fjxROu5QFf7RwLt4JZnloBe"
+            }
+          })
+
+Argument `images`: Invalid value provided. Expected String or StringFieldUpdateOperationsInput, provided (String).
+    at <unknown> (lib\products\product-repository.ts:47:25)
+    at async Module.update (lib\products\product-service.ts:102:12)
+    at async PUT (app\api\products\[id]\route.ts:64:21)
+  45 |
+  46 | export async function updateProduct(id: number, data: any) {
+> 47 |   return prisma.product.update({ where: { id }, data })
+     |                         ^
+  48 | }
+  49 |
+  50 | export async function softDeleteProduct(id: number) { {
+  clientVersion: '6.19.3'
+}
+ PUT /api/products/170 500 in 176ms (compile: 8ms, render: 168ms)
+ GET / 200 in 121ms (compile: 4ms, render: 117ms)
+ GET /admin/login 200 in 64ms (compile: 5ms, proxy.ts: 4ms, render: 55ms)
+ GET /admin/login 200 in 72ms (compile: 8ms, proxy.ts: 3ms, render: 62ms)
+ GET / 200 in 85ms (compile: 3ms, render: 82ms)
+ GET /admin/login 200 in 61ms (compile: 5ms, proxy.ts: 3ms, render: 53ms)
+ GET /admin/login 200 in 61ms (compile: 7ms, proxy.ts: 3ms, render: 51ms)

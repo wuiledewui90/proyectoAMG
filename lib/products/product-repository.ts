@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/prisma"
-import type { Product } from "@prisma/client"
+import type { product as Product } from "@prisma/client"
 
 export async function listProducts(params: {
   search?: string

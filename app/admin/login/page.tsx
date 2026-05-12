@@ -28,18 +28,8 @@ export default function AdminLoginPage() {
         return
       }
 
-      try {
-        localStorage.setItem("amg-admin-session", "authenticated")
-      } catch {}
-
-      try {
-        document.cookie = "amg_admin=1; path=/"
-      } catch {}
-
-      router.replace("/admin/productos")
-      try {
-        window.location.href = "/admin/productos"
-      } catch {}
+      router.replace("/admin")
+      router.refresh()
     } finally {
       setLoading(false)
     }

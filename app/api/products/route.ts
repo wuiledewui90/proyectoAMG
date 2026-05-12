@@ -3,9 +3,19 @@ import { z } from "zod"
 import { productListQuerySchema } from "@/lib/products/product-schemas"
 import * as service from "@/lib/products/product-service"
 import { serializeProduct, serializeProducts } from "@/lib/products/product-serialize"
+import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
+
+function getAdminTokenFromCookieHeader(req: Request) {
+  return req.headers
+    .get("cookie")
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
+    ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -43,6 +53,11 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const token = getAdminTokenFromCookieHeader(req)
+  if (!(await verifyAdminSessionToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   let body: unknown
   try {
     body = await req.json()

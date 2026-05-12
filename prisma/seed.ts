@@ -158,6 +158,8 @@ async function main() {
   ]
 
   for (const p of items) {
+    const now = new Date()
+
     await prisma.product.upsert({
       where: { slug: p.slug },
       update: {
@@ -172,10 +174,15 @@ async function main() {
         model: p.model,
         category: p.category,
         compatibility: p.compatibility,
-        images: p.images,
+        images: JSON.stringify(p.images),
         imageUrl: p.imageUrl,
+        updatedAt: now,
       },
-      create: p,
+      create: {
+        ...p,
+        images: JSON.stringify(p.images),
+        updatedAt: now,
+      },
     })
   }
 

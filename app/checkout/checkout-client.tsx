@@ -7,11 +7,15 @@ import Link from "next/link"
 import { ArrowLeft, Check, ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/data"
+import { ORDERS_STORAGE_KEY, type StoredOrder } from "@/lib/orders"
+import { buildCheckoutWhatsAppMessage, getWhatsAppUrl } from "@/lib/whatsapp"
 
 export function CheckoutClient() {
   const { items, totalPrice, clearCart } = useCart()
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [whatsAppUrl, setWhatsAppUrl] = useState("")
 
   const [form, setForm] = useState({
     name: "",
@@ -39,7 +43,7 @@ export function CheckoutClient() {
     return errs
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) {
@@ -47,8 +51,9 @@ export function CheckoutClient() {
       return
     }
 
-    // MVP: Save order to localStorage (would go to DB in production)
-    const order = {
+    setSubmitting(true)
+
+    const order: StoredOrder = {
       id: `ORD-${Date.now()}`,
       customerName: form.name,
       customerEmail: form.email,
@@ -60,20 +65,60 @@ export function CheckoutClient() {
         productName: i.product.name,
         quantity: i.quantity,
         price: i.product.price,
+        sku: i.product.sku,
+        brand: i.product.brand,
+        model: i.product.model,
+        category: i.product.category,
+        compatibility: i.product.compatibility,
       })),
       total: totalPrice,
       status: "pendiente",
       createdAt: new Date().toISOString(),
     }
 
-    const existingOrders = JSON.parse(
-      localStorage.getItem("amg-orders") || "[]"
-    )
-    existingOrders.push(order)
-    localStorage.setItem("amg-orders", JSON.stringify(existingOrders))
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order),
+      })
 
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null)
+        throw new Error(payload?.error ?? `Error ${res.status}`)
+      }
+
+      const existingOrders = JSON.parse(
+        localStorage.getItem(ORDERS_STORAGE_KEY) || "[]"
+      ) as StoredOrder[]
+      existingOrders.push(order)
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(existingOrders))
+    } catch (err) {
+      setErrors({
+        submit:
+          err instanceof Error
+            ? err.message
+            : "No se pudo registrar el pedido. Intentalo nuevamente.",
+      })
+      setSubmitting(false)
+      return
+    }
+
+    const message = buildCheckoutWhatsAppMessage({
+      address: form.address,
+      email: form.email,
+      items,
+      name: form.name,
+      notes: form.notes,
+      phone: form.phone,
+      totalPrice,
+    })
+    const url = getWhatsAppUrl(message)
+
+    setWhatsAppUrl(url)
     clearCart()
     setSubmitted(true)
+    window.location.href = url
   }
 
   if (items.length === 0 && !submitted) {
@@ -109,17 +154,16 @@ export function CheckoutClient() {
         </h1>
         <p className="mt-3 max-w-md text-muted-foreground">
           Tu pedido fue registrado con exito. Para confirmar el pago, comunicate
-          por WhatsApp o transferencia bancaria. Te enviaremos los datos de
-          pago.
+          por WhatsApp. Ya preparamos el mensaje con los productos y tus datos.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <a
-            href="https://wa.me/5491100000000?text=Hola, acabo de realizar un pedido y quiero coordinar el pago."
+            href={whatsAppUrl || getWhatsAppUrl("Hola, acabo de realizar un pedido y quiero coordinar el pago.")}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            Coordinar Pago por WhatsApp
+            Abrir WhatsApp
           </a>
           <Link
             href="/"
@@ -267,10 +311,14 @@ export function CheckoutClient() {
 
           <button
             type="submit"
+            disabled={submitting}
             className="w-full rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 md:w-auto"
           >
-            Confirmar Pedido
+            {submitting ? "Registrando pedido..." : "Confirmar Pedido"}
           </button>
+          {errors.submit && (
+            <p className="text-sm text-destructive">{errors.submit}</p>
+          )}
         </form>
 
         {/* Order Summary */}

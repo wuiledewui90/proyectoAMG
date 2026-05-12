@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Package,
@@ -10,19 +10,23 @@ import {
   LogOut,
   Home,
 } from "lucide-react"
-import { useAdminAuth } from "@/lib/admin-auth"
 import { cn } from "@/lib/utils"
 
 const links = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Productos", icon: Package },
+  { href: "/admin/productos", label: "Productos", icon: Package },
   { href: "/admin/ordenes", label: "Ordenes", icon: ShoppingCart },
   { href: "/admin/mensajes", label: "Mensajes", icon: MessageSquare },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const { logout } = useAdminAuth()
+  const router = useRouter()
+
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST" })
+    router.replace("/admin/login")
+  }
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card">
@@ -70,7 +74,7 @@ export function AdminSidebar() {
           Ver sitio
         </Link>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
         >
           <LogOut className="h-4 w-4" />

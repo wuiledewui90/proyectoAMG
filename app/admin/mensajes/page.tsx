@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { RequireAuth } from "@/lib/admin-auth"
-import { AdminSidebar } from "@/components/admin-sidebar"
 import { Eye, X, Mail, MailOpen } from "lucide-react"
 import { sampleMessages } from "@/lib/data"
 import type { ContactMessage } from "@/lib/data"
@@ -21,10 +19,7 @@ export default function AdminMessagesPage() {
   }
 
   return (
-    <RequireAuth>
-      <div className="flex min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 overflow-auto">
+        <div className="mx-auto w-full max-w-7xl overflow-auto">
           <div className="border-b border-border bg-card px-6 py-4">
             <h1 className="text-xl font-bold text-foreground">
               Mensajes de Contacto
@@ -164,7 +159,5 @@ export default function AdminMessagesPage() {
             </div>
           </div>
         </div>
-      </div>
-    </RequireAuth>
   )
 }
