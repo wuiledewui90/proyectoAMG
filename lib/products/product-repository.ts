@@ -57,6 +57,14 @@ export async function deleteProduct(id: number) {
 
 // Home: productos destacados (limitados)
 export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
+  const featured = await prisma.product.findMany({
+    where: { isActive: true, isFeatured: true },
+    orderBy: { updatedAt: "desc" },
+    take: limit,
+  })
+
+  if (featured.length > 0) return featured
+
   return prisma.product.findMany({
     where: { isActive: true },
     orderBy: { updatedAt: "desc" },

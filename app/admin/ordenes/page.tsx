@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, Eye, Loader2, X } from "lucide-react"
+import { CheckCircle2, Eye, Loader2, Trash2, X } from "lucide-react"
 import { formatPrice } from "@/lib/data"
 import { ORDERS_STORAGE_KEY, type StoredOrder } from "@/lib/orders"
 
@@ -9,6 +9,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<StoredOrder[]>([])
   const [selected, setSelected] = useState<StoredOrder | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -76,6 +77,36 @@ export default function AdminOrdersPage() {
       alert(err instanceof Error ? err.message : "No se pudo confirmar la orden.")
     } finally {
       setConfirmingId(null)
+    }
+  }
+
+  async function deleteOrder(order: StoredOrder) {
+    if (
+      !confirm(
+        `Eliminar la orden ${order.id}? Esta accion no se puede deshacer.`
+      )
+    ) {
+      return
+    }
+
+    setDeletingId(order.id)
+
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null)
+        throw new Error(payload?.error ?? `Error ${res.status}`)
+      }
+
+      const nextOrders = orders.filter((current) => current.id !== order.id)
+      updateOrders(nextOrders)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "No se pudo eliminar la orden.")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -161,20 +192,34 @@ export default function AdminOrdersPage() {
 
           <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-lg font-bold text-primary">Total: {formatPrice(selected.total)}</p>
-            {selected.status === "pendiente" && (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {selected.status === "pendiente" && (
+                <button
+                  onClick={() => confirmOrder(selected)}
+                  disabled={confirmingId === selected.id}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                >
+                  {confirmingId === selected.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  Confirmar y descontar stock
+                </button>
+              )}
               <button
-                onClick={() => confirmOrder(selected)}
-                disabled={confirmingId === selected.id}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                onClick={() => deleteOrder(selected)}
+                disabled={deletingId === selected.id}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-destructive/40 px-4 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
               >
-                {confirmingId === selected.id ? (
+                {deletingId === selected.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <CheckCircle2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 )}
-                Confirmar y descontar stock
+                Eliminar orden
               </button>
-            )}
+            </div>
           </div>
         </section>
       )}
@@ -229,6 +274,18 @@ export default function AdminOrdersPage() {
                         Confirmar
                       </button>
                     )}
+                    <button
+                      onClick={() => deleteOrder(order)}
+                      disabled={deletingId === order.id}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                      aria-label={`Eliminar orden ${order.id}`}
+                    >
+                      {deletingId === order.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -283,6 +340,18 @@ export default function AdminOrdersPage() {
                   Confirmar
                 </button>
               )}
+              <button
+                onClick={() => deleteOrder(order)}
+                disabled={deletingId === order.id}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-medium text-destructive disabled:opacity-60"
+              >
+                {deletingId === order.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Eliminar
+              </button>
             </div>
           </article>
         ))}

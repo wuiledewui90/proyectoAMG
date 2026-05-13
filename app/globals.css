@@ -26,8 +26,9 @@
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
+    --border: 220 14% 70%;
+    --input: 220 14% 58%;
+    --control-border: 220 14% 46%;
     --ring: 0 72% 51%;
     --chart-1: 0 72% 51%;
     --chart-2: 220 14% 16%;
@@ -41,7 +42,7 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 10% 93%;
     --sidebar-accent-foreground: 220 20% 10%;
-    --sidebar-border: 220 13% 88%;
+    --sidebar-border: 220 14% 70%;
     --sidebar-ring: 0 72% 51%;
   }
 }
@@ -53,4 +54,29 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+}
+
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  border-color: hsl(var(--control-border));
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  background-color: hsl(var(--card));
+  border-width: 2px;
+}
+
+button[class*="bg-transparent"],
+a[class*="bg-transparent"],
+[role="button"][class*="bg-transparent"] {
+  background-color: hsl(var(--card));
+}
+
+.border-transparent {
+  border-color: hsl(var(--border)) !important;
 }

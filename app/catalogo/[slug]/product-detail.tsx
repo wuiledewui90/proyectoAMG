@@ -4,13 +4,14 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
+  ArrowRight,
   ChevronLeft,
   Minus,
   Plus,
-  ShoppingCart,
   MessageCircle,
   Check,
 } from "lucide-react"
+import { CartIcon3D } from "@/components/cart-icon"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
 import { useCart } from "@/lib/cart-context"
 import { getWhatsAppUrl } from "@/lib/whatsapp"
@@ -22,7 +23,7 @@ function formatPriceARS(value: number) {
 export function ProductDetail({ product }: { product: SerializedProduct }) {
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
-  const { addItem } = useCart()
+  const { addItem, totalItems } = useCart()
 
   function handleAdd() {
     addItem(product, quantity)
@@ -102,10 +103,10 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                 >
                   Cantidad
                 </label>
-                <div className="flex items-center rounded-md border border-border">
+                <div className="flex items-center rounded-full border border-border bg-card p-1 shadow-sm">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="flex h-10 w-10 items-center justify-center transition-colors hover:bg-muted"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
                     aria-label="Reducir cantidad"
                   >
                     <Minus className="h-4 w-4" />
@@ -125,14 +126,14 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                         )
                       )
                     }
-                    className="h-10 w-14 border-x border-border bg-card text-center text-sm text-foreground focus:outline-none"
+                    className="h-9 w-14 border-x border-border bg-card text-center text-sm font-semibold text-foreground focus:outline-none"
                   />
 
                   <button
                     onClick={() =>
                       setQuantity(Math.min(product.stock, quantity + 1))
                     }
-                    className="flex h-10 w-10 items-center justify-center transition-colors hover:bg-muted"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
                     aria-label="Aumentar cantidad"
                   >
                     <Plus className="h-4 w-4" />
@@ -143,20 +144,34 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   onClick={handleAdd}
-                  className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  className="group inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
                 >
                   {added ? (
                     <>
-                      <Check className="h-4 w-4" />
+                      <Check className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                       Agregado
                     </>
                   ) : (
                     <>
-                      <ShoppingCart className="h-4 w-4" />
+                      <CartIcon3D className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
                       Agregar al Carrito
                     </>
                   )}
                 </button>
+
+                <Link
+                  href="/carrito"
+                  className="group inline-flex items-center gap-2 rounded-md border border-primary/40 bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 hover:shadow-md active:translate-y-0"
+                >
+                  <CartIcon3D className="h-5 w-5 text-primary transition-transform duration-200 group-hover:scale-110" />
+                  Ver carrito
+                  {totalItems > 0 && (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                      {totalItems}
+                    </span>
+                  )}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
 
                 <a
                   href={getWhatsAppUrl(
@@ -176,9 +191,9 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                  className="group inline-flex items-center gap-2 rounded-md border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted hover:shadow-md active:translate-y-0"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4 text-primary transition-transform duration-200 group-hover:scale-110" />
                   Consultar
                 </a>
               </div>

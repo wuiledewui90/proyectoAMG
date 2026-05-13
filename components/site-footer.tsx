@@ -1,27 +1,70 @@
 import Link from "next/link"
-import { Phone, Mail, MapPin } from "lucide-react"
+import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react"
+
+const navLinks = [
+  { href: "/catalogo", label: "Catalogo" },
+  { href: "/servicios", label: "Servicios" },
+  { href: "/sobre-nosotros", label: "Sobre Nosotros" },
+  { href: "/contacto", label: "Contacto" },
+]
+
+const socialLinks = [
+  {
+    href: "https://www.facebook.com/share/1Dx9Yeb5ti/",
+    label: "Facebook de Radiadores AMG",
+    icon: Facebook,
+  },
+  {
+    href: "https://www.instagram.com/radiadoresamg/?igsh=YXFkdXM4ZDI3c2g5",
+    label: "Instagram de Radiadores AMG",
+    icon: Instagram,
+  },
+]
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-secondary text-secondary-foreground">
+    <footer className="bg-secondary text-secondary-foreground">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:py-12 lg:px-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="text-center sm:text-left">
             <div className="flex items-center justify-center gap-2 sm:justify-start">
               <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-                <span className="text-base font-bold text-primary-foreground">R</span>
+                <span className="text-base font-bold text-primary-foreground">
+                  R
+                </span>
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-base font-bold tracking-tight">RADIADORES</span>
+                <span className="text-base font-bold tracking-tight">
+                  RADIADORES
+                </span>
                 <span className="text-[10px] font-semibold tracking-widest text-primary">
                   AMG
                 </span>
               </div>
             </div>
+
             <p className="mt-4 text-sm leading-relaxed text-secondary-foreground/70">
               Especialistas en radiadores y sistemas de enfriamiento automotor.
               Calidad y confianza desde hace mas de 3 decadas.
             </p>
+
+            <div className="mt-5 flex justify-center gap-3 sm:justify-start">
+              {socialLinks.map((social) => {
+                const Icon = social.icon
+                return (
+                  <a
+                    key={social.href}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-secondary-foreground/20 bg-secondary-foreground/5 text-secondary-foreground/75 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-lg"
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                )
+              })}
+            </div>
           </div>
 
           <div className="text-center sm:text-left">
@@ -29,12 +72,7 @@ export function SiteFooter() {
               Navegacion
             </h3>
             <ul className="flex flex-col gap-2.5">
-              {[
-                { href: "/catalogo", label: "Catalogo" },
-                { href: "/servicios", label: "Servicios" },
-                { href: "/sobre-nosotros", label: "Sobre Nosotros" },
-                { href: "/contacto", label: "Contacto" },
-              ].map((link) => (
+              {navLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -78,86 +116,12 @@ export function SiteFooter() {
             </ul>
           </div>
         </div>
+
         <div className="mt-8 border-t border-secondary-foreground/10 pt-6 text-center text-xs text-secondary-foreground/50 sm:text-sm">
-          {new Date().getFullYear()} © RADIADORES AMG. Todos los derechos reservados..
+          {new Date().getFullYear()} {"\u00A9"} RADIADORES AMG. Todos los derechos
+          reservados.
         </div>
-      </div>
-      <div className="mx-auto max-w-7xl px-1 py-1 flex items-center justify-end gap-14">
-        <a target="_blank" href="https://www.facebook.com/share/1Dx9Yeb5ti/" >
-          <svg
-  width="64"
-  height="64"
-  viewBox="0 0 64 64"
-  xmlns="http://www.w3.org/2000/svg"
-  role="img"
-  aria-label="Facebook"
->
-<style>{`
-  svg:hover {
-    transform: scale(1.12);
-    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
-    transition: 0.25s ease;
-  }
-`}</style>
-  <circle cx="32" cy="32" r="30" fill="#1877F2"/>
-  <path
-    d="M35.3 20H39V14.3h-5c-5.6 0-9.3 3.6-9.3 9.4v4.3H20v6.1h4.7V50h6.2V34.1h4.9l.7-6.1h-5.6v-3.7c0-1.8.5-4.3 3.4-4.3Z"
-    fill="#FFFFFF"
-  />
-</svg>
-        </a>
-        <a target="_blank"  href="https://www.instagram.com/radiadoresamg/?igsh=YXFkdXM4ZDI3c2g5" >
-          <svg
-  width="64"
-  height="64"
-  viewBox="0 0 64 64"
-  xmlns="http://www.w3.org/2000/svg"
-  role="img"
-  aria-label="Instagram"
->
-  <defs>
-    <linearGradient id="igGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-<stop offset="0%" stopColor="#F58529" />
-<stop offset="25%" stopColor="#FEDA77" />
-<stop offset="50%" stopColor="#DD2A7B" />
-<stop offset="75%" stopColor="#8134AF" />
-    </linearGradient>
-  </defs>
-  <g fill="none" fillRule="evenodd">
-  <circle cx="32" cy="32" r="30" fill="url(#igGradient)" />
-  
-  <rect
-    x="20"
-    y="20"
-    width="24"
-    height="24"
-    rx="7"
-    ry="7"
-    stroke="#FFFFFF"
-    strokeWidth="2.6"
-    fill="none"
-  />
-
-  <circle
-    cx="32"
-    cy="32"
-    r="6"
-    stroke="#FFFFFF"
-    strokeWidth="2.6"
-    fill="none"
-  />
-
-  <circle
-    cx="39"
-    cy="25"
-    r="1.8"
-    fill="#FFFFFF"
-  />
-</g>
-</svg>
-        </a>
       </div>
     </footer>
   )
 }
-

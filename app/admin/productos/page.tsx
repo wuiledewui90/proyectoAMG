@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Ban, FileUp, Loader2, Pencil, Plus, Save, Search, Trash2, X } from "lucide-react"
+import { Ban, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
 
 import { brands, categories, formatPrice } from "@/lib/data"
 
@@ -22,6 +22,7 @@ type ApiProduct = {
   price: number
   stock: number
   isActive: boolean
+  isFeatured: boolean
 }
 
 type ListResponse = {
@@ -54,6 +55,7 @@ type EditorState = {
   stock: number
   imageUrl: string
   isActive: boolean
+  isFeatured: boolean
 }
 
 const emptyEditor: EditorState = {
@@ -67,9 +69,16 @@ const emptyEditor: EditorState = {
   compatibility: "",
   price: 0,
   stock: 0,
-  imageUrl: "/images/radiador-1.jpg",
+  imageUrl: "",
   isActive: true,
+  isFeatured: false,
 }
+
+const editorControlClass =
+  "h-10 w-full rounded-md border-2 border-slate-300 bg-white px-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+
+const editorTextareaClass =
+  "min-h-24 w-full rounded-md border-2 border-slate-300 bg-white p-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
 
 function toValidId(value: unknown): number | null {
   const raw = String(value ?? "").trim()
@@ -82,6 +91,7 @@ export default function AdminProductosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const importInputRef = useRef<HTMLInputElement | null>(null)
+  const imageInputRef = useRef<HTMLInputElement | null>(null)
 
   const page = Number(searchParams.get("page") ?? "1")
   const limit = Number(searchParams.get("limit") ?? "20")
@@ -95,6 +105,9 @@ export default function AdminProductosPage() {
   const [reloadKey, setReloadKey] = useState(0)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportResponse | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageUploadError, setImageUploadError] = useState("")
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("")
 
   const [editing, setEditing] = useState<EditorState | null>(null)
   const [isNew, setIsNew] = useState(false)
@@ -151,6 +164,8 @@ export default function AdminProductosPage() {
   function handleNew() {
     setEditing({ ...emptyEditor })
     setIsNew(true)
+    setImageUploadError("")
+    setImagePreviewUrl("")
   }
 
   function handleEdit(product: ApiProduct) {
@@ -174,8 +189,47 @@ export default function AdminProductosPage() {
       stock: product.stock,
       imageUrl: product.imageUrl ?? product.images?.[0] ?? "/images/radiador-1.jpg",
       isActive: product.isActive,
+      isFeatured: product.isFeatured,
     })
     setIsNew(false)
+    setImageUploadError("")
+    setImagePreviewUrl("")
+  }
+
+  async function handleUploadProductImage(file: File | null) {
+    if (!file || !editing) return
+
+    const previewUrl = URL.createObjectURL(file)
+    setImagePreviewUrl(previewUrl)
+    setImageUploading(true)
+    setImageUploadError("")
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const res = await fetch("/api/products/upload-image", {
+        method: "POST",
+        body: formData,
+      })
+      const payload = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        throw new Error(payload?.error ?? `Error ${res.status}`)
+      }
+
+      const imageUrl = String(payload?.url ?? "")
+      if (!imageUrl) throw new Error("La subida no devolvio una ruta de imagen.")
+
+      setEditing((current) => (current ? { ...current, imageUrl } : current))
+      setImagePreviewUrl("")
+      URL.revokeObjectURL(previewUrl)
+    } catch (err) {
+      setImageUploadError(err instanceof Error ? err.message : "No se pudo subir la imagen.")
+    } finally {
+      setImageUploading(false)
+      if (imageInputRef.current) imageInputRef.current.value = ""
+    }
   }
 
   async function handleSave() {
@@ -195,6 +249,7 @@ export default function AdminProductosPage() {
       imageUrl: editing.imageUrl || "",
       images: editing.imageUrl ? [editing.imageUrl] : [],
       isActive: editing.isActive,
+      isFeatured: editing.isFeatured,
     }
 
     let url = "/api/products"
@@ -428,36 +483,78 @@ export default function AdminProductosPage() {
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Nombre">
               <input
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
+                placeholder="Ej: Radiador Toyota Corolla"
                 value={editing.name}
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
               />
             </Field>
             <Field label="Slug">
               <input
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
+                placeholder="Ej: radiador-toyota-corolla"
                 value={editing.slug}
                 onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
               />
             </Field>
             <Field label="SKU">
               <input
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
+                placeholder="Ej: AMG-001"
                 value={editing.sku}
                 onChange={(e) => setEditing({ ...editing, sku: e.target.value })}
               />
             </Field>
-            <Field label="Imagen URL">
-              <input
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                value={editing.imageUrl}
-                onChange={(e) => setEditing({ ...editing, imageUrl: e.target.value })}
-              />
-            </Field>
+            <div className="space-y-2 md:col-span-2 xl:col-span-3">
+              <label className="text-sm font-medium">Imagen</label>
+              <div className="grid gap-3 md:grid-cols-[160px_minmax(0,1fr)]">
+                <ProductImagePreview
+                  image={imagePreviewUrl || editing.imageUrl}
+                  name={editing.name || "Producto"}
+                  loading={imageUploading}
+                />
+                <div className="grid content-start gap-2">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => void handleUploadProductImage(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={imageUploading}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-60"
+                    >
+                      {imageUploading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImageUp className="h-4 w-4" />
+                      )}
+                      {imageUploading ? "Subiendo..." : "Subir imagen"}
+                    </button>
+                    <input
+                      className={`${editorControlClass} min-w-0 flex-1`}
+                      value={editing.imageUrl}
+                      onChange={(e) => {
+                        setImagePreviewUrl("")
+                        setEditing({ ...editing, imageUrl: e.target.value })
+                      }}
+                      placeholder="/uploads/products/producto.jpg"
+                      aria-label="Ruta o URL de imagen"
+                    />
+                  </div>
+                  {imageUploadError && <p className="text-sm text-red-600">{imageUploadError}</p>}
+                </div>
+              </div>
+            </div>
             <Field label="Precio">
               <input
                 type="number"
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
+                placeholder="Ej: 25000"
                 value={editing.price}
                 onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
               />
@@ -465,14 +562,15 @@ export default function AdminProductosPage() {
             <Field label="Stock">
               <input
                 type="number"
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
+                placeholder="Ej: 5"
                 value={editing.stock}
                 onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
               />
             </Field>
             <Field label="Marca">
               <select
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
                 value={editing.brand}
                 onChange={(e) => setEditing({ ...editing, brand: e.target.value })}
               >
@@ -486,7 +584,7 @@ export default function AdminProductosPage() {
             </Field>
             <Field label="Categoria">
               <select
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorControlClass}
                 value={editing.category}
                 onChange={(e) => setEditing({ ...editing, category: e.target.value })}
               >
@@ -506,10 +604,24 @@ export default function AdminProductosPage() {
               />
               Activo
             </label>
+            <label className="flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm md:mt-6">
+              <input
+                type="checkbox"
+                checked={editing.isFeatured}
+                onChange={(e) => setEditing({ ...editing, isFeatured: e.target.checked })}
+              />
+              <Star
+                className={`h-4 w-4 ${
+                  editing.isFeatured ? "fill-amber-400 text-amber-500" : "text-muted-foreground"
+                }`}
+              />
+              Destacado en inicio
+            </label>
             <div className="space-y-1 md:col-span-2 xl:col-span-3">
               <label className="text-sm font-medium">Descripcion</label>
               <textarea
-                className="min-h-24 w-full rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className={editorTextareaClass}
+                placeholder="Escribi una descripcion clara del producto, compatibilidad o detalles importantes."
                 rows={3}
                 value={editing.description}
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
@@ -557,7 +669,15 @@ export default function AdminProductosPage() {
                   <ProductImage product={product} size="sm" />
                 </td>
                 <td className="min-w-0 px-4 py-3">
-                  <p className="truncate font-medium text-foreground">{product.name}</p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="truncate font-medium text-foreground">{product.name}</p>
+                    {product.isFeatured && (
+                      <Star
+                        className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500"
+                        aria-label="Destacado"
+                      />
+                    )}
+                  </div>
                   <p className="mt-1 truncate text-xs text-muted-foreground">
                     {productSubtitle(product)}
                   </p>
@@ -610,6 +730,12 @@ export default function AdminProductosPage() {
                   <h2 className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug">
                     {product.name}
                   </h2>
+                  {product.isFeatured && (
+                    <Star
+                      className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500"
+                      aria-label="Destacado"
+                    />
+                  )}
                   <StatusBadge active={product.isActive} />
                 </div>
                 <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -684,6 +810,34 @@ function ProductImage({ product, size }: { product: ApiProduct; size: "sm" | "md
   return (
     <div className={`relative shrink-0 overflow-hidden rounded-md border bg-white ${sizeClass}`}>
       <Image src={image} alt={product.name} fill sizes="96px" className="object-contain p-1" />
+    </div>
+  )
+}
+
+function ProductImagePreview({
+  image,
+  loading,
+  name,
+}: {
+  image: string
+  loading: boolean
+  name: string
+}) {
+  const src = image || "/placeholder.svg"
+
+  return (
+    <div className="relative h-40 w-full overflow-hidden rounded-md border bg-white md:w-40">
+      {src.startsWith("blob:") ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={name} className="h-full w-full object-contain p-2" />
+      ) : (
+        <Image src={src} alt={name} fill sizes="160px" className="object-contain p-2" />
+      )}
+      {loading && (
+        <div className="absolute inset-0 grid place-items-center bg-white/70">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
     </div>
   )
 }

@@ -54,9 +54,9 @@ export default function ServiciosPage() {
                   href={`https://wa.me/5493804524590?text=Hola, me interesa el servicio de ${service.title}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                  className="group mt-6 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                   Consultar por WhatsApp
                 </a>
               </article>
@@ -78,7 +78,7 @@ export default function ServiciosPage() {
             href="https://wa.me/5493804524590"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            className="mt-6 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
           >
             Pedir Presupuesto
           </a>

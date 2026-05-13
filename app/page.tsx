@@ -51,17 +51,17 @@ export default async function HomePage() {
             <div className="mt-8 flex items-end gap-4">
               <Link
                 href="/catalogo"
-                className="inline-flex items-center justify-end gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="group inline-flex items-center justify-end gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
               >
                 Ver Catalogo
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="https://maps.app.goo.gl/Pji5UPnbmQHGQKJ99" target="blank"
-                className="inline-flex items-center justify-end gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="group inline-flex items-center justify-end gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
               >
                 Como LLlegar
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
             </div>
           </div>
@@ -117,7 +117,7 @@ export default async function HomePage() {
             <Link
               key={product.id}
               href={`/catalogo/${product.slug}`}
-              className="group overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
+              className="group overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
             >
               <div className="relative aspect-square overflow-hidden bg-muted">
                 <Image
@@ -183,13 +183,13 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8 text-center">
-            <Link
-              href="/servicios"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Ver Todos los Servicios
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+          <Link
+            href="/servicios"
+            className="group inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
+          >
+            Ver Todos los Servicios
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
           </div>
         </div>
       </section>
@@ -208,7 +208,7 @@ export default async function HomePage() {
             href="https://wa.me/5493804524590"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            className="mt-6 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
           >
             Contactar por WhatsApp
           </a>

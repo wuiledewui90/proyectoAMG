@@ -4,7 +4,7 @@ import React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Check, ShoppingBag } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, ShoppingBag } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { formatPrice } from "@/lib/data"
 import { ORDERS_STORAGE_KEY, type StoredOrder } from "@/lib/orders"
@@ -135,9 +135,10 @@ export function CheckoutClient() {
         </p>
         <Link
           href="/catalogo"
-          className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          className="group mt-6 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
         >
           Ir al Catalogo
+          <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
       </section>
     )
@@ -161,14 +162,16 @@ export function CheckoutClient() {
             href={whatsAppUrl || getWhatsAppUrl("Hola, acabo de realizar un pedido y quiero coordinar el pago.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            className="group inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
           >
             Abrir WhatsApp
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </a>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-6 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+            className="group inline-flex items-center gap-2 rounded-md border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted hover:shadow-md active:translate-y-0"
           >
+            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
             Volver al Inicio
           </Link>
         </div>
@@ -180,9 +183,9 @@ export function CheckoutClient() {
     <section className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
       <Link
         href="/carrito"
-        className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="group mb-6 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
         Volver al carrito
       </Link>
 
@@ -312,7 +315,7 @@ export function CheckoutClient() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 md:w-auto"
+            className="w-full rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0 disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none md:w-auto"
           >
             {submitting ? "Registrando pedido..." : "Confirmar Pedido"}
           </button>

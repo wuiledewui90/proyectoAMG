@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { ShoppingCart, Menu, X } from "lucide-react"
+import { Menu, X } from "lucide-react"
+import { CartIcon3D } from "@/components/cart-icon"
 import { useCart } from "@/lib/cart-context"
 import { cn } from "@/lib/utils"
 
@@ -53,25 +54,25 @@ export function SiteHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/productos"
-            className="hidden items-center rounded-full border border-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground md:inline-flex"
+            className="hidden items-center rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:text-foreground hover:shadow-md md:inline-flex"
             aria-label="Acceso al panel de administracion"
           >
-            Administracion
+            AMG
           </Link>
           <Link
             href="/carrito"
-            className="relative flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-lg active:translate-y-0"
             aria-label={`Carrito con ${totalItems} productos`}
           >
-            <ShoppingCart className="h-5 w-5 text-foreground" />
+            <CartIcon3D className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
             {totalItems > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-card bg-primary px-1 text-[11px] font-bold text-primary-foreground shadow-sm group-hover:bg-card group-hover:text-primary">
                 {totalItems}
               </span>
             )}
           </Link>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-muted lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:shadow-md lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? "Cerrar menu" : "Abrir menu"}
             aria-expanded={mobileOpen}
@@ -108,7 +109,7 @@ export function SiteHeader() {
             className="mt-2 rounded-md border border-border px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             onClick={() => setMobileOpen(false)}
           >
-            Administracion
+            AMG
           </Link>
         </nav>
       </div>

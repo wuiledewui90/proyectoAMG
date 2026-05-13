@@ -10,7 +10,7 @@ datasource db {
 model product {
   id            Int      @id @default(autoincrement())
   name          String
-  description   String?
+  description   String?  @db.Text
   sku           String?  @unique(map: "Product_sku_key")
   brand         String?
   model         String?
@@ -22,12 +22,14 @@ model product {
   price         Decimal
   stock         Int      @default(0)
   isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime
 
   @@index([name], map: "Product_name_idx")
   @@index([sku], map: "Product_sku_idx")
   @@index([slug], map: "Product_slug_idx")
+  @@index([isFeatured], map: "Product_isFeatured_idx")
 }
 
 model orderRecord {

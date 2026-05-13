@@ -16,6 +16,7 @@ export const productCreateSchema = z.object({
   price: z.coerce.number().min(0, "price debe ser >= 0"),
   stock: z.coerce.number().int().min(0, "stock debe ser >= 0").default(0),
   isActive: z.coerce.boolean().default(true),
+  isFeatured: z.coerce.boolean().default(false),
   brand: z.string().trim().min(1).optional().or(z.literal("")),
   model: z.string().trim().min(1).optional().or(z.literal("")),
   category: z.string().trim().min(1).optional().or(z.literal("")),

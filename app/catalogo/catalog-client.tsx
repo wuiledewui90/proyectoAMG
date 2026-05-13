@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Search, X } from "lucide-react"
+import { categories as baseCategories } from "@/lib/data"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
 
 // Si querés mantener el formatPrice de lib/data, lo podés importar.
@@ -21,13 +22,16 @@ export function CatalogClient({ products }: Props) {
   const [selectedCategory, setSelectedCategory] = useState("")
   const [selectedBrand, setSelectedBrand] = useState("")
 
-  // ✅ categorías y marcas derivadas de la DB (no hardcode)
+  // Categorias base + categorias derivadas de la DB.
   const categories = useMemo(() => {
     return Array.from(
       new Set(
-        products
-          .map((p) => p.category?.trim())
-          .filter((x): x is string => Boolean(x))
+        [
+          ...baseCategories,
+          ...products
+            .map((p) => p.category?.trim())
+            .filter((x): x is string => Boolean(x)),
+        ]
       )
     ).sort()
   }, [products])
@@ -61,6 +65,19 @@ export function CatalogClient({ products }: Props) {
   }, [products, search, selectedCategory, selectedBrand])
 
   const hasFilters = search || selectedCategory || selectedBrand
+  const hasProducts = products.some((product) => product.isActive)
+
+  useEffect(() => {
+    if (selectedCategory && !categories.includes(selectedCategory)) {
+      setSelectedCategory("")
+    }
+  }, [categories, selectedCategory])
+
+  useEffect(() => {
+    if (selectedBrand && !brands.includes(selectedBrand)) {
+      setSelectedBrand("")
+    }
+  }, [brands, selectedBrand])
 
   return (
     <>
@@ -93,10 +110,15 @@ export function CatalogClient({ products }: Props) {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={categories.length === 0}
+            className="rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground transition disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Filtrar por categoria"
           >
-            <option value="">Todas las categorias</option>
+            <option value="">
+              {categories.length === 0
+                ? "Sin categorias cargadas"
+                : "Todas las categorias"}
+            </option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -107,10 +129,13 @@ export function CatalogClient({ products }: Props) {
           <select
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
-            className="rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={brands.length === 0}
+            className="rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground transition disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label="Filtrar por marca"
           >
-            <option value="">Todas las marcas</option>
+            <option value="">
+              {brands.length === 0 ? "Sin marcas cargadas" : "Todas las marcas"}
+            </option>
             {brands.map((b) => (
               <option key={b} value={b}>
                 {b}
@@ -125,10 +150,10 @@ export function CatalogClient({ products }: Props) {
                 setSelectedCategory("")
                 setSelectedBrand("")
               }}
-              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80"
+              className="group inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-md active:translate-y-0"
               aria-label="Limpiar filtros"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
               Limpiar
             </button>
           )}
@@ -144,10 +169,14 @@ export function CatalogClient({ products }: Props) {
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-center">
             <p className="text-lg font-medium text-foreground">
-              No se encontraron productos
+              {hasProducts
+                ? "No se encontraron productos"
+                : "Todavia no hay productos cargados"}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Intenta con otros filtros o terminos de busqueda
+              {hasProducts
+                ? "Intenta con otros filtros o terminos de busqueda"
+                : "Cuando subas productos nuevos, las marcas apareceran automaticamente y podras usar las categorias cargadas."}
             </p>
           </div>
         ) : (
@@ -156,14 +185,14 @@ export function CatalogClient({ products }: Props) {
               <Link
                 key={product.id}
                 href={`/catalogo/${product.slug}`}
-                className="group rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
+                className="group rounded-lg border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
               >
                 <div className="relative aspect-square overflow-hidden bg-muted">
                   <Image
                     src={product.images?.[0] || "/placeholder.svg"}
                     alt={product.name}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-102"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <span className="absolute bottom-3 left-3 rounded bg-secondary/90 px-2 py-0.5 text-xs font-medium text-secondary-foreground shadow-sm">
                     {product.category}

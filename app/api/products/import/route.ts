@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library"
 import { z } from "zod"
 import * as XLSX from "xlsx"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
@@ -23,10 +24,14 @@ const columnAliases: Record<string, string> = {
   descripcion: "description",
   description: "description",
   estado: "isActive",
+  destacado: "isFeatured",
+  destacada: "isFeatured",
+  featured: "isFeatured",
   imagen: "imageUrl",
   image: "imageUrl",
   imageurl: "imageUrl",
   isactive: "isActive",
+  isfeatured: "isFeatured",
   marca: "brand",
   brand: "brand",
   modelo: "model",
@@ -104,6 +109,56 @@ function toStringValue(value: unknown) {
   return String(value ?? "").trim()
 }
 
+function normalizeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+}
+
+function normalizeCategory(category: string, name: string) {
+  const text = normalizeText(`${category} ${name}`)
+
+  if (text.includes("kit") && text.includes("distribucion")) {
+    return "Kits de Distribución"
+  }
+
+  if (text.includes("bomba")) {
+    return "Bombas de Agua"
+  }
+
+  if (text.includes("electroventilador") || text.includes("electro ventilador")) {
+    return "Electroventiladores"
+  }
+
+  if (text.includes("manguera")) {
+    return "Mangueras"
+  }
+
+  if (text.includes("termostato")) {
+    return "Termostatos"
+  }
+
+  if (text.includes("tapa")) {
+    return "Tapas"
+  }
+
+  if (text.includes("correa")) {
+    return "Correas"
+  }
+
+  if (text.includes("tensor")) {
+    return "Tensores"
+  }
+
+  if (text.includes("calefaccion")) {
+    return "Radiadores de Calefaccion"
+  }
+
+  if (category) return category
+  return "Radiadores"
+}
+
 function normalizeRow(row: ImportRow) {
   const normalized: ImportRow = {}
 
@@ -115,6 +170,7 @@ function normalizeRow(row: ImportRow) {
   const name = toStringValue(normalized.name)
   const slug = toStringValue(normalized.slug) || slugify(name)
   const imageUrl = toStringValue(normalized.imageUrl)
+  const category = normalizeCategory(toStringValue(normalized.category), name)
 
   return {
     slug,
@@ -123,14 +179,39 @@ function normalizeRow(row: ImportRow) {
     sku: toStringValue(normalized.sku),
     brand: toStringValue(normalized.brand),
     model: toStringValue(normalized.model),
-    category: toStringValue(normalized.category),
+    category,
     compatibility: toStringValue(normalized.compatibility),
     price: toNumber(normalized.price),
     stock: toNumber(normalized.stock),
     imageUrl,
     images: imageUrl ? [imageUrl] : [],
     isActive: toBoolean(normalized.isActive),
+    isFeatured: normalized.isFeatured ? toBoolean(normalized.isFeatured) : false,
   }
+}
+
+function getImportErrorMessage(err: unknown) {
+  if (err instanceof service.ConflictError || err instanceof service.NotFoundError) {
+    return err.message
+  }
+
+  if (err instanceof z.ZodError) {
+    return err.issues.map((issue) => issue.message).join(", ")
+  }
+
+  if (err instanceof PrismaClientKnownRequestError && err.code === "P2000") {
+    const column = err.meta?.column_name
+    if (column === "description") {
+      return "La descripcion es demasiado larga para la base de datos. Ejecuta la migracion nueva y vuelve a importar."
+    }
+    return `El valor de la columna ${String(column ?? "indicada")} es demasiado largo.`
+  }
+
+  if (err instanceof Error) {
+    return err.message
+  }
+
+  return "Error inesperado"
 }
 
 async function findExistingProduct(row: { slug: string; sku: string }) {
@@ -219,19 +300,7 @@ export async function POST(req: Request) {
       result.items.push(serializeProduct(product))
     } catch (err) {
       result.failed += 1
-
-      if (err instanceof service.ConflictError || err instanceof service.NotFoundError) {
-        result.errors.push({ row: rowNumber, error: err.message })
-      } else if (err instanceof z.ZodError) {
-        result.errors.push({
-          row: rowNumber,
-          error: err.issues.map((issue) => issue.message).join(", "),
-        })
-      } else if (err instanceof Error) {
-        result.errors.push({ row: rowNumber, error: err.message })
-      } else {
-        result.errors.push({ row: rowNumber, error: "Error inesperado" })
-      }
+      result.errors.push({ row: rowNumber, error: getImportErrorMessage(err) })
     }
   }
 

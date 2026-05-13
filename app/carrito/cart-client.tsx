@@ -2,7 +2,8 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"
+import { Trash2, Minus, Plus, ArrowRight } from "lucide-react"
+import { CartIcon3D } from "@/components/cart-icon"
 import { useCart } from "@/lib/cart-context"
 
 function formatPriceARS(value: number) {
@@ -17,7 +18,7 @@ export function CartClient() {
     return (
       <section className="mx-auto flex max-w-7xl flex-col items-center px-4 py-24 text-center lg:px-8">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <ShoppingBag className="h-7 w-7 text-muted-foreground" />
+          <CartIcon3D className="h-9 w-9 text-muted-foreground" />
         </div>
         <h1 className="mt-6 text-2xl font-bold text-foreground">
           Tu carrito esta vacio
@@ -27,10 +28,10 @@ export function CartClient() {
         </p>
         <Link
           href="/catalogo"
-          className="mt-6 inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          className="group mt-6 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
         >
           Ir al Catalogo
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
       </section>
     )
@@ -78,7 +79,7 @@ export function CartClient() {
 
                   <button
                     onClick={() => removeItem(item.product.id)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive hover:shadow-md active:translate-y-0"
                     aria-label={`Eliminar ${item.product.name} del carrito`}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -86,18 +87,18 @@ export function CartClient() {
                 </div>
 
                 <div className="mt-auto flex items-center justify-between pt-2">
-                  <div className="flex items-center rounded-md border border-border">
+                  <div className="flex items-center rounded-full border border-border bg-card p-1 shadow-sm">
                     <button
                       onClick={() =>
                         updateQuantity(item.product.id, item.quantity - 1)
                       }
-                      className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-muted"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
                       aria-label="Reducir cantidad"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
 
-                    <span className="flex h-8 w-10 items-center justify-center border-x border-border text-sm font-medium text-foreground">
+                    <span className="flex h-8 w-10 items-center justify-center border-x border-border text-sm font-semibold text-foreground">
                       {item.quantity}
                     </span>
 
@@ -105,7 +106,7 @@ export function CartClient() {
                       onClick={() =>
                         updateQuantity(item.product.id, item.quantity + 1)
                       }
-                      className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-muted"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground"
                       aria-label="Aumentar cantidad"
                     >
                       <Plus className="h-3 w-3" />
@@ -154,10 +155,10 @@ export function CartClient() {
 
           <Link
             href="/checkout"
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            className="group mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
           >
             Finalizar Compra
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>
