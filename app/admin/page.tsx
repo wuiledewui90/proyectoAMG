@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
     }),
     prisma.product.findMany({
       where: { isActive: true, stock: { gt: 0 } },
-      select: { price: true, stock: true },
+      select: { category: true, price: true, stock: true },
     }),
     prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
@@ -56,6 +56,27 @@ export default async function AdminDashboardPage() {
     (total, product) => total + Number(product.price) * product.stock,
     0
   )
+  const investmentByCategory = Array.from(
+    inventoryProducts
+      .reduce((categories, product) => {
+        const category = product.category?.trim() || "Sin categoria"
+        const current =
+          categories.get(category) ?? {
+            category,
+            products: 0,
+            units: 0,
+            total: 0,
+          }
+
+        current.products += 1
+        current.units += product.stock
+        current.total += Number(product.price) * product.stock
+        categories.set(category, current)
+
+        return categories
+      }, new Map<string, { category: string; products: number; units: number; total: number }>())
+      .values()
+  ).sort((a, b) => b.total - a.total)
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5">
@@ -83,6 +104,93 @@ export default async function AdminDashboardPage() {
         <StatCard icon={ClipboardList} label="Unidades disponibles" value={availableUnits} />
         <StatCard icon={Truck} label="Pendientes de entrega" value={pendingOrders} />
       </div>
+
+      <section className="overflow-hidden rounded-lg border bg-card">
+        <div className="flex flex-col gap-1 border-b px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-semibold">Inversion disponible por categoria</h2>
+            <p className="text-sm text-muted-foreground">
+              Calculado con productos activos: precio por stock disponible.
+            </p>
+          </div>
+          <p className="text-lg font-bold">{formatPrice(inventoryValue)}</p>
+        </div>
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50 text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Categoria</th>
+                <th className="px-4 py-3 text-right font-medium">Productos</th>
+                <th className="px-4 py-3 text-right font-medium">Unidades</th>
+                <th className="px-4 py-3 text-right font-medium">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {investmentByCategory.map((item) => (
+                <tr key={item.category} className="border-b last:border-0">
+                  <td className="px-4 py-3 font-medium">{item.category}</td>
+                  <td className="px-4 py-3 text-right">{item.products}</td>
+                  <td className="px-4 py-3 text-right">{item.units}</td>
+                  <td className="px-4 py-3 text-right font-semibold">
+                    {formatPrice(item.total)}
+                  </td>
+                </tr>
+              ))}
+              {investmentByCategory.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                    No hay productos disponibles para calcular inversion.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+            {investmentByCategory.length > 0 && (
+              <tfoot>
+                <tr className="border-t bg-muted/50">
+                  <td className="px-4 py-3 font-bold">Total</td>
+                  <td className="px-4 py-3 text-right font-bold">
+                    {investmentByCategory.reduce((total, item) => total + item.products, 0)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold">{availableUnits}</td>
+                  <td className="px-4 py-3 text-right text-base font-bold">
+                    {formatPrice(inventoryValue)}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+        <div className="grid gap-3 p-3 md:hidden">
+          {investmentByCategory.map((item) => (
+            <div key={item.category} className="rounded-md border p-3">
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 text-sm font-semibold leading-snug">{item.category}</p>
+                <p className="shrink-0 text-sm font-bold">{formatPrice(item.total)}</p>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <p>Productos: {item.products}</p>
+                <p className="text-right">Unidades: {item.units}</p>
+              </div>
+            </div>
+          ))}
+          {investmentByCategory.length > 0 && (
+            <div className="rounded-md bg-muted p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-bold">Total</p>
+                <p className="text-base font-bold">{formatPrice(inventoryValue)}</p>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {availableUnits} unidades disponibles
+              </p>
+            </div>
+          )}
+          {investmentByCategory.length === 0 && (
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              No hay productos disponibles para calcular inversion.
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <section className="overflow-hidden rounded-lg border bg-card">
