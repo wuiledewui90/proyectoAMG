@@ -77,7 +77,7 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
         left: Math.min(scroller.clientWidth * 0.78, 340),
         behavior: "smooth",
       })
-    }, 2600)
+    }, 1900)
 
     return () => {
       clearInterval(interval)
@@ -86,15 +86,19 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
   }, [])
 
   return (
-    <section className="border-y border-white/10 bg-[#050505]">
-      <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-        <div className="mb-7 flex flex-col gap-1.5 text-left">
+    <section className="relative z-20 -mt-10 overflow-hidden bg-[#050505] pb-8 pt-8 sm:-mt-12 sm:pt-9 lg:-mt-16 lg:pb-10 lg:pt-8">
+      <div
+        className="pointer-events-none absolute left-1/2 top-12 h-40 w-[min(920px,88vw)] -translate-x-1/2 rounded-full bg-primary/14 blur-3xl sm:top-14 lg:top-16 lg:h-48"
+        aria-hidden="true"
+      />
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-5 flex flex-col gap-1.5 text-left">
           <h2 className="text-xl font-bold text-white">Nuestros Servicios</h2>
         </div>
 
         <div
           ref={scrollerRef}
-          className="flex snap-x snap-mandatory touch-pan-x select-none gap-7 overflow-x-auto overflow-y-visible px-1 pb-7 pt-2 [perspective:1200px] [scrollbar-width:none] active:cursor-grabbing md:cursor-grab lg:grid lg:grid-cols-5 lg:overflow-visible lg:pb-2 lg:cursor-default xl:gap-8 [&::-webkit-scrollbar]:hidden"
+          className="flex snap-x snap-mandatory touch-auto select-none gap-7 overflow-x-auto overflow-y-visible overscroll-x-contain px-1 pb-7 pt-1 [perspective:1200px] [scrollbar-width:none] active:cursor-grabbing md:cursor-grab lg:grid lg:grid-cols-5 lg:overflow-visible lg:pb-2 lg:cursor-default xl:gap-8 [&::-webkit-scrollbar]:hidden"
           aria-label="Servicios"
           tabIndex={0}
           onFocus={pauseAutoScroll}
@@ -102,10 +106,10 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
           onMouseEnter={pauseAutoScroll}
           onMouseLeave={() => resumeAutoScroll()}
           onPointerDown={pauseAutoScroll}
-          onPointerUp={() => resumeAutoScroll()}
-          onPointerCancel={() => resumeAutoScroll()}
+          onPointerUp={() => resumeAutoScroll(4200)}
+          onPointerCancel={() => resumeAutoScroll(4200)}
           onTouchStart={pauseAutoScroll}
-          onTouchEnd={() => resumeAutoScroll()}
+          onTouchEnd={() => resumeAutoScroll(4200)}
           onWheel={() => {
             pauseAutoScroll()
             resumeAutoScroll(1800)
@@ -117,7 +121,7 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
             return (
               <article
                 key={service.id}
-                className="group relative flex min-h-[225px] w-[78vw] min-w-[260px] max-w-[280px] shrink-0 snap-center origin-center transform-gpu flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.075),rgba(255,255,255,0.018)_44%,rgba(255,255,255,0.03)_100%)] px-3.5 py-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all duration-300 ease-out [transform-style:preserve-3d] md:w-[280px] lg:w-full lg:min-w-0 lg:justify-self-center lg:hover:z-30 lg:hover:-translate-y-4 lg:hover:scale-[1.14] lg:hover:border-primary/45 lg:hover:bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.11),rgba(255,255,255,0.03)_44%,rgba(255,255,255,0.045)_100%)] lg:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_32px_80px_rgba(0,0,0,0.42),0_18px_48px_rgba(220,38,38,0.16)] xl:hover:scale-[1.18]"
+                className="group relative flex min-h-[225px] w-[78vw] min-w-[260px] max-w-[280px] shrink-0 snap-center origin-center transform-gpu flex-col items-center justify-center overflow-hidden rounded-[1.35rem] border border-primary/20 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.09),rgba(255,255,255,0.024)_44%,rgba(255,255,255,0.038)_100%)] px-3.5 py-5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_16px_40px_rgba(0,0,0,0.34),0_10px_30px_rgba(220,38,38,0.08)] backdrop-blur-sm transition-all duration-300 ease-out [transform-style:preserve-3d] md:w-[280px] lg:w-full lg:min-w-0 lg:justify-self-center lg:hover:z-30 lg:hover:-translate-y-4 lg:hover:scale-[1.14] lg:hover:border-primary/50 lg:hover:bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.12),rgba(255,255,255,0.036)_44%,rgba(255,255,255,0.052)_100%)] lg:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_32px_80px_rgba(0,0,0,0.46),0_18px_48px_rgba(220,38,38,0.18)] xl:hover:scale-[1.18]"
               >
                 <span
                   className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/6 blur-2xl transition-opacity duration-300 group-hover:opacity-95"

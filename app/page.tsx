@@ -40,6 +40,10 @@ export default async function HomePage() {
           className="absolute inset-0 bg-gradient-to-b from-secondary/10 via-secondary/40 to-secondary/80"
           aria-hidden="true"
         />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[160px] bg-gradient-to-b from-transparent via-[#050505]/38 to-[#050505] sm:h-[190px] lg:h-[220px]"
+          aria-hidden="true"
+        />
         <div className="relative z-10 mx-auto flex w-full max-w-7xl justify-end px-4 py-20 lg:px-8">
           <div className="flex max-w-xl flex-col items-end text-right">
             <h1 className="text-balance text-4xl font-bold leading-tight text-secondary-foreground md:text-3xl lg:text-4xl">
