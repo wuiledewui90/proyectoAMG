@@ -1,0 +1,31 @@
+Revision de seguridad - RADIADORES AMG
+
+La pagina no puede considerarse segura ante cualquier ataque. Ninguna web lo es al 100%, pero esta app necesita algunos ajustes antes de publicarse en produccion.
+
+Puntos importantes encontrados:
+
+1. Riesgo alto: el login admin todavia acepta una contrasena por defecto en el codigo: amg2026. Aunque se use un hash en .env, el codigo permite esa contrasena igualmente. Hay que quitar ese acceso por defecto.
+
+2. Riesgo alto: ADMIN_SECRET es muy simple. Debe reemplazarse por una clave larga, aleatoria, privada y distinta para produccion.
+
+3. Falta proteccion contra fuerza bruta. Alguien podria intentar muchas contrasenas contra /api/admin/login. Conviene agregar limite de intentos por IP.
+
+4. La cookie de sesion esta bastante bien configurada: usa httpOnly, sameSite lax y secure en produccion. Eso ayuda a proteger la sesion.
+
+5. Las APIs admin estan protegidas por verificacion de sesion: productos, ordenes, importacion y subida de imagenes.
+
+6. La subida de imagenes valida tipo y tamano, lo cual esta bien. Pero seria mejor validar tambien el contenido real del archivo, no solo file.type.
+
+7. Base de datos: si se sube a un hosting, no conviene usar usuario root ni credenciales debiles.
+
+Recomendaciones minimas antes de publicar:
+
+1. Quitar la contrasena por defecto del codigo.
+2. Exigir ADMIN_USER, ADMIN_PASS_HASH y ADMIN_SECRET fuertes.
+3. Agregar bloqueo o limite de intentos al login.
+4. Agregar headers de seguridad.
+5. Revisar mejor la subida e importacion de archivos.
+
+Conclusion:
+
+La app no esta abierta completamente, porque el panel admin y las APIs sensibles tienen control de sesion. Pero todavia no deberia considerarse segura para produccion hasta cerrar los puntos anteriores.

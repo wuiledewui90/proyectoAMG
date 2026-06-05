@@ -51,8 +51,8 @@ type EditorState = {
   model: string
   category: string
   compatibility: string
-  price: number
-  stock: number
+  price: string
+  stock: string
   imageUrl: string
   isActive: boolean
   isFeatured: boolean
@@ -67,8 +67,8 @@ const emptyEditor: EditorState = {
   model: "",
   category: "",
   compatibility: "",
-  price: 0,
-  stock: 0,
+  price: "",
+  stock: "",
   imageUrl: "",
   isActive: true,
   isFeatured: false,
@@ -85,6 +85,23 @@ function toValidId(value: unknown): number | null {
   const id = Number.parseInt(raw, 10)
   if (!Number.isFinite(id) || id <= 0) return null
   return id
+}
+
+function parseNonNegativeNumber(value: string) {
+  const normalized = value.trim().replace(",", ".")
+  if (!normalized) return null
+
+  const number = Number(normalized)
+  if (!Number.isFinite(number) || number < 0) return null
+
+  return number
+}
+
+function parseNonNegativeInteger(value: string) {
+  const number = parseNonNegativeNumber(value)
+  if (number === null || !Number.isInteger(number)) return null
+
+  return number
 }
 
 export default function AdminProductosPage() {
@@ -185,8 +202,8 @@ export default function AdminProductosPage() {
       model: product.model ?? "",
       category: product.category ?? "",
       compatibility: product.compatibility ?? "",
-      price: product.price,
-      stock: product.stock,
+      price: String(product.price),
+      stock: String(product.stock),
       imageUrl: product.imageUrl ?? product.images?.[0] ?? "/images/radiador-1.jpg",
       isActive: product.isActive,
       isFeatured: product.isFeatured,
@@ -235,6 +252,19 @@ export default function AdminProductosPage() {
   async function handleSave() {
     if (!editing) return
 
+    const price = parseNonNegativeNumber(editing.price)
+    const stock = parseNonNegativeInteger(editing.stock)
+
+    if (price === null) {
+      alert("Ingresa un precio valido.")
+      return
+    }
+
+    if (stock === null) {
+      alert("Ingresa un stock valido, sin decimales.")
+      return
+    }
+
     const payload = {
       name: editing.name,
       slug: editing.slug,
@@ -244,8 +274,8 @@ export default function AdminProductosPage() {
       model: editing.model || "",
       category: editing.category || "",
       compatibility: editing.compatibility || "",
-      price: editing.price,
-      stock: editing.stock,
+      price,
+      stock,
       imageUrl: editing.imageUrl || "",
       images: editing.imageUrl ? [editing.imageUrl] : [],
       isActive: editing.isActive,
@@ -556,7 +586,7 @@ export default function AdminProductosPage() {
                 className={editorControlClass}
                 placeholder="Ej: 25000"
                 value={editing.price}
-                onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
+                onChange={(e) => setEditing({ ...editing, price: e.target.value })}
               />
             </Field>
             <Field label="Stock">
@@ -565,7 +595,7 @@ export default function AdminProductosPage() {
                 className={editorControlClass}
                 placeholder="Ej: 5"
                 value={editing.stock}
-                onChange={(e) => setEditing({ ...editing, stock: Number(e.target.value) })}
+                onChange={(e) => setEditing({ ...editing, stock: e.target.value })}
               />
             </Field>
             <Field label="Marca">
