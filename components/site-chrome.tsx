@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { getWhatsAppUrl } from "@/lib/whatsapp"
+import { cn } from "@/lib/utils"
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -16,7 +17,11 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SiteHeader />
-      <main className="min-h-screen">{children}</main>
+      <main
+        className={cn("min-h-screen", pathname !== "/" && "site-main-offset")}
+      >
+        {children}
+      </main>
       <SiteFooter />
 
       <div className="group fixed bottom-6 right-6 z-50">

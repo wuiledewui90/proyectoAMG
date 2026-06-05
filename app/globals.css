@@ -80,3 +80,11 @@ a[class*="bg-transparent"],
 .border-transparent {
   border-color: hsl(var(--border)) !important;
 }
+
+.site-main-offset > section:first-child.mx-auto {
+  padding-top: 7.5rem;
+}
+
+.site-main-offset > section:first-child:not(.mx-auto) > div:first-child {
+  padding-top: 7.5rem;
+}

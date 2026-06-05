@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, Shield, Truck, Award, Wrench } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { ServicesCarousel } from "@/components/services-carousel"
 
 // ✅ ahora SOLO services (por ahora) queda desde data
 import { services } from "@/lib/data"
@@ -42,11 +43,10 @@ export default async function HomePage() {
         <div className="relative z-10 mx-auto flex w-full max-w-7xl justify-end px-4 py-20 lg:px-8">
           <div className="flex max-w-xl flex-col items-end text-right">
             <h1 className="text-balance text-4xl font-bold leading-tight text-secondary-foreground md:text-3xl lg:text-4xl">
-              Especialistas en Sistemas de Enfriamiento y Radiadores Automotrices
+              Evitá el Recalentamiento y Protegé el Motor de tu Vehículo
             </h1>
             <p className="mt-5 text-lg leading-relaxed text-secondary-foreground/70">
-              Mas de 30 años de experiencia en venta, reparacion e instalacion de
-              radiadores para todas las marcas. Calidad garantizada.
+            Venta, reparación y mantenimiento de radiadores para autos, camionetas y maquinaria. Más de 30 años brindando soluciones confiables para mantener tu vehículo siempre en marcha.
             </p>
             <div className="mt-8 flex items-end gap-4">
               <Link
@@ -68,29 +68,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Trust bar */}
-      <section className="border-b border-border bg-card">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 md:grid-cols-4 lg:px-8">
-          {[
-            { icon: Shield, title: "Garantia", desc: "En todos los productos" },
-            { icon: Truck, title: "Envios", desc: "A todo el pais" },
-            { icon: Award, title: "Calidad", desc: "Primeras marcas" },
-            { icon: Wrench, title: "Servicio", desc: "Instalacion profesional" },
-          ].map((item) => (
-            <div key={item.title} className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                <item.icon className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ServicesCarousel services={services} />
 
       {/* Featured Products */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
@@ -150,47 +128,6 @@ export default async function HomePage() {
             Ver todos los productos
             <ArrowRight className="h-4 w-4" />
           </Link>
-        </div>
-      </section>
-
-      {/* Services preview */}
-      <section className="bg-muted">
-        <div className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-            Nuestros Servicios
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Soluciones completas para el sistema de refrigeracion de tu vehiculo
-          </p>
-
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {services.map((service) => (
-              <div
-                key={service.id}
-                className="rounded-lg border border-border bg-card p-6"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
-                  <Wrench className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="mt-4 font-semibold text-foreground">
-                  {service.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {service.description.slice(0, 100)}...
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 text-center">
-          <Link
-            href="/servicios"
-            className="group inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
-          >
-            Ver Todos los Servicios
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-          </div>
         </div>
       </section>
 
