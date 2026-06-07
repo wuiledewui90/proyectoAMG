@@ -31,7 +31,7 @@ export function SiteHeader() {
         <div className="pointer-events-auto relative w-full">
           <nav
             id="nav-shell"
-            className="flex w-full items-center justify-between rounded-lg border border-white/40 bg-white/30 px-3 py-3 shadow-lg shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-md sm:px-4 sm:py-2.5"
+            className="flex w-full items-center justify-between rounded-lg border border-white/15 bg-[rgba(5,7,7,0.78)] px-3 py-3 shadow-lg shadow-[0_18px_55px_rgba(0,0,0,0.42)] ring-1 ring-primary/20 backdrop-blur-xl sm:px-4 sm:py-2.5"
             aria-label="Principal"
           >
             <Link
@@ -46,7 +46,7 @@ export function SiteHeader() {
                 </span>
               </div>
               <div className="hidden min-w-0 flex-col leading-none min-[420px]:flex">
-                <span className="text-base font-bold tracking-tight text-black sm:text-lg">
+                <span className="text-base font-bold tracking-tight text-white sm:text-lg">
                   RADIADORES
                 </span>
                 <span className="text-[11px] font-semibold uppercase tracking-widest text-primary sm:text-xs">
@@ -67,7 +67,7 @@ export function SiteHeader() {
                     <Link
                       href={link.href}
                       className={cn(
-                        "group relative text-sm font-semibold text-black transition-colors duration-300 hover:text-primary sm:text-base",
+                        "group relative text-sm font-semibold text-white/85 transition-colors duration-300 hover:text-primary sm:text-base",
                         active && "text-primary"
                       )}
                     >
@@ -133,7 +133,7 @@ export function SiteHeader() {
 
           <div
             className={cn(
-              "absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-lg border border-white/40 bg-white/85 shadow-xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-300 lg:hidden",
+              "absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-lg border border-white/15 bg-[rgba(5,7,7,0.92)] shadow-xl shadow-[0_16px_40px_rgba(0,0,0,0.38)] ring-1 ring-primary/20 backdrop-blur-xl transition-all duration-300 lg:hidden",
               mobileOpen
                 ? "max-h-96 translate-y-0 opacity-100"
                 : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
@@ -144,7 +144,7 @@ export function SiteHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="group relative rounded-md px-3 py-2.5 text-sm font-semibold text-black transition-colors hover:text-primary"
+                  className="group relative rounded-md px-3 py-2.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-primary"
                   onClick={() => setMobileOpen(false)}
                 >
                   {link.label}

@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowDown, ArrowRight } from "lucide-react"
 import { ServicesCarousel } from "@/components/services-carousel"
 
 // ✅ ahora SOLO services (por ahora) queda desde data
@@ -23,7 +23,7 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-[520px] items-center overflow-hidden bg-secondary lg:min-h-[600px]">
+      <section className="relative flex min-h-svh items-center overflow-hidden bg-secondary">
         <video
           className="absolute inset-0 h-full w-full object-cover opacity-80 pointer-events-none motion-reduce:hidden"
           autoPlay
@@ -70,6 +70,16 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+        <a
+          href="#servicios"
+          aria-label="Ver servicios"
+          className="absolute bottom-7 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/75 transition-colors hover:text-primary"
+        >
+          <span>Servicios</span>
+          <span className="flex h-10 w-10 animate-bounce items-center justify-center rounded-full border border-primary/50 bg-black/35 text-primary shadow-[0_10px_28px_rgba(0,127,128,0.22)] backdrop-blur-md">
+            <ArrowDown className="h-5 w-5" />
+          </span>
+        </a>
       </section>
 
       <ServicesCarousel services={services} />
