@@ -33,6 +33,7 @@ const extraService: Service = {
 export function ServicesCarousel({ services }: { services: Service[] }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const activeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pausedRef = useRef(false)
   const [paused, setPaused] = useState(false)
   const [activeServiceId, setActiveServiceId] = useState<string | null>(null)
@@ -60,6 +61,18 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
     }, delay)
   }
 
+  function revealService(id: string) {
+    setActiveServiceId(id)
+
+    if (activeTimerRef.current) {
+      clearTimeout(activeTimerRef.current)
+    }
+
+    activeTimerRef.current = setTimeout(() => {
+      setActiveServiceId(null)
+    }, 3200)
+  }
+
   useEffect(() => {
     const interval = setInterval(() => {
       const scroller = scrollerRef.current
@@ -84,6 +97,7 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
     return () => {
       clearInterval(interval)
       if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current)
+      if (activeTimerRef.current) clearTimeout(activeTimerRef.current)
     }
   }, [])
 
@@ -126,6 +140,10 @@ export function ServicesCarousel({ services }: { services: Service[] }) {
                 key={service.id}
                 onMouseEnter={() => setActiveServiceId(service.id)}
                 onMouseLeave={() => setActiveServiceId(null)}
+                onClick={() => revealService(service.id)}
+                onTouchStart={() => {
+                  revealService(service.id)
+                }}
                 className={cn(
                   "group relative flex min-h-[245px] w-[78vw] min-w-[260px] max-w-[280px] shrink-0 snap-center origin-center transform-gpu flex-col overflow-hidden rounded-[1.35rem] border border-primary/20 bg-[#080b0b] text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_16px_40px_rgba(0,0,0,0.34),0_10px_30px_rgba(0,127,128,0.1)] transition-all duration-500 ease-out [transform-style:preserve-3d] hover:z-30 hover:-translate-y-4 hover:scale-[1.08] hover:border-primary/50 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_32px_80px_rgba(0,0,0,0.5),0_18px_48px_rgba(0,127,128,0.22)] md:w-[280px] lg:w-full lg:min-w-0 lg:justify-self-center xl:hover:scale-[1.1]",
                   isActive &&
