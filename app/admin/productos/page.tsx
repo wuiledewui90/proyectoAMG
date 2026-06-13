@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Ban, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
@@ -105,6 +105,14 @@ function parseNonNegativeInteger(value: string) {
 }
 
 export default function AdminProductosPage() {
+  return (
+    <Suspense fallback={<AdminProductosLoading />}>
+      <AdminProductosContent />
+    </Suspense>
+  )
+}
+
+function AdminProductosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const importInputRef = useRef<HTMLInputElement | null>(null)
@@ -816,6 +824,14 @@ export default function AdminProductosPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function AdminProductosLoading() {
+  return (
+    <div className="grid min-h-[40vh] place-items-center">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Cargando productos" />
     </div>
   )
 }
