@@ -15,6 +15,14 @@ export const productCreateSchema = z.object({
   sku: z.string().trim().min(1).optional().or(z.literal("")),
   price: z.coerce.number().min(0, "price debe ser >= 0"),
   stock: z.coerce.number().int().min(0, "stock debe ser >= 0").default(0),
+  minimumStock: z.coerce.number().int().min(0, "minimumStock debe ser >= 0").default(0),
+  cost: z.coerce.number().min(0, "cost debe ser >= 0").default(0),
+  stockType: z.string().trim().min(1).optional().or(z.literal("")),
+  stockCategory: z.string().trim().min(1).optional().or(z.literal("")),
+  brands: z.string().trim().min(1).optional().or(z.literal("")),
+  application: z.string().trim().min(1).optional().or(z.literal("")),
+  dimensions: z.string().trim().min(1).optional().or(z.literal("")),
+  location: z.string().trim().min(1).optional().or(z.literal("")),
   isActive: z.coerce.boolean().default(true),
   isFeatured: z.coerce.boolean().default(false),
   brand: z.string().trim().min(1).optional().or(z.literal("")),
@@ -35,6 +43,8 @@ export type ProductUpdateInput = z.infer<typeof productUpdateSchema>
 
 export const productListQuerySchema = z.object({
   search: z.string().trim().optional(),
+  category: z.string().trim().optional(),
+  brand: z.string().trim().optional(),
   isActive: z
     .enum(["true", "false"])
     .optional()

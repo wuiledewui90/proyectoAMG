@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ClipboardList,
+  FileText,
   Package,
   Plus,
   ShoppingCart,
@@ -18,24 +19,24 @@ export const revalidate = 0
 export default async function AdminDashboardPage() {
   const [
     totalProducts,
-    activeProducts,
-    inactiveProducts,
     lowStockProducts,
     availableStock,
-    pendingOrders,
     pendingOrderItems,
     inventoryProducts,
     recentProducts,
+    salesToday,
+    salesMonth,
+    expensesMonth,
+    customerCount,
+    activeWorkOrders,
+    teamCount,
   ] = await Promise.all([
     prisma.product.count(),
-    prisma.product.count({ where: { isActive: true } }),
-    prisma.product.count({ where: { isActive: false } }),
     prisma.product.count({ where: { stock: { lte: 0 } } }),
     prisma.product.aggregate({
       where: { isActive: true, stock: { gt: 0 } },
       _sum: { stock: true },
     }),
-    prisma.orderRecord.count({ where: { status: "pendiente" } }),
     prisma.orderItem.aggregate({
       where: { order: { status: "pendiente" } },
       _sum: { quantity: true },
@@ -48,6 +49,12 @@ export default async function AdminDashboardPage() {
       orderBy: { updatedAt: "desc" },
       take: 5,
     }),
+    prisma.erpSale.aggregate({ where: { status: "COMPLETED", createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } }, _sum: { total: true }, _count: true }),
+    prisma.erpSale.aggregate({ where: { status: "COMPLETED", createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } }, _sum: { total: true } }),
+    prisma.erpExpense.aggregate({ where: { expenseDate: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } }, _sum: { amount: true } }),
+    prisma.customer.count({ where: { active: true } }),
+    prisma.workOrder.count({ where: { status: { notIn: ["DELIVERED", "CANCELLED"] } } }),
+    prisma.erpUser.count({ where: { active: true } }),
   ])
 
   const availableUnits = availableStock._sum.stock ?? 0
@@ -77,6 +84,8 @@ export default async function AdminDashboardPage() {
       }, new Map<string, { category: string; products: number; units: number; total: number }>())
       .values()
   ).sort((a, b) => b.total - a.total)
+  const monthRevenue = Number(salesMonth._sum.total ?? 0)
+  const monthExpenses = Number(expensesMonth._sum.amount ?? 0)
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5">
@@ -97,12 +106,18 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <StatCard icon={ShoppingCart} label="Ventas hoy" value={formatPrice(Number(salesToday._sum.total ?? 0))} />
+        <StatCard icon={ClipboardList} label="Operaciones hoy" value={salesToday._count} />
+        <StatCard icon={Truck} label="Trabajos activos" value={activeWorkOrders} />
         <StatCard icon={Package} label="Productos" value={totalProducts} />
-        <StatCard icon={CheckCircle2} label="Activos" value={activeProducts} />
-        <StatCard icon={AlertTriangle} label="Inactivos" value={inactiveProducts} />
-        <StatCard icon={ShoppingCart} label="Sin stock" value={lowStockProducts} />
-        <StatCard icon={ClipboardList} label="Unidades disponibles" value={availableUnits} />
-        <StatCard icon={Truck} label="Pendientes de entrega" value={pendingOrders} />
+        <StatCard icon={AlertTriangle} label="Sin stock" value={lowStockProducts} />
+        <StatCard icon={CheckCircle2} label="Clientes / equipo" value={`${customerCount} / ${teamCount}`} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard icon={ShoppingCart} label="Ventas del mes" value={formatPrice(monthRevenue)} />
+        <StatCard icon={AlertTriangle} label="Gastos del mes" value={formatPrice(monthExpenses)} />
+        <StatCard icon={CheckCircle2} label="Resultado del mes" value={formatPrice(monthRevenue - monthExpenses)} />
       </div>
 
       <section className="overflow-hidden rounded-lg border bg-card">
@@ -258,8 +273,18 @@ export default async function AdminDashboardPage() {
         <section className="rounded-lg border bg-card p-4">
           <h2 className="font-semibold">Accesos rapidos</h2>
           <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3 xl:grid-cols-1">
+            <Link className="flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-muted" href="/admin/documentos">
+              <FileText className="h-4 w-4 text-primary" />
+              Presupuestos y facturas
+            </Link>
             <Link className="block rounded-md border px-3 py-2 hover:bg-muted" href="/admin/productos">
               Ver productos
+            </Link>
+            <Link className="block rounded-md border px-3 py-2 hover:bg-muted" href="/admin/ventas">
+              Nueva venta
+            </Link>
+            <Link className="block rounded-md border px-3 py-2 hover:bg-muted" href="/admin/taller">
+              Orden de taller
             </Link>
             <Link className="block rounded-md border px-3 py-2 hover:bg-muted" href="/admin/ordenes">
               Ver ordenes
@@ -293,7 +318,7 @@ function StatCard({
 }: {
   icon: ComponentType<{ className?: string }>
   label: string
-  value: number
+  value: number | string
 }) {
   return (
     <section className="rounded-lg border bg-card p-4">

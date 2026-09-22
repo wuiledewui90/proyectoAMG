@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Ban, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
+import { Ban, FileDown, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
 
 import { brands, categories, formatPrice } from "@/lib/data"
 
@@ -31,6 +31,8 @@ type ListResponse = {
   limit: number
   total: number
   totalPages: number
+  availableCategories: string[]
+  availableBrands: string[]
 }
 
 type ImportResponse = {
@@ -122,6 +124,8 @@ function AdminProductosContent() {
   const limit = Number(searchParams.get("limit") ?? "20")
   const [search, setSearch] = useState(searchParams.get("search") ?? "")
   const [isActive, setIsActive] = useState(searchParams.get("isActive") ?? "")
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") ?? "")
+  const [selectedBrand, setSelectedBrand] = useState(searchParams.get("brand") ?? "")
   const [orderMode, setOrderMode] = useState<"updated" | "category">("updated")
 
   const [data, setData] = useState<ListResponse | null>(null)
@@ -141,10 +145,12 @@ function AdminProductosContent() {
     const qs = new URLSearchParams()
     if (search.trim()) qs.set("search", search.trim())
     if (isActive === "true" || isActive === "false") qs.set("isActive", isActive)
+    if (selectedCategory) qs.set("category", selectedCategory)
+    if (selectedBrand) qs.set("brand", selectedBrand)
     qs.set("page", String(page))
     qs.set("limit", String(limit))
     return qs.toString()
-  }, [search, isActive, page, limit])
+  }, [search, isActive, selectedCategory, selectedBrand, page, limit])
 
   useEffect(() => {
     let cancel = false
@@ -185,6 +191,39 @@ function AdminProductosContent() {
     }
     return items
   }, [data?.items, orderMode])
+
+  const categoryOptions = Array.from(
+    new Set([...categories, ...(data?.availableCategories ?? [])])
+  ).sort((a, b) => a.localeCompare(b, "es"))
+  const brandOptions = Array.from(
+    new Set([...brands, ...(data?.availableBrands ?? [])])
+  ).sort((a, b) => a.localeCompare(b, "es"))
+
+  const firstVisibleProduct = data && data.total > 0 ? (data.page - 1) * data.limit + 1 : 0
+  const lastVisibleProduct = data
+    ? Math.min(data.page * data.limit, data.total)
+    : 0
+
+  function navigateToPage(nextPage: number) {
+    if (!data) return
+
+    const targetPage = Math.min(Math.max(nextPage, 1), data.totalPages)
+    const qs = new URLSearchParams(searchParams.toString())
+
+    if (search.trim()) qs.set("search", search.trim())
+    else qs.delete("search")
+    if (isActive) qs.set("isActive", isActive)
+    else qs.delete("isActive")
+    if (selectedCategory) qs.set("category", selectedCategory)
+    else qs.delete("category")
+    if (selectedBrand) qs.set("brand", selectedBrand)
+    else qs.delete("brand")
+
+    qs.set("page", String(targetPage))
+    qs.set("limit", String(limit))
+    router.push(`/admin/productos?${qs.toString()}`)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   function handleNew() {
     setEditing({ ...emptyEditor })
@@ -423,6 +462,16 @@ function AdminProductosContent() {
             {importing ? "Importando..." : "Importar Excel/CSV"}
           </button>
           <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/api/products/export"
+            }}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition-colors hover:bg-muted sm:w-auto"
+          >
+            <FileDown className="h-4 w-4" />
+            Exportar Excel
+          </button>
+          <button
             onClick={handleNew}
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
           >
@@ -432,8 +481,8 @@ function AdminProductosContent() {
         </div>
       </div>
 
-      <div className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[minmax(260px,1fr)_180px_180px]">
-        <div className="relative sm:col-span-2 lg:col-span-1">
+      <div className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_170px_200px_180px_160px]">
+        <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
@@ -455,6 +504,38 @@ function AdminProductosContent() {
             <option value="">Todos</option>
             <option value="true">Activos</option>
             <option value="false">Inactivos</option>
+          </select>
+        </label>
+
+        <label className="space-y-1 text-sm">
+          <span className="text-xs font-medium text-muted-foreground">Categoría</span>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="space-y-1 text-sm">
+          <span className="text-xs font-medium text-muted-foreground">Marca</span>
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            value={selectedBrand}
+            onChange={(e) => setSelectedBrand(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {brandOptions.map((brand) => (
+              <option key={brand} value={brand}>
+                {brand}
+              </option>
+            ))}
           </select>
         </label>
 
@@ -692,6 +773,7 @@ function AdminProductosContent() {
         <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="border-b bg-muted/50 text-left text-muted-foreground">
+              <th className="w-16 px-4 py-3 text-center font-medium">N.º</th>
               <th className="w-24 px-4 py-3 font-medium">Imagen</th>
               <th className="px-4 py-3 font-medium">Producto</th>
               <th className="w-36 px-4 py-3 font-medium">Precio</th>
@@ -701,8 +783,11 @@ function AdminProductosContent() {
             </tr>
           </thead>
           <tbody>
-            {orderedItems.map((product) => (
+            {orderedItems.map((product, index) => (
               <tr key={product.id} className="border-b last:border-0">
+                <td className="px-4 py-3 text-center font-semibold text-muted-foreground">
+                  {(data?.page ?? page) * (data?.limit ?? limit) - (data?.limit ?? limit) + index + 1}
+                </td>
                 <td className="px-4 py-3">
                   <ProductImage product={product} size="sm" />
                 </td>
@@ -749,7 +834,7 @@ function AdminProductosContent() {
             ))}
             {!loading && data?.items?.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                <td colSpan={7} className="p-8 text-center text-muted-foreground">
                   No hay productos.
                 </td>
               </tr>
@@ -759,8 +844,11 @@ function AdminProductosContent() {
       </div>
 
       <div className="grid gap-3 lg:hidden">
-        {orderedItems.map((product) => (
+        {orderedItems.map((product, index) => (
           <article key={product.id} className="overflow-hidden rounded-lg border bg-card p-3">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-primary">
+              Artículo #{(data?.page ?? page) * (data?.limit ?? limit) - (data?.limit ?? limit) + index + 1}
+            </p>
             <div className="flex gap-3">
               <ProductImage product={product} size="md" />
               <div className="min-w-0 flex-1">
@@ -824,6 +912,56 @@ function AdminProductosContent() {
           </div>
         )}
       </div>
+
+      {data && data.total > 0 && (
+        <nav
+          className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+          aria-label="Paginación de productos"
+        >
+          <p className="text-sm text-muted-foreground">
+            Mostrando <span className="font-semibold text-foreground">{firstVisibleProduct}</span>–
+            <span className="font-semibold text-foreground">{lastVisibleProduct}</span> de{" "}
+            <span className="font-semibold text-foreground">{data.total}</span> artículos
+          </p>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => navigateToPage(data.page - 1)}
+              disabled={data.page <= 1}
+              className="h-9 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Anterior
+            </button>
+
+            {Array.from({ length: data.totalPages }, (_, index) => index + 1).map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => navigateToPage(pageNumber)}
+                aria-current={pageNumber === data.page ? "page" : undefined}
+                aria-label={`Ir a la página ${pageNumber}`}
+                className={`h-9 min-w-9 rounded-md border px-2 text-sm font-semibold transition-colors ${
+                  pageNumber === data.page
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => navigateToPage(data.page + 1)}
+              disabled={data.page >= data.totalPages}
+              className="h-9 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Siguiente
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   )
 }

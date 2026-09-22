@@ -7,29 +7,96 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ErpUserRole {
+  ADMIN
+  SALES
+  TECHNICIAN
+  VIEWER
+}
+
+enum ErpPaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+  CURRENT_ACCOUNT
+  COMBINED
+}
+
+enum ErpSaleStatus {
+  COMPLETED
+  VOID
+}
+
+enum WorkOrderStatus {
+  OPEN
+  DIAGNOSIS
+  WAITING_PARTS
+  IN_PROGRESS
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum StockMovementType {
+  SALE
+  PURCHASE
+  ADJUSTMENT
+  RETURN
+  WORK_ORDER
+}
+
+enum ErpDocumentType {
+  QUOTE
+  QUOTATION
+  INVOICE
+}
+
+enum ErpDocumentStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  ISSUED
+  PAID
+  VOID
+}
+
 model product {
-  id            Int      @id @default(autoincrement())
-  name          String
-  description   String?  @db.Text
-  sku           String?  @unique(map: "Product_sku_key")
-  brand         String?
-  model         String?
-  category      String?
-  compatibility String?
-  slug          String   @unique(map: "Product_slug_key")
-  images        String   @db.LongText
-  imageUrl      String?
-  price         Decimal
-  stock         Int      @default(0)
-  isActive      Boolean  @default(true)
-  isFeatured    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  id             Int               @id @default(autoincrement())
+  name           String
+  description    String?           @db.Text
+  sku            String?           @unique(map: "Product_sku_key")
+  brand          String?
+  model          String?
+  category       String?
+  compatibility  String?
+  slug           String            @unique(map: "Product_slug_key")
+  images         String            @db.LongText
+  imageUrl       String?
+  price          Decimal
+  stock          Int               @default(0)
+  minimumStock   Int               @default(0)
+  cost           Decimal           @default(0)
+  stockType      String?           @db.VarChar(40)
+  stockCategory  String?           @db.VarChar(120)
+  brands         String?           @db.VarChar(255)
+  application    String?           @db.Text
+  dimensions     String?           @db.VarChar(191)
+  location       String?           @db.VarChar(191)
+  isActive       Boolean           @default(true)
+  isFeatured     Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime
+  saleItems      erpSaleItem[]
+  documentItems  erpDocumentItem[]
+  stockMovements stockMovement[]
 
   @@index([name], map: "Product_name_idx")
   @@index([sku], map: "Product_sku_idx")
   @@index([slug], map: "Product_slug_idx")
   @@index([isFeatured], map: "Product_isFeatured_idx")
+  @@map("Product")
 }
 
 model orderRecord {
@@ -67,4 +134,248 @@ model orderItem {
   @@index([orderId], map: "OrderItem_orderId_idx")
   @@index([productId], map: "OrderItem_productId_idx")
   @@map("OrderItem")
+}
+
+model adminCredential {
+  id              Int      @id @default(autoincrement())
+  username        String   @unique(map: "AdminCredential_username_key")
+  passwordHash    String   @db.VarChar(60)
+  recoveryPinHash String?  @db.VarChar(60)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("AdminCredential")
+}
+
+model erpUser {
+  id             String          @id @default(cuid())
+  name           String          @db.VarChar(160)
+  username       String          @unique(map: "ErpUser_username_key") @db.VarChar(80)
+  passwordHash   String          @db.VarChar(60)
+  role           ErpUserRole     @default(VIEWER)
+  active         Boolean         @default(true)
+  lastLoginAt    DateTime?
+  sales          erpSale[]
+  assignedOrders workOrder[]     @relation("WorkOrderAssignee")
+  expenses       erpExpense[]
+  documents      erpDocument[]
+  stockMovements stockMovement[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([active, role], map: "ErpUser_active_role_idx")
+  @@map("ErpUser")
+}
+
+model customer {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(160)
+  phone        String?       @db.VarChar(40)
+  email        String?       @db.VarChar(191)
+  taxId        String?       @db.VarChar(40)
+  address      String?       @db.VarChar(255)
+  vehiclePlate String?       @db.VarChar(20)
+  vehicleBrand String?       @db.VarChar(80)
+  vehicleModel String?       @db.VarChar(120)
+  vehicleYear  Int?
+  notes        String?       @db.Text
+  active       Boolean       @default(true)
+  sales        erpSale[]
+  workOrders   workOrder[]
+  documents    erpDocument[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([name], map: "Customer_name_idx")
+  @@index([phone], map: "Customer_phone_idx")
+  @@index([vehiclePlate], map: "Customer_vehiclePlate_idx")
+  @@map("Customer")
+}
+
+model erpSale {
+  id            Int              @id @default(autoincrement())
+  customerId    Int?
+  createdById   String?
+  subtotal      Decimal          @db.Decimal(12, 2)
+  discount      Decimal          @default(0) @db.Decimal(12, 2)
+  taxRate       Decimal          @default(0) @db.Decimal(5, 2)
+  taxAmount     Decimal          @default(0) @db.Decimal(12, 2)
+  total         Decimal          @db.Decimal(12, 2)
+  paymentMethod ErpPaymentMethod
+  status        ErpSaleStatus    @default(COMPLETED)
+  notes         String?          @db.Text
+  customer      customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy     erpUser?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  items         erpSaleItem[]
+  payments      erpSalePayment[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([createdAt], map: "ErpSale_createdAt_idx")
+  @@index([customerId], map: "ErpSale_customerId_idx")
+  @@index([status, createdAt], map: "ErpSale_status_createdAt_idx")
+  @@map("ErpSale")
+}
+
+model erpSaleItem {
+  id          Int      @id @default(autoincrement())
+  saleId      Int
+  productId   Int?
+  productName String   @db.VarChar(191)
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  subtotal    Decimal  @db.Decimal(12, 2)
+  sale        erpSale  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product     product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([saleId], map: "ErpSaleItem_saleId_idx")
+  @@index([productId], map: "ErpSaleItem_productId_idx")
+  @@map("ErpSaleItem")
+}
+
+model erpSalePayment {
+  id        Int              @id @default(autoincrement())
+  saleId    Int
+  method    ErpPaymentMethod
+  amount    Decimal          @db.Decimal(12, 2)
+  sale      erpSale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([saleId], map: "ErpSalePayment_saleId_idx")
+  @@map("ErpSalePayment")
+}
+
+model workOrder {
+  id                 Int             @id @default(autoincrement())
+  customerId         Int?
+  assignedToId       String?
+  vehiclePlate       String          @db.VarChar(20)
+  vehicleDescription String?         @db.VarChar(191)
+  problem            String          @db.Text
+  diagnosis          String?         @db.Text
+  workPerformed      String?         @db.Text
+  partsCost          Decimal         @default(0) @db.Decimal(12, 2)
+  laborCost          Decimal         @default(0) @db.Decimal(12, 2)
+  total              Decimal         @default(0) @db.Decimal(12, 2)
+  status             WorkOrderStatus @default(OPEN)
+  estimatedDelivery  DateTime?
+  deliveredAt        DateTime?
+  customer           customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  assignedTo         erpUser?        @relation("WorkOrderAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([status, createdAt], map: "WorkOrder_status_createdAt_idx")
+  @@index([vehiclePlate], map: "WorkOrder_vehiclePlate_idx")
+  @@index([customerId], map: "WorkOrder_customerId_idx")
+  @@map("WorkOrder")
+}
+
+model erpExpense {
+  id            Int              @id @default(autoincrement())
+  category      String           @db.VarChar(80)
+  description   String           @db.VarChar(255)
+  amount        Decimal          @db.Decimal(12, 2)
+  paymentMethod ErpPaymentMethod
+  createdById   String?
+  createdBy     erpUser?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  expenseDate   DateTime         @default(now())
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([expenseDate], map: "ErpExpense_expenseDate_idx")
+  @@map("ErpExpense")
+}
+
+model stockMovement {
+  id            Int               @id @default(autoincrement())
+  productId     Int
+  createdById   String?
+  type          StockMovementType
+  quantity      Int
+  previousStock Int
+  newStock      Int
+  referenceId   String?           @db.VarChar(80)
+  notes         String?           @db.VarChar(255)
+  product       product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdBy     erpUser?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+
+  @@index([productId, createdAt], map: "StockMovement_product_created_idx")
+  @@index([type, createdAt], map: "StockMovement_type_created_idx")
+  @@map("StockMovement")
+}
+
+model erpDocument {
+  id                 Int               @id @default(autoincrement())
+  type               ErpDocumentType
+  status             ErpDocumentStatus @default(DRAFT)
+  customerId         Int?
+  createdById        String?
+  sourceDocumentId   Int?
+  customerName       String            @db.VarChar(160)
+  customerTaxId      String?           @db.VarChar(40)
+  customerPhone      String?           @db.VarChar(40)
+  customerEmail      String?           @db.VarChar(191)
+  customerAddress    String?           @db.VarChar(255)
+  vehicleDescription String?           @db.VarChar(191)
+  vehiclePlate       String?           @db.VarChar(20)
+  issueDate          DateTime          @default(now())
+  validUntil         DateTime?
+  dueDate            DateTime?
+  subtotal           Decimal           @db.Decimal(12, 2)
+  discount           Decimal           @default(0) @db.Decimal(12, 2)
+  taxRate            Decimal           @default(0) @db.Decimal(5, 2)
+  taxAmount          Decimal           @default(0) @db.Decimal(12, 2)
+  total              Decimal           @db.Decimal(12, 2)
+  notes              String?           @db.Text
+  terms              String?           @db.Text
+  customer           customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy          erpUser?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  sourceDocument     erpDocument?      @relation("DocumentConversion", fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  convertedDocuments erpDocument[]     @relation("DocumentConversion")
+  items              erpDocumentItem[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([type, issueDate], map: "ErpDocument_type_issueDate_idx")
+  @@index([status, issueDate], map: "ErpDocument_status_issueDate_idx")
+  @@index([customerId], map: "ErpDocument_customerId_idx")
+  @@index([sourceDocumentId], map: "ErpDocument_sourceDocumentId_idx")
+  @@map("ErpDocument")
+}
+
+model erpDocumentItem {
+  id          Int         @id @default(autoincrement())
+  documentId  Int
+  productId   Int?
+  description String      @db.VarChar(255)
+  quantity    Decimal     @db.Decimal(10, 2)
+  unitPrice   Decimal     @db.Decimal(12, 2)
+  subtotal    Decimal     @db.Decimal(12, 2)
+  document    erpDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  product     product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([documentId], map: "ErpDocumentItem_documentId_idx")
+  @@index([productId], map: "ErpDocumentItem_productId_idx")
+  @@map("ErpDocumentItem")
+}
+
+model erpSetting {
+  id                Int      @id @default(1)
+  businessName      String   @default("Radiadores AMG") @db.VarChar(160)
+  tagline           String?  @db.VarChar(191)
+  taxId             String?  @db.VarChar(40)
+  phone             String?  @db.VarChar(40)
+  email             String?  @db.VarChar(191)
+  address           String?  @db.VarChar(255)
+  whatsapp          String?  @db.VarChar(40)
+  quoteValidityDays Int      @default(15)
+  invoiceDueDays    Int      @default(30)
+  defaultTaxRate    Decimal  @default(0) @db.Decimal(5, 2)
+  defaultTerms      String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("ErpSetting")
 }

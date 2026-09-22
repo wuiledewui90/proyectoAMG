@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `ErpDocument`
+MODIFY `type` ENUM('QUOTE', 'QUOTATION', 'INVOICE') NOT NULL;

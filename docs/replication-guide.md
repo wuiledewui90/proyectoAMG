@@ -3,9 +3,9 @@
 ## 1) Resumen tecnico
 - Framework: Next.js (App Router) + TypeScript
 - UI: Tailwind CSS + Lucide icons
-- DB: Prisma + MySQL (datasource en prisma/schema.prisma)
+- DB: Prisma + MySQL 8 en Docker (datasource en prisma/schema.prisma)
 - API: Routes en app/api
-- Admin: rutas en app/admin, login con cookie amg_admin + localStorage
+- Admin: rutas en app/admin, login con cookie firmada `amg_admin_session`
 - Catalogo: datos desde Prisma (server) + filtros client-side
 
 ## 2) Estructura principal
@@ -39,7 +39,7 @@ Campos principales:
 - name, slug (requeridos)
 - description, sku, brand, model, category, compatibility (opcionales)
 - price (Decimal), stock (Int), isActive (Boolean)
-- images (Json), imageUrl (String?)
+- images (texto JSON serializado), imageUrl (String?)
 
 ## 5) Flujo Admin
 - Login: /admin/login
@@ -53,16 +53,19 @@ Campos principales:
 - Client: app/catalogo/catalog-client.tsx filtra por busqueda/categoria/marca
 
 ## 7) Configuracion de entorno
-- DATABASE_URL en .env (MySQL)
+- `DATABASE_URL` en `.env` (MySQL)
+- `ADMIN_USER`, `ADMIN_PASS_HASH` y `ADMIN_SECRET` son obligatorias
+- `.env.example` documenta el formato sin incluir secretos
 - Next.js por default (next.config.mjs)
 
 ## 8) Pasos para replicar
 1. Instalar dependencias:
    - pnpm install
-2. Configurar .env con DATABASE_URL
+2. Iniciar Docker Desktop y ejecutar `pnpm db:setup` para crear MySQL en el
+   puerto 3307; en otros entornos, crear `.env` a partir de `.env.example`
 3. Prisma:
-   - pnpm prisma migrate deploy
-   - pnpm prisma generate
+   - pnpm db:deploy
+   - pnpm exec prisma generate
 4. Ejecutar:
    - pnpm dev
 

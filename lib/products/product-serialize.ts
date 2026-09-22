@@ -1,8 +1,9 @@
 // lib/products/product-serialize.ts
 import type { product as Product } from "@prisma/client"
 
-export type SerializedProduct = Omit<Product, "price" | "images"> & {
+export type SerializedProduct = Omit<Product, "price" | "cost" | "images"> & {
   price: number
+  cost: number
   images: string[]
 }
 
@@ -34,6 +35,7 @@ export function serializeProduct(p: Product): SerializedProduct {
   return {
     ...p,
     price: Number(p.price),
+    cost: Number(p.cost),
     images: parseProductImages(p.images, p.imageUrl),
   }
 }

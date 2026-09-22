@@ -1,1 +1,1 @@
-ALTER TABLE `product` MODIFY `description` TEXT NULL;
+ALTER TABLE `Product` MODIFY `description` TEXT NULL;

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s | RADIADORES AMG",
   },
   description:
-    "Venta y reparacion de radiadores y sistemas de enfriamiento automotor. Calidad, confianza y los mejores precios en Buenos Aires, Argentina.",
+    "Venta y reparación de radiadores, repuestos y sistemas de enfriamiento automotor en La Rioja, Argentina.",
   openGraph: {
     title: "RADIADORES AMG",
     description:

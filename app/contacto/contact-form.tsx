@@ -1,191 +1,97 @@
 "use client"
 
-import React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { Check, Send } from "lucide-react"
+
+const fieldClassName = "min-h-12 w-full border-2 border-input bg-card px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-0"
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [honeypot, setHoneypot] = useState("")
+  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" })
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-  })
-
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setErrors({ ...errors, [e.target.name]: "" })
+  function handleChange(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setForm({ ...form, [event.target.name]: event.target.value })
+    setErrors({ ...errors, [event.target.name]: "" })
   }
 
   function validate() {
-    const errs: Record<string, string> = {}
-    if (!form.name.trim()) errs.name = "El nombre es obligatorio"
-    if (!form.email.trim()) errs.email = "El email es obligatorio"
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      errs.email = "Email invalido"
-    if (!form.message.trim()) errs.message = "El mensaje es obligatorio"
-    return errs
+    const nextErrors: Record<string, string> = {}
+    if (!form.name.trim()) nextErrors.name = "El nombre es obligatorio"
+    if (!form.email.trim()) nextErrors.email = "El email es obligatorio"
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = "El email no es válido"
+    if (!form.message.trim()) nextErrors.message = "El mensaje es obligatorio"
+    return nextErrors
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    // Honeypot check
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
     if (honeypot) return
 
-    const errs = validate()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
+    const nextErrors = validate()
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
       return
     }
 
-    // Save to localStorage (would go to DB in production)
-    const msg = {
-      id: `MSG-${Date.now()}`,
-      ...form,
-      createdAt: new Date().toISOString(),
-      read: false,
-    }
-    const existing = JSON.parse(
-      localStorage.getItem("amg-messages") || "[]"
-    )
-    existing.push(msg)
+    const message = { id: `MSG-${Date.now()}`, ...form, createdAt: new Date().toISOString(), read: false }
+    const existing = JSON.parse(localStorage.getItem("amg-messages") || "[]")
+    existing.push(message)
     localStorage.setItem("amg-messages", JSON.stringify(existing))
-
     setSubmitted(true)
   }
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center rounded-lg border border-border bg-card p-10 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-          <Check className="h-7 w-7 text-primary" />
-        </div>
-        <h2 className="mt-4 text-xl font-bold text-foreground">
-          Mensaje Enviado
-        </h2>
-        <p className="mt-2 text-muted-foreground">
-          Gracias por contactarnos. Te responderemos a la brevedad.
-        </p>
+      <div className="flex min-h-[28rem] flex-col items-start justify-center border-l-4 border-primary bg-muted/55 p-8 sm:p-12">
+        <div className="flex h-14 w-14 items-center justify-center bg-primary text-primary-foreground"><Check className="h-7 w-7" /></div>
+        <p className="mt-7 text-xs font-bold uppercase tracking-[0.22em] text-primary">Consulta recibida</p>
+        <h2 className="font-display mt-2 text-4xl font-black uppercase tracking-[-0.03em] text-foreground">Mensaje enviado.</h2>
+        <p className="mt-4 max-w-md leading-7 text-muted-foreground">Gracias por contactarnos. Te responderemos a la brevedad.</p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <h2 className="text-xl font-bold text-foreground">
-        Envianos tu Consulta
-      </h2>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="border-b border-border pb-7">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Solicitar asesoramiento</p>
+        <h2 className="font-display mt-3 text-3xl font-black uppercase tracking-[-0.025em] text-foreground sm:text-4xl">Dejanos tu consulta</h2>
+      </div>
 
-      {/* Honeypot - hidden from users */}
       <div className="sr-only" aria-hidden="true">
-        <label htmlFor="website">Website</label>
-        <input
-          id="website"
-          name="website"
-          type="text"
-          value={honeypot}
-          onChange={(e) => setHoneypot(e.target.value)}
-          tabIndex={-1}
-          autoComplete="off"
-        />
+        <label htmlFor="website">Sitio web</label>
+        <input id="website" name="website" type="text" value={honeypot} onChange={(event) => setHoneypot(event.target.value)} tabIndex={-1} autoComplete="off" />
       </div>
 
       <div>
-        <label
-          htmlFor="contact-name"
-          className="mb-1 block text-sm font-medium text-foreground"
-        >
-          Nombre *
-        </label>
-        <input
-          id="contact-name"
-          name="name"
-          type="text"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          placeholder="Tu nombre"
-        />
-        {errors.name && (
-          <p className="mt-1 text-xs text-destructive">{errors.name}</p>
-        )}
+        <label htmlFor="contact-name" className="mb-2 block text-[0.7rem] font-black uppercase tracking-[0.16em] text-foreground">Nombre y apellido *</label>
+        <input id="contact-name" name="name" type="text" value={form.name} onChange={handleChange} className={fieldClassName} placeholder="Tu nombre" />
+        {errors.name && <p className="mt-2 text-xs font-semibold text-destructive">{errors.name}</p>}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <div>
-          <label
-            htmlFor="contact-email"
-            className="mb-1 block text-sm font-medium text-foreground"
-          >
-            Email *
-          </label>
-          <input
-            id="contact-email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder="tu@email.com"
-          />
-          {errors.email && (
-            <p className="mt-1 text-xs text-destructive">{errors.email}</p>
-          )}
+          <label htmlFor="contact-email" className="mb-2 block text-[0.7rem] font-black uppercase tracking-[0.16em] text-foreground">Email *</label>
+          <input id="contact-email" name="email" type="email" value={form.email} onChange={handleChange} className={fieldClassName} placeholder="tu@email.com" />
+          {errors.email && <p className="mt-2 text-xs font-semibold text-destructive">{errors.email}</p>}
         </div>
         <div>
-          <label
-            htmlFor="contact-phone"
-            className="mb-1 block text-sm font-medium text-foreground"
-          >
-            Telefono
-          </label>
-          <input
-            id="contact-phone"
-            name="phone"
-            type="tel"
-            value={form.phone}
-            onChange={handleChange}
-            className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder=""
-          />
+          <label htmlFor="contact-phone" className="mb-2 block text-[0.7rem] font-black uppercase tracking-[0.16em] text-foreground">Teléfono</label>
+          <input id="contact-phone" name="phone" type="tel" value={form.phone} onChange={handleChange} className={fieldClassName} placeholder="380 000-0000" />
         </div>
       </div>
 
       <div>
-        <label
-          htmlFor="contact-message"
-          className="mb-1 block text-sm font-medium text-foreground"
-        >
-          Mensaje *
-        </label>
-        <textarea
-          id="contact-message"
-          name="message"
-          rows={5}
-          value={form.message}
-          onChange={handleChange}
-          className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          placeholder="Contanos en que podemos ayudarte..."
-        />
-        {errors.message && (
-          <p className="mt-1 text-xs text-destructive">{errors.message}</p>
-        )}
+        <label htmlFor="contact-message" className="mb-2 block text-[0.7rem] font-black uppercase tracking-[0.16em] text-foreground">¿Qué necesitás? *</label>
+        <textarea id="contact-message" name="message" rows={6} value={form.message} onChange={handleChange} className={fieldClassName} placeholder="Indicá vehículo, modelo, año y el problema o repuesto que buscás..." />
+        {errors.message && <p className="mt-2 text-xs font-semibold text-destructive">{errors.message}</p>}
       </div>
 
-      <button
-        type="submit"
-        className="group inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
-      >
-        <Send className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        Enviar Mensaje
+      <button type="submit" className="group inline-flex min-h-10 items-center gap-2 border border-primary bg-primary px-5 text-xs font-black uppercase tracking-[0.15em] text-primary-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground">
+        <Send className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        Enviar consulta
       </button>
     </form>
   )

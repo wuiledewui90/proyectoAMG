@@ -1,127 +1,108 @@
 import type { Metadata } from "next"
-import { Shield, Clock, Users, Award } from "lucide-react"
+import { Award, Clock, Shield, Users } from "lucide-react"
+import { Reveal } from "@/components/reveal"
 
 export const metadata: Metadata = {
-  title: "Sobre Nosotros",
+  title: "La empresa",
   description:
-    "Conoce la historia de RADIADORES AMG. Mas de 20 anos de experiencia en radiadores y sistemas de enfriamiento automotor en Buenos Aires.",
+    "Más de 30 años de experiencia en radiadores y sistemas de enfriamiento automotor en La Rioja.",
 }
+
+const metrics = [
+  { icon: Clock, title: "+30 años", desc: "de experiencia técnica" },
+  { icon: Users, title: "Atención directa", desc: "con especialistas" },
+  { icon: Shield, title: "Garantía", desc: "en productos y servicios" },
+  { icon: Award, title: "Primeras marcas", desc: "nacionales e importadas" },
+]
+
+const reasons = [
+  {
+    title: "Asesoramiento técnico",
+    desc: "Identificamos la aplicación correcta según vehículo, motorización y uso. No vendemos por vender.",
+  },
+  {
+    title: "Soluciones comprobadas",
+    desc: "Diagnosticamos antes de intervenir y verificamos presión y temperatura antes de entregar.",
+  },
+  {
+    title: "Cobertura nacional",
+    desc: "Enviamos repuestos a todo el país con la información necesaria para una compra segura.",
+  },
+]
 
 export default function SobreNosotrosPage() {
   return (
     <>
-      <section className="bg-secondary">
-        <div className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
-          <h1 className="text-3xl font-bold text-secondary-foreground md:text-4xl">
-            Sobre Nosotros
-          </h1>
-          <p className="mt-3 max-w-2xl text-lg text-secondary-foreground/70">
-                RADIADORES AMG se fundo en la ciudad de La Rioja con una mision clara:
-                ofrecer soluciones de calidad para el sistema de enfriamiento de
-                todo tipo de vehiculos. Desde nuestros inicios, nos enfocamos en
-                brindar productos de primera linea y un servicio tecnico
-                profesional.
-            
-          </p>
+      <section className="relative overflow-hidden bg-[#090b0e] pb-20 pt-32 text-white sm:pb-24 sm:pt-40 lg:pb-28">
+        <div className="technical-grid absolute inset-0 opacity-25" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-[90rem] items-end gap-10 px-5 sm:px-8 lg:grid-cols-12 lg:px-12 xl:px-16">
+          <Reveal className="lg:col-span-8">
+            <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Nuestra historia</p>
+            <h1 className="font-display text-[clamp(1.8rem,4.2vw,4.2rem)] font-black uppercase leading-[0.9] tracking-[-0.055em]">
+              Tres décadas cuidando motores.
+            </h1>
+          </Reveal>
+          <Reveal delay={160} className="border-l border-white/18 pl-6 lg:col-span-4 lg:pl-8">
+            <p className="text-lg leading-relaxed text-white/62">
+              Nacimos en La Rioja con una idea simple: resolver cada problema de
+              refrigeración con conocimiento, honestidad y precisión.
+            </p>
+          </Reveal>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              Más de 30 Años de Confianza y Calidad
+      <section className="bg-background py-20 sm:py-24 lg:py-32">
+        <div className="mx-auto grid max-w-[90rem] gap-14 px-5 sm:px-8 lg:grid-cols-12 lg:px-12 xl:px-16">
+          <Reveal className="lg:col-span-5">
+            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Experiencia aplicada</p>
+            <h2 className="font-display mt-4 text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] sm:text-5xl">
+              Conocemos el calor. Sabemos cómo controlarlo.
             </h2>
-            <div className="mt-4 space-y-4 leading-relaxed text-muted-foreground">
-              <p>
-                Contamos con un equipo de técnicos altamente capacitados y equipos de última generación para garantizar reparaciones de la más alta calidad. Trabajamos con todas las marcas y modelos, desde autos compactos hasta camiones y maquinarias de carga pesada.
-              </p>
-              <p>
-                A lo largo de nuestra trayectoria en el mercado, hemos construido una
-                reputacion basada en la confianza, la honestidad y el
-                conocimiento tecnico. Trabajamos con las mejores marcas del
-                mercado y contamos con un equipo de tecnicos altamente
-                capacitados.
-              </p>
-              <p>
-                Hoy, seguimos creciendo y evolucionando, incorporando nuevas
-                tecnologias y ampliando nuestro catalogo para satisfacer las
-                necesidades de cada cliente.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            {[
-              {
-                icon: Clock,
-                title: "+30 Años",
-                desc: "De experiencia en el rubro automotor",
-              },
-              {
-                icon: Users,
-                title: "Clientes",
-                desc: "Satisfechos en todo el pais",
-              },
-              {
-                icon: Shield,
-                title: "Garantia",
-                desc: "En todos nuestros productos y servicios",
-              },
-              {
-                icon: Award,
-                title: "Calidad",
-                desc: "Primeras marcas nacionales e importadas",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-lg border border-border bg-card p-6 text-center"
-              >
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-primary/10">
-                  <item.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mt-3 text-lg font-bold text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+          </Reveal>
+          <Reveal delay={120} className="space-y-5 text-base leading-relaxed text-muted-foreground lg:col-span-7 lg:text-lg">
+            <p>
+              Trabajamos con sistemas de enfriamiento de autos, camionetas,
+              camiones y maquinaria. La experiencia nos permite reconocer el
+              origen del problema y elegir una solución durable.
+            </p>
+            <p>
+              Combinamos oficio con herramientas actuales: prueba de presión,
+              limpieza técnica, reparación especializada y selección precisa de
+              repuestos.
+            </p>
+            <p>
+              Seguimos incorporando tecnología y ampliando el catálogo, sin perder
+              el trato directo que construyó nuestra reputación.
+            </p>
+          </Reveal>
         </div>
       </section>
 
-      <section className="bg-muted">
-        <div className="mx-auto max-w-7xl px-4 py-16 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground">
-            {"¿Por qué elegirnos?"}
-          </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                title: "Asesoramiento Tecnico",
-                desc: "Nuestro equipo te ayuda a encontrar el producto exacto para tu vehiculo. No vendemos por vender, asesoramos para que elijas bien.",
-              },
-              {
-                title: "Precios Competitivos",
-                desc: "Trabajamos directo con fabricantes y distribuidores para ofrecerte los mejores precios del mercado sin resignar calidad.",
-              },
-              {
-                title: "Envios a Todo el Pais",
-                desc: "Realizamos envios a todas las provincias de Argentina. Tu pedido llega rapido y seguro a donde estes.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-lg border border-border bg-card p-6"
-              >
-                <h3 className="font-semibold text-foreground">{item.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {item.desc}
-                </p>
-              </div>
+      <section className="bg-[#0a0c0f] py-20 text-white sm:py-24">
+        <div className="mx-auto grid max-w-[90rem] gap-px bg-white/12 px-5 sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-12 xl:px-16">
+          {metrics.map((item, index) => (
+            <Reveal key={item.title} delay={index * 90} className="metal-surface p-7 sm:p-8">
+              <item.icon className="h-5 w-5 text-primary" />
+              <p className="font-display mt-8 text-2xl font-black uppercase tracking-[-0.025em]">{item.title}</p>
+              <p className="mt-2 text-sm text-white/52">{item.desc}</p>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-white py-20 sm:py-24 lg:py-28">
+        <div className="mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12 xl:px-16">
+          <Reveal className="mb-12 border-b border-foreground/15 pb-7">
+            <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Por qué elegirnos</p>
+            <h2 className="font-display mt-4 text-4xl font-black uppercase tracking-[-0.04em] sm:text-5xl">Confianza que se construye trabajando.</h2>
+          </Reveal>
+          <div className="grid gap-px bg-foreground/12 md:grid-cols-3">
+            {reasons.map((item, index) => (
+              <Reveal key={item.title} delay={index * 100} className="bg-white p-7 sm:p-9">
+                <span className="font-display text-4xl font-black text-primary/22">0{index + 1}</span>
+                <h3 className="font-display mt-5 text-xl font-black uppercase">{item.title}</h3>
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+              </Reveal>
             ))}
           </div>
         </div>

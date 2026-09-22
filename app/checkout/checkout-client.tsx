@@ -35,8 +35,7 @@ export function CheckoutClient() {
   function validate() {
     const errs: Record<string, string> = {}
     if (!form.name.trim()) errs.name = "El nombre es obligatorio"
-    if (!form.email.trim()) errs.email = "El email es obligatorio"
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Email invalido"
     if (!form.phone.trim()) errs.phone = "El telefono es obligatorio"
     if (!form.address.trim()) errs.address = "La direccion es obligatoria"
@@ -226,7 +225,7 @@ export function CheckoutClient() {
                 htmlFor="email"
                 className="mb-1 block text-sm font-medium text-foreground"
               >
-                Email *
+                Email (opcional)
               </label>
               <input
                 id="email"
@@ -235,7 +234,7 @@ export function CheckoutClient() {
                 value={form.email}
                 onChange={handleChange}
                 className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="juan@email.com"
+                placeholder="Opcional"
               />
               {errors.email && (
                 <p className="mt-1 text-xs text-destructive">{errors.email}</p>

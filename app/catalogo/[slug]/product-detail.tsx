@@ -153,7 +153,7 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                     </>
                   ) : (
                     <>
-                      <CartIcon3D className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+                      <CartIcon3D className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
                       Agregar al Carrito
                     </>
                   )}
@@ -163,7 +163,7 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                   href="/carrito"
                   className="group inline-flex items-center gap-2 rounded-md border border-primary/40 bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary/10 hover:shadow-md active:translate-y-0"
                 >
-                  <CartIcon3D className="h-5 w-5 text-primary transition-transform duration-200 group-hover:scale-110" />
+                  <CartIcon3D className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />
                   Ver carrito
                   {totalItems > 0 && (
                     <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">

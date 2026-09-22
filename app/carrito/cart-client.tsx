@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { Trash2, Minus, Plus, ArrowRight } from "lucide-react"
+import { Trash2, Minus, Plus, ArrowLeft, ArrowRight } from "lucide-react"
 import { CartIcon3D } from "@/components/cart-icon"
 import { useCart } from "@/lib/cart-context"
 
@@ -18,7 +18,7 @@ export function CartClient() {
     return (
       <section className="mx-auto flex max-w-7xl flex-col items-center px-4 py-24 text-center lg:px-8">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <CartIcon3D className="h-9 w-9 text-muted-foreground" />
+          <CartIcon3D className="h-14 w-14" />
         </div>
         <h1 className="mt-6 text-2xl font-bold text-foreground">
           Tu carrito esta vacio
@@ -153,13 +153,22 @@ export function CartClient() {
             </div>
           </div>
 
-          <Link
-            href="/checkout"
-            className="group mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
-          >
-            Finalizar Compra
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
+          <div className="mt-6 space-y-3">
+            <Link
+              href="/checkout"
+              className="group flex w-full items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
+            >
+              Finalizar Compra
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/catalogo"
+              className="group flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted hover:shadow-md active:translate-y-0"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              Seguir comprando
+            </Link>
+          </div>
         </div>
       </div>
     </section>

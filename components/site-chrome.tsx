@@ -20,13 +20,18 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
       <main
         className={cn("min-h-screen", pathname !== "/" && "site-main-offset")}
       >
-        {children}
+        <div
+          key={pathname}
+          className={cn(pathname !== "/" && "site-route-enter")}
+        >
+          {children}
+        </div>
       </main>
       <SiteFooter />
 
       <div className="group fixed bottom-6 right-6 z-50">
         <span className="absolute bottom-full right-0 mb-2 hidden items-center whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg group-hover:flex">
-          Necesitas ayuda? Escribinos!
+          ¿Necesitás ayuda? ¡Escribinos!
           <span className="absolute -bottom-1 right-5 h-2 w-2 rotate-45 bg-gray-900" />
         </span>
         <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-40" />

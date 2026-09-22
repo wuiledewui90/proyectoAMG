@@ -1,7 +1,15 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, Eye, Loader2, Trash2, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  CheckCircle2,
+  ExternalLink,
+  Eye,
+  Loader2,
+  ReceiptText,
+  Trash2,
+  X,
+} from "lucide-react"
 import { formatPrice } from "@/lib/data"
 import { ORDERS_STORAGE_KEY, type StoredOrder } from "@/lib/orders"
 
@@ -10,19 +18,18 @@ export default function AdminOrdersPage() {
   const [selected, setSelected] = useState<StoredOrder | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [invoiceMode, setInvoiceMode] = useState<"INTERNAL" | "ARCA">("INTERNAL")
+  const [invoicingId, setInvoicingId] = useState<string | null>(null)
+  const [invoiceNotice, setInvoiceNotice] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    void loadOrders()
-  }, [])
 
   const pendingCount = useMemo(
     () => orders.filter((order) => order.status === "pendiente").length,
     [orders]
   )
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     setLoading(true)
     setError("")
 
@@ -34,15 +41,22 @@ export default function AdminOrdersPage() {
       }
       const nextOrders = (await res.json()) as StoredOrder[]
       setOrders(nextOrders)
-      if (selected) {
-        setSelected(nextOrders.find((order) => order.id === selected.id) ?? null)
-      }
+      setSelected((current) =>
+        current
+          ? nextOrders.find((order) => order.id === current.id) ?? null
+          : null
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudieron cargar las ordenes.")
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadOrders(), 0)
+    return () => window.clearTimeout(timer)
+  }, [loadOrders])
 
   function updateOrders(nextOrders: StoredOrder[]) {
     setOrders(nextOrders)
@@ -107,6 +121,47 @@ export default function AdminOrdersPage() {
       alert(err instanceof Error ? err.message : "No se pudo eliminar la orden.")
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function issueInvoice(order: StoredOrder) {
+    setInvoiceNotice("")
+
+    if (invoiceMode === "ARCA") {
+      const arcaWindow = window.open(
+        "https://www.arca.gob.ar/",
+        "_blank",
+        "noopener,noreferrer"
+      )
+      if (!arcaWindow) {
+        window.location.href = "https://www.arca.gob.ar/"
+        return
+      }
+      setInvoiceNotice(
+        "ARCA se abrió en otra pestaña. Ingresá con clave fiscal y elegí Comprobantes en línea."
+      )
+      return
+    }
+
+    setInvoicingId(order.id)
+    try {
+      const response = await fetch(`/api/orders/${order.id}/invoice`, {
+        method: "POST",
+      })
+      const data = (await response.json().catch(() => null)) as
+        | { error?: string; id?: number }
+        | null
+
+      if (!response.ok || !data?.id) {
+        throw new Error(data?.error || "No se pudo emitir la factura.")
+      }
+
+      window.location.href = `/admin/documentos/${data.id}`
+    } catch (err) {
+      setInvoiceNotice(
+        err instanceof Error ? err.message : "No se pudo emitir la factura."
+      )
+      setInvoicingId(null)
     }
   }
 
@@ -188,6 +243,59 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-5 rounded-xl border border-primary/20 bg-primary/[0.04] p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <ReceiptText className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Emitir factura</h3>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Elegí cómo querés generar el comprobante de esta orden.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Tipo de emisión
+                  <select
+                    value={invoiceMode}
+                    onChange={(event) => {
+                      setInvoiceMode(event.target.value as "INTERNAL" | "ARCA")
+                      setInvoiceNotice("")
+                    }}
+                    className="mt-1 block h-10 min-w-60 rounded-md border bg-background px-3 text-sm text-foreground"
+                  >
+                    <option value="INTERNAL">Factura normal (interna)</option>
+                    <option value="ARCA">Factura electrónica por ARCA</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void issueInvoice(selected)}
+                  disabled={invoicingId === selected.id}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                >
+                  {invoicingId === selected.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : invoiceMode === "ARCA" ? (
+                    <ExternalLink className="h-4 w-4" />
+                  ) : (
+                    <ReceiptText className="h-4 w-4" />
+                  )}
+                  {invoiceMode === "ARCA" ? "Abrir ARCA" : "Emitir factura"}
+                </button>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {invoiceMode === "ARCA"
+                ? "La factura fiscal se completa en Comprobantes en línea y queda válida cuando ARCA autoriza su CAE."
+                : "Genera el comprobante comercial interno listo para imprimir o guardar como PDF; no reemplaza una factura fiscal con CAE."}
+            </p>
+            {invoiceNotice && (
+              <p className="mt-2 text-sm font-medium text-foreground">{invoiceNotice}</p>
+            )}
           </div>
 
           <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">

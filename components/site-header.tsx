@@ -1,9 +1,10 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { ArrowUpRight, MapPin, Menu, X } from "lucide-react"
 import { CartIcon3D } from "@/components/cart-icon"
 import { useCart } from "@/lib/cart-context"
 import { cn } from "@/lib/utils"
@@ -11,11 +12,14 @@ import { getWhatsAppUrl } from "@/lib/whatsapp"
 
 const navLinks = [
   { href: "/", label: "Inicio" },
-  { href: "/catalogo", label: "Catalogo" },
+  { href: "/catalogo", label: "Catálogo" },
   { href: "/servicios", label: "Servicios" },
-  { href: "/sobre-nosotros", label: "Sobre Nosotros" },
+  { href: "/sobre-nosotros", label: "Nosotros" },
   { href: "/contacto", label: "Contacto" },
 ]
+
+const directionsUrl =
+  "https://www.google.com/maps/place/RADIADORES+AMG/@-29.4002907,-66.8367486,17z/data=!3m1!4b1!4m6!3m5!1s0x9427da42c30e0433:0x576025b3cc0c6a5b!8m2!3d-29.4002907!4d-66.8341737!16s%2Fg%2F11h9z11xml?entry=ttu"
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -23,153 +27,139 @@ export function SiteHeader() {
   const { totalItems } = useCart()
 
   return (
-    <header
-      id="site-header"
-      className="pointer-events-none fixed left-0 right-0 top-0 z-50 w-full"
-    >
-      <div className="flex items-center justify-center px-2 pt-0 sm:px-3">
-        <div className="pointer-events-auto relative w-full">
-          <nav
-            id="nav-shell"
-            className="flex w-full items-center justify-between rounded-lg border border-white/15 bg-[rgba(5,7,7,0.78)] px-3 py-3 shadow-lg shadow-[0_18px_55px_rgba(0,0,0,0.42)] ring-1 ring-primary/20 backdrop-blur-xl sm:px-4 sm:py-2.5"
-            aria-label="Principal"
-          >
-            <Link
-              href="/"
-              className="flex min-w-0 items-center gap-2 rounded-xl"
-              aria-label="Inicio"
-              onClick={() => setMobileOpen(false)}
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary shadow-sm sm:h-10 sm:w-10">
-                <span className="text-lg font-bold text-primary-foreground">
-                  R
-                </span>
-              </div>
-              <div className="hidden min-w-0 flex-col leading-none min-[420px]:flex">
-                <span className="text-base font-bold tracking-tight text-white sm:text-lg">
-                  RADIADORES
-                </span>
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-primary sm:text-xs">
-                  AMG
-                </span>
-              </div>
-            </Link>
+    <header id="site-header" className="fixed inset-x-0 top-0 z-50">
+      <nav
+        className="flex h-[70px] w-full items-center justify-between border-y border-white/[0.12] bg-[#07152b]/58 px-4 shadow-[0_18px_55px_rgba(0,0,0,.28),inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[#07152b]/50 sm:px-6 lg:px-10 xl:px-14"
+        aria-label="Principal"
+      >
+        <Link
+          href="/"
+          className="group flex shrink-0 items-center"
+          aria-label="Radiadores AMG, inicio"
+          onClick={() => setMobileOpen(false)}
+        >
+          <Image
+            src="/images/logo-navbar-amg.png"
+            alt="Radiadores AMG"
+            width={2172}
+            height={724}
+            priority
+            sizes="(max-width: 640px) 122px, 150px"
+            className="h-9 w-auto object-contain drop-shadow-[0_2px_10px_rgba(190,198,204,.12)] sm:h-11"
+          />
+        </Link>
 
-            <ul className="hidden items-center gap-4 lg:flex xl:gap-6">
-              {navLinks.map((link) => {
-                const active =
-                  link.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(link.href)
-
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className={cn(
-                        "group relative text-sm font-semibold text-white/85 transition-colors duration-300 hover:text-primary sm:text-base",
-                        active && "text-primary"
-                      )}
-                    >
-                      {link.label}
-                      <span
-                        className={cn(
-                          "absolute -bottom-1 left-0 h-0.5 bg-white transition-all duration-300 group-hover:w-full",
-                          active ? "w-full" : "w-0"
-                        )}
-                      />
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <a
-                href={getWhatsAppUrl(
-                  "Hola, me gustaria conocer mas sobre sus productos y servicios."
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative hidden overflow-hidden rounded-lg bg-white/90 px-4 py-2.5 text-sm font-semibold text-primary shadow-sm transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-xl hover:shadow-[0_16px_40px_rgba(255,255,255,0.40)] active:brightness-90 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-transparent xl:inline-flex"
-              >
-                <span className="absolute inset-0 rounded-lg bg-white/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <span className="relative">Solicitar Presupuesto</span>
-              </a>
-              <Link
-                href="/admin/productos"
-                className="hidden h-10 items-center rounded-lg border border-white/40 bg-white/70 px-3 text-[11px] font-semibold uppercase tracking-wide text-black shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:text-primary hover:shadow-md md:inline-flex"
-                aria-label="Acceso al panel de administracion"
-              >
-                AMG
-              </Link>
-              <Link
-                href="/carrito"
-                className="group relative flex h-11 w-11 items-center justify-center rounded-lg border border-white/40 bg-white/75 text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-lg active:translate-y-0"
-                aria-label={`Carrito con ${totalItems} productos`}
-                onClick={() => setMobileOpen(false)}
-              >
-                <CartIcon3D className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
-                {totalItems > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-primary px-1 text-[11px] font-bold text-primary-foreground shadow-sm">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
-              <button
-                className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/40 bg-white/75 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-md lg:hidden"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label={mobileOpen ? "Cerrar menu" : "Abrir menu"}
-                aria-expanded={mobileOpen}
-              >
-                {mobileOpen ? (
-                  <X className="h-5 w-5 text-black" />
-                ) : (
-                  <Menu className="h-5 w-5 text-black" />
-                )}
-              </button>
-            </div>
-          </nav>
-
-          <div
-            className={cn(
-              "absolute left-0 right-0 top-full mt-2 overflow-hidden rounded-lg border border-white/15 bg-[rgba(5,7,7,0.92)] shadow-xl shadow-[0_16px_40px_rgba(0,0,0,0.38)] ring-1 ring-primary/20 backdrop-blur-xl transition-all duration-300 lg:hidden",
-              mobileOpen
-                ? "max-h-96 translate-y-0 opacity-100"
-                : "pointer-events-none max-h-0 -translate-y-1 opacity-0"
-            )}
-          >
-            <nav className="flex flex-col px-4 py-4" aria-label="Menu movil">
-              {navLinks.map((link) => (
+        <ul className="hidden items-center gap-7 lg:flex">
+          {navLinks.map((link) => {
+            const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+            return (
+              <li key={link.href}>
                 <Link
-                  key={link.href}
                   href={link.href}
-                  className="group relative rounded-md px-3 py-2.5 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 hover:text-primary"
-                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "relative py-6 text-xs font-bold uppercase tracking-[0.13em] text-white transition-colors hover:text-white",
+                    active && "text-white"
+                  )}
                 >
                   {link.label}
+                  <span
+                    className={cn(
+                      "absolute inset-x-0 bottom-[17px] h-0.5 origin-left bg-[linear-gradient(90deg,#b51625_0_42%,#c7cbce_42%_58%,#0b2a69_58%_100%)] transition-transform duration-300",
+                      active ? "scale-x-100" : "scale-x-0"
+                    )}
+                  />
                 </Link>
-              ))}
-              <a
-                href={getWhatsAppUrl(
-                  "Hola, me gustaria conocer mas sobre sus productos y servicios."
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90"
-                onClick={() => setMobileOpen(false)}
-              >
-                Solicitar Consulta
-              </a>
-              <Link
-                href="/admin/productos"
-                className="mt-2 rounded-md border border-black/10 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-black transition-colors hover:bg-white hover:text-primary"
-                onClick={() => setMobileOpen(false)}
-              >
-                AMG
-              </Link>
-            </nav>
-          </div>
+              </li>
+            )
+          })}
+        </ul>
+
+        <div className="flex items-center gap-2">
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group hidden min-h-9 items-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-3 text-[0.7rem] font-extrabold uppercase tracking-[0.1em] text-white transition hover:border-white/60 hover:bg-white/10 lg:inline-flex"
+          >
+            <MapPin className="h-3.5 w-3.5 text-primary transition-transform group-hover:-translate-y-0.5" />
+            Cómo llegar
+          </a>
+          <a
+            href={getWhatsAppUrl("Hola, necesito asesoramiento para mi vehiculo.")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group hidden min-h-9 items-center gap-2 rounded-xl border border-primary bg-primary px-3 text-[0.7rem] font-extrabold uppercase tracking-[0.1em] text-white transition hover:bg-transparent lg:inline-flex"
+          >
+            Pedir presupuesto
+            <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
+          <Link
+            href="/carrito"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-transparent text-white transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3f68b8]"
+            aria-label={`Carrito con ${totalItems} productos`}
+            onClick={() => setMobileOpen(false)}
+          >
+            <CartIcon3D className="h-9 w-9 transition-transform duration-200 hover:scale-105" />
+            {totalItems > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center bg-primary px-1 text-[10px] font-black text-white">
+                {totalItems}
+              </span>
+            )}
+          </Link>
+          <button
+            className="flex h-10 w-10 items-center justify-center border border-white/16 bg-white/6 text-white transition hover:border-[#3f68b8] hover:text-[#8dace7] lg:hidden"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </nav>
+
+      <div
+        className={cn(
+          "relative mx-3 mt-2 w-auto overflow-hidden rounded-2xl border border-white/25 bg-black shadow-[0_24px_60px_rgba(0,0,0,.55),inset_0_1px_0_rgba(255,255,255,.16)] transition-all duration-300 lg:hidden",
+          mobileOpen
+            ? "max-h-[32rem] translate-y-0 opacity-100"
+            : "pointer-events-none max-h-0 -translate-y-2 opacity-0"
+        )}
+      >
+        <div
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,.14),transparent_42%,rgba(255,255,255,.04))]"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 grid p-3">
+          {navLinks.map((link, index) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex items-center justify-between border-b border-white/10 px-3 py-3.5 text-sm font-bold uppercase tracking-[0.1em] text-white transition hover:bg-white/10 hover:text-white"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span>{link.label}</span>
+              <span className="text-xs text-primary">0{index + 1}</span>
+            </Link>
+          ))}
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/[0.08] px-3 text-xs font-extrabold uppercase tracking-[0.1em] text-white transition hover:bg-white/15"
+            onClick={() => setMobileOpen(false)}
+          >
+            <MapPin className="h-4 w-4 text-primary" />
+            Cómo llegar
+          </a>
+          <a
+            href={getWhatsAppUrl("Hola, necesito asesoramiento para mi vehiculo.")}
+            target="_blank"
+            rel="noopener noreferrer"
+              className="mt-3 flex min-h-10 items-center justify-center rounded-xl bg-primary px-3 text-xs font-extrabold uppercase tracking-[0.1em] text-white"
+            onClick={() => setMobileOpen(false)}
+          >
+            Pedir presupuesto
+          </a>
         </div>
       </div>
     </header>

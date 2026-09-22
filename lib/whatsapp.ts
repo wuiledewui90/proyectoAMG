@@ -53,7 +53,7 @@ export function buildCheckoutWhatsAppMessage({
     "",
     `Cliente: ${name}`,
     `Telefono: ${phone}`,
-    `Email: ${email}`,
+    email.trim() ? `Email: ${email.trim()}` : null,
     `Direccion: ${address}`,
     notes?.trim() ? `Notas: ${notes.trim()}` : null,
     "",

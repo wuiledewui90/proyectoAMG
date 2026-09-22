@@ -23,6 +23,8 @@ export async function GET(req: Request) {
 
   const parsed = productListQuerySchema.safeParse({
     search: searchParams.get("search") ?? searchParams.get("q") ?? undefined,
+    category: searchParams.get("category") ?? undefined,
+    brand: searchParams.get("brand") ?? undefined,
     isActive: searchParams.get("isActive") ?? searchParams.get("active") ?? undefined,
     page: searchParams.get("page") ?? undefined,
     limit: searchParams.get("limit") ?? undefined,
@@ -35,8 +37,8 @@ export async function GET(req: Request) {
     )
   }
 
-  const { search, isActive, page, limit } = parsed.data
-  const { total, items } = await service.list({ search, isActive, page, limit })
+  const { search, category, brand, isActive, page, limit } = parsed.data
+  const { total, items } = await service.list({ search, category, brand, isActive, page, limit })
 
   if (!wantsPaged) {
     return NextResponse.json(serializeProducts(items), {
@@ -45,9 +47,18 @@ export async function GET(req: Request) {
   }
 
   const totalPages = Math.max(1, Math.ceil(total / limit))
+  const filterOptions = await service.listFilterOptions()
 
   return NextResponse.json(
-    { items: serializeProducts(items), page, limit, total, totalPages },
+    {
+      items: serializeProducts(items),
+      page,
+      limit,
+      total,
+      totalPages,
+      availableCategories: filterOptions.categories,
+      availableBrands: filterOptions.brands,
+    },
     { headers: { "Cache-Control": "no-store" } }
   )
 }

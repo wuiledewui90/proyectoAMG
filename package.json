@@ -3,24 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3002",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 3002",
     "lint": "eslint .",
+    "images:webp": "node scripts/convert-images-to-webp.mjs",
+    "db:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-docker-mysql.ps1",
+    "db:setup:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-mysql.ps1",
+    "db:docker:up": "docker compose --env-file .env.docker up -d mysql",
+    "db:docker:down": "docker compose --env-file .env.docker down",
+    "db:docker:logs": "docker compose --env-file .env.docker logs -f mysql",
+    "db:docker:status": "docker compose --env-file .env.docker ps",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "esbuild",
-      "prisma"
-    ]
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -70,6 +70,7 @@
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
+    "sharp": "0.34.5",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
@@ -82,6 +83,8 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.1.6",
     "postcss": "^8.5",
     "prisma": "^6.19.2",
     "tailwindcss": "^3.4.17",

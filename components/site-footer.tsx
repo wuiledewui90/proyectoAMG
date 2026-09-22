@@ -1,10 +1,11 @@
+import Image from "next/image"
 import Link from "next/link"
-import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react"
+import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react"
 
 const navLinks = [
-  { href: "/catalogo", label: "Catalogo" },
+  { href: "/catalogo", label: "Catálogo" },
   { href: "/servicios", label: "Servicios" },
-  { href: "/sobre-nosotros", label: "Sobre Nosotros" },
+  { href: "/sobre-nosotros", label: "Nosotros" },
   { href: "/contacto", label: "Contacto" },
 ]
 
@@ -12,72 +13,53 @@ const socialLinks = [
   {
     href: "https://www.facebook.com/share/1Dx9Yeb5ti/",
     label: "Facebook de Radiadores AMG",
-    icon: Facebook,
+    icon: "/images/social/facebook.png",
   },
   {
     href: "https://www.instagram.com/radiadoresamg/?igsh=YXFkdXM4ZDI3c2g5",
     label: "Instagram de Radiadores AMG",
-    icon: Instagram,
+    icon: "/images/social/instagram.png",
   },
 ]
 
 export function SiteFooter() {
   return (
-    <footer className="bg-secondary text-secondary-foreground">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:py-12 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="text-center sm:text-left">
-            <div className="flex items-center justify-center gap-2 sm:justify-start">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-                <span className="text-base font-bold text-primary-foreground">
-                  R
-                </span>
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-base font-bold tracking-tight">
-                  RADIADORES
-                </span>
-                <span className="text-[10px] font-semibold tracking-widest text-primary">
-                  AMG
-                </span>
+    <footer className="border-t border-white/10 bg-[#07090b] text-white">
+      <div className="mx-auto max-w-[90rem] px-5 pb-8 pt-14 sm:px-8 sm:pt-16 lg:px-12 xl:px-16">
+        <div className="flex flex-col justify-between gap-10 border-b border-white/12 pb-12 lg:flex-row lg:items-end">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center bg-primary text-xl font-black italic">R</span>
+              <div className="leading-none">
+                <p className="font-display text-xl font-black uppercase tracking-[0.08em]">Radiadores AMG</p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">
+                  Especialistas térmicos
+                </p>
               </div>
             </div>
-
-            <p className="mt-4 text-sm leading-relaxed text-secondary-foreground/70">
-              Especialistas en radiadores y sistemas de enfriamiento automotor.
-              Calidad y confianza desde hace mas de 3 decadas.
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-white/55">
+              Radiadores, repuestos y servicio técnico para mantener cada motor
+              trabajando a la temperatura correcta.
             </p>
-
-            <div className="mt-5 flex justify-center gap-3 sm:justify-start">
-              {socialLinks.map((social) => {
-                const Icon = social.icon
-                return (
-                  <a
-                    key={social.href}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={social.label}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-secondary-foreground/20 bg-secondary-foreground/5 text-secondary-foreground/75 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-lg"
-                  >
-                    <Icon className="h-5 w-5" />
-                  </a>
-                )
-              })}
-            </div>
           </div>
+          <a
+            href="https://wa.me/5493804524590"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex min-h-10 w-fit items-center gap-2 border-b-2 border-primary text-xs font-extrabold uppercase tracking-[0.1em] transition hover:text-primary"
+          >
+            Hablar con el taller
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </a>
+        </div>
 
-          <div className="text-center sm:text-left">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">
-              Navegacion
-            </h3>
-            <ul className="flex flex-col gap-2.5">
+        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-[0.2em] text-primary">Navegación</h3>
+            <ul className="mt-5 space-y-3">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-secondary-foreground/70 transition-colors hover:text-secondary-foreground"
-                  >
+                  <Link href={link.href} className="text-sm text-white/58 transition hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -85,41 +67,52 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <div className="text-center sm:text-left">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">
-              Contacto
-            </h3>
-            <ul className="flex flex-col gap-3">
-              <li className="flex items-start justify-center gap-2 text-sm text-secondary-foreground/70 sm:justify-start">
-                <Phone className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>5493804524590</span>
-              </li>
-              <li className="flex items-start justify-center gap-2 text-sm text-secondary-foreground/70 sm:justify-start">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>info@radiadoresamg.com.ar</span>
-              </li>
-              <li className="flex items-start justify-center gap-2 text-sm text-secondary-foreground/70 sm:justify-start">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Cerro de la Cruz, 810 La Rioja Capital</span>
-              </li>
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-[0.2em] text-primary">Contacto</h3>
+            <ul className="mt-5 space-y-4 text-sm text-white/58">
+              <li className="flex items-start gap-3"><Phone className="mt-0.5 h-4 w-4 text-white/35" /><span>+54 9 380 452-4590</span></li>
+              <li className="flex items-start gap-3"><Mail className="mt-0.5 h-4 w-4 text-white/35" /><span>info@radiadoresamg.com.ar</span></li>
+              <li className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 text-white/35" /><span>Cerro de la Cruz 810, La Rioja</span></li>
             </ul>
           </div>
 
-          <div className="text-center sm:text-left">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider">
-              Horarios
-            </h3>
-            <ul className="flex flex-col gap-2 text-sm text-secondary-foreground/70">
-              <li>Lunes a Viernes: 6:00 - 14:00</li>
-              <li>Sabados: Cerrado</li>
-              <li>Domingos: Cerrado</li>
-            </ul>
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-[0.2em] text-primary">Horarios</h3>
+            <div className="mt-5 space-y-3 text-sm text-white/58">
+              <div className="flex justify-between gap-5 border-b border-white/8 pb-3"><span>Lunes — Viernes</span><span className="text-white">06:00 — 14:00</span></div>
+              <div className="flex justify-between gap-5"><span>Sábado — Domingo</span><span className="text-white/35">Cerrado</span></div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-extrabold uppercase tracking-[0.2em] text-primary">Seguinos</h3>
+            <div className="mt-5 flex gap-3">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.href}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  title={social.label}
+                  className="group flex h-14 w-14 items-center justify-center rounded-full transition duration-300 hover:-translate-y-1 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#07090b]"
+                >
+                  <Image
+                    src={social.icon}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="h-14 w-14 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,.4)]"
+                  />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-secondary-foreground/10 pt-6 text-center text-xs text-secondary-foreground/50 sm:text-sm">
-          {new Date().getFullYear()} {"\u00A9"} RADIADORES AMG. Todos los derechos
-          reservados.
+        <div className="flex flex-col justify-between gap-3 border-t border-white/12 pt-6 text-xs text-white/35 sm:flex-row">
+          <p>{new Date().getFullYear()} © Radiadores AMG. Todos los derechos reservados.</p>
+          <p>Refrigeración automotor · La Rioja, Argentina</p>
         </div>
       </div>
     </footer>

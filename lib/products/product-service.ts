@@ -21,11 +21,17 @@ function normalizeOptionalString(value: unknown): string | undefined {
 
 export async function list(params: {
   search?: string
+  category?: string
+  brand?: string
   isActive?: boolean
   page: number
   limit: number
 }) {
   return repo.listProducts(params)
+}
+
+export async function listFilterOptions() {
+  return repo.getProductFilterOptions()
 }
 
 export async function getById(id: number) {
@@ -50,6 +56,14 @@ export async function create(input: unknown) {
     sku: normalizeOptionalString(parsed.sku),
     price: new Decimal(parsed.price),
     stock: parsed.stock ?? 0,
+    minimumStock: parsed.minimumStock ?? 0,
+    cost: new Decimal(parsed.cost ?? 0),
+    stockType: normalizeOptionalString(parsed.stockType),
+    stockCategory: normalizeOptionalString(parsed.stockCategory),
+    brands: normalizeOptionalString(parsed.brands),
+    application: normalizeOptionalString(parsed.application),
+    dimensions: normalizeOptionalString(parsed.dimensions),
+    location: normalizeOptionalString(parsed.location),
     isActive: parsed.isActive ?? true,
     isFeatured: parsed.isFeatured ?? false,
     brand: normalizeOptionalString(parsed.brand),
@@ -92,6 +106,24 @@ export async function update(id: number, input: unknown) {
     ...(parsed.sku !== undefined ? { sku: normalizeOptionalString(parsed.sku) } : {}),
     ...(parsed.price !== undefined ? { price: new Decimal(parsed.price) } : {}),
     ...(parsed.stock !== undefined ? { stock: parsed.stock } : {}),
+    ...(parsed.minimumStock !== undefined ? { minimumStock: parsed.minimumStock } : {}),
+    ...(parsed.cost !== undefined ? { cost: new Decimal(parsed.cost) } : {}),
+    ...(parsed.stockType !== undefined
+      ? { stockType: normalizeOptionalString(parsed.stockType) }
+      : {}),
+    ...(parsed.stockCategory !== undefined
+      ? { stockCategory: normalizeOptionalString(parsed.stockCategory) }
+      : {}),
+    ...(parsed.brands !== undefined ? { brands: normalizeOptionalString(parsed.brands) } : {}),
+    ...(parsed.application !== undefined
+      ? { application: normalizeOptionalString(parsed.application) }
+      : {}),
+    ...(parsed.dimensions !== undefined
+      ? { dimensions: normalizeOptionalString(parsed.dimensions) }
+      : {}),
+    ...(parsed.location !== undefined
+      ? { location: normalizeOptionalString(parsed.location) }
+      : {}),
     ...(parsed.isActive !== undefined ? { isActive: parsed.isActive } : {}),
     ...(parsed.isFeatured !== undefined ? { isFeatured: parsed.isFeatured } : {}),
     ...(parsed.brand !== undefined ? { brand: normalizeOptionalString(parsed.brand) } : {}),

@@ -1,16 +1,20 @@
 import { prisma } from "@/lib/db/prisma"
-import type { product as Product } from "@prisma/client"
+import type { Prisma, product as Product } from "@prisma/client"
 
 export async function listProducts(params: {
   search?: string
+  category?: string
+  brand?: string
   isActive?: boolean
   page: number
   limit: number
 }) {
-  const { search, isActive, page, limit } = params
+  const { search, category, brand, isActive, page, limit } = params
 
-  const where: any = {
+  const where: Prisma.productWhereInput = {
     ...(typeof isActive === "boolean" ? { isActive } : {}),
+    ...(category ? { category } : {}),
+    ...(brand ? { brand } : {}),
     ...(search
       ? {
           OR: [
@@ -35,15 +39,30 @@ export async function listProducts(params: {
   return { total, items }
 }
 
+export async function getProductFilterOptions() {
+  const items = await prisma.product.findMany({
+    select: { category: true, brand: true },
+  })
+
+  return {
+    categories: Array.from(
+      new Set(items.map((item) => item.category?.trim()).filter((value): value is string => Boolean(value)))
+    ).sort((a, b) => a.localeCompare(b, "es")),
+    brands: Array.from(
+      new Set(items.map((item) => item.brand?.trim()).filter((value): value is string => Boolean(value)))
+    ).sort((a, b) => a.localeCompare(b, "es")),
+  }
+}
+
 export async function getProductById(id: number) {
   return prisma.product.findUnique({ where: { id } })
 }
 
-export async function createProduct(data: any) {
+export async function createProduct(data: Prisma.productUncheckedCreateInput) {
   return prisma.product.create({ data })
 }
 
-export async function updateProduct(id: number, data: any) {
+export async function updateProduct(id: number, data: Prisma.productUncheckedUpdateInput) {
   return prisma.product.update({ where: { id }, data })
 }
 

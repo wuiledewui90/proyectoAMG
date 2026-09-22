@@ -19,6 +19,8 @@ const columnAliases: Record<string, string> = {
   active: "isActive",
   categoria: "category",
   category: "category",
+  codigo: "sku",
+  code: "sku",
   compatibilidad: "compatibility",
   compatibility: "compatibility",
   descripcion: "description",
@@ -40,6 +42,7 @@ const columnAliases: Record<string, string> = {
   name: "name",
   precio: "price",
   price: "price",
+  contado: "price",
   sku: "sku",
   slug: "slug",
   stock: "stock",
@@ -76,7 +79,8 @@ function toNumber(value: unknown) {
   if (typeof value === "number") return value
   const raw = String(value ?? "")
     .trim()
-    .replace(/\s/g, "")
+    .replace(/[\s\u00a0]/g, "")
+    .replace(/[^0-9,.-]/g, "")
 
   const hasComma = raw.includes(",")
   const hasDot = raw.includes(".")
@@ -84,7 +88,9 @@ function toNumber(value: unknown) {
     hasComma && hasDot
       ? raw.replace(/\./g, "").replace(",", ".")
       : hasComma
-        ? raw.replace(",", ".")
+        ? /^-?\d{1,3}(,\d{3})+$/.test(raw)
+          ? raw.replace(/,/g, "")
+          : raw.replace(",", ".")
         : /^\d{1,3}(\.\d{3})+$/.test(raw)
           ? raw.replace(/\./g, "")
           : raw
@@ -160,6 +166,58 @@ function normalizeCategory(category: string, name: string) {
 }
 
 function normalizeRow(row: ImportRow) {
+  const source = Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [normalizeHeader(key), value])
+  )
+
+  const isAmgStockWorkbook =
+    Object.hasOwn(source, "codigo") &&
+    Object.hasOwn(source, "descripcion") &&
+    Object.hasOwn(source, "contado")
+
+  if (isAmgStockWorkbook) {
+    const sku = toStringValue(source.codigo)
+    const name = toStringValue(source.descripcion) || sku
+    const stockType = toStringValue(source.tipo)
+    const stockCategory = toStringValue(source.categoria)
+    const brand = toStringValue(source.marca)
+    const allBrands = toStringValue(source.marcas) || brand
+    const application = toStringValue(source.aplicacion)
+    const dimensions = toStringValue(source.medidas)
+    const compatibility = Array.from(
+      new Set([allBrands, application, dimensions].filter(Boolean))
+    ).join(" · ")
+
+    return {
+      slug: slugify([name, sku].filter(Boolean).join(" ")),
+      name,
+      description: name,
+      sku,
+      brand: brand || allBrands.split(",")[0]?.trim() || "",
+      model: application,
+      category:
+        stockCategory ||
+        (normalizeText(stockType) === "servicio"
+          ? "Servicios"
+          : normalizeCategory("", `${stockType} ${name}`)),
+      compatibility,
+      price: toNumber(source.contado),
+      stock: toNumber(source.stock),
+      minimumStock: toNumber(source.minimo),
+      cost: toNumber(source.costo),
+      stockType,
+      stockCategory,
+      brands: allBrands,
+      application,
+      dimensions,
+      location: toStringValue(source.ubicacion),
+      imageUrl: "",
+      images: [],
+      isActive: true,
+      isFeatured: false,
+    }
+  }
+
   const normalized: ImportRow = {}
 
   for (const [key, value] of Object.entries(row)) {
@@ -167,7 +225,7 @@ function normalizeRow(row: ImportRow) {
     if (mappedKey) normalized[mappedKey] = value
   }
 
-  const name = toStringValue(normalized.name)
+  const name = toStringValue(normalized.name) || toStringValue(normalized.description)
   const slug = toStringValue(normalized.slug) || slugify(name)
   const imageUrl = toStringValue(normalized.imageUrl)
   const category = normalizeCategory(toStringValue(normalized.category), name)
@@ -188,6 +246,14 @@ function normalizeRow(row: ImportRow) {
     isActive: toBoolean(normalized.isActive),
     isFeatured: normalized.isFeatured ? toBoolean(normalized.isFeatured) : false,
   }
+}
+
+function isSummaryRow(row: ImportRow) {
+  const source = Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [normalizeHeader(key), value])
+  )
+  const code = normalizeHeader(toStringValue(source.codigo ?? source.sku))
+  return (code === "total" || code === "totales") && !toStringValue(source.descripcion)
 }
 
 function getImportErrorMessage(err: unknown) {
@@ -256,10 +322,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "El archivo no tiene hojas para importar" }, { status: 400 })
   }
 
-  const rows = XLSX.utils.sheet_to_json<ImportRow>(sheet, {
+  const sourceRows = XLSX.utils.sheet_to_json<ImportRow>(sheet, {
     defval: "",
-    raw: false,
+    raw: true,
   })
+
+  const rows = sourceRows
+    .map((row, index) => ({
+      row,
+      rowNumber:
+        typeof (row as ImportRow & { __rowNum__?: number }).__rowNum__ === "number"
+          ? (row as ImportRow & { __rowNum__: number }).__rowNum__ + 1
+          : index + 2,
+    }))
+    .filter(({ row }) => !isSummaryRow(row))
 
   if (rows.length === 0) {
     return NextResponse.json({ error: "El archivo no tiene productos" }, { status: 400 })
@@ -280,10 +356,18 @@ export async function POST(req: Request) {
     errors: [] as Array<{ row: number; error: string }>,
     items: [] as unknown[],
   }
+  const importedSkuOccurrences = new Map<string, number>()
 
-  for (const [index, rawRow] of rows.entries()) {
-    const rowNumber = index + 2
+  for (const { row: rawRow, rowNumber } of rows) {
     const payload = normalizeRow(rawRow)
+    if (payload.sku) {
+      const occurrence = (importedSkuOccurrences.get(payload.sku) ?? 0) + 1
+      importedSkuOccurrences.set(payload.sku, occurrence)
+      if (occurrence > 1) {
+        payload.sku = `${payload.sku}-${occurrence}`
+        payload.slug = slugify(`${payload.name} ${payload.sku}`)
+      }
+    }
 
     try {
       const existingProduct = await findExistingProduct(payload)
