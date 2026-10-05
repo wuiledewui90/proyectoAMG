@@ -10,7 +10,11 @@ import { getRequestIp } from "@/lib/security/request"
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
-  const { username, password } = body as { username?: string; password?: string }
+  const { username, password, remember } = body as {
+    username?: string
+    password?: string
+    remember?: boolean
+  }
   const normalizedUsername = typeof username === "string" ? username.trim().slice(0, 80) : ""
   const suppliedPassword = typeof password === "string" ? password.slice(0, 129) : ""
   const limitKey = `admin-login:${getRequestIp(req)}:${normalizedUsername.toLowerCase() || "unknown"}`
@@ -41,13 +45,18 @@ export async function POST(req: Request) {
     role: principal.role,
     name: principal.name,
   })
-  res.cookies.set(ADMIN_COOKIE_NAME, await createAdminSessionToken(principal), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: getAdminSessionMaxAge(),
-  })
+  const keepSession = remember === true
+  res.cookies.set(
+    ADMIN_COOKIE_NAME,
+    await createAdminSessionToken(principal, { remember: keepSession }),
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: getAdminSessionMaxAge(keepSession),
+    }
+  )
   res.headers.set("Cache-Control", "no-store")
   return res
 }

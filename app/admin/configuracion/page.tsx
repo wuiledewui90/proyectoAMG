@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Building2, FileText, Save, Settings } from "lucide-react"
+import { Building2, CreditCard, FileText, Plus, Save, Settings, Trash2 } from "lucide-react"
 import { defaultErpSettings, type ErpSettings } from "@/lib/erp-settings"
 
 const inputClass =
@@ -40,6 +40,37 @@ export default function ConfigurationPage() {
 
   function update<K extends keyof ErpSettings>(field: K, value: ErpSettings[K]) {
     setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateCardPlan(index: number, field: "installments" | "surchargeRate", value: number) {
+    setForm((current) => ({
+      ...current,
+      cardInstallmentRates: current.cardInstallmentRates.map((plan, planIndex) =>
+        planIndex === index ? { ...plan, [field]: value } : plan
+      ),
+    }))
+  }
+
+  function addCardPlan() {
+    setForm((current) => {
+      const used = new Set(current.cardInstallmentRates.map((plan) => plan.installments))
+      const suggested = [1, 3, 6, 9, 12, 18, 24].find((installments) => !used.has(installments)) ??
+        Math.min(60, Math.max(1, ...used) + 1)
+      return {
+        ...current,
+        cardInstallmentRates: [
+          ...current.cardInstallmentRates,
+          { installments: suggested, surchargeRate: 0 },
+        ],
+      }
+    })
+  }
+
+  function removeCardPlan(index: number) {
+    setForm((current) => ({
+      ...current,
+      cardInstallmentRates: current.cardInstallmentRates.filter((_, planIndex) => planIndex !== index),
+    }))
   }
 
   async function save(event: React.FormEvent) {
@@ -241,6 +272,85 @@ export default function ConfigurationPage() {
               />
             </label>
           </div>
+        </section>
+
+        <section className="rounded-xl border bg-card p-5">
+          <div className="mb-5 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" aria-hidden="true" />
+              <div>
+                <h2 className="font-semibold">Cuotas y recargos de tarjeta</h2>
+                <p className="text-xs text-muted-foreground">
+                  Definí las cuotas disponibles y el porcentaje que se sumará al total de la venta.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={addCardPlan}
+              disabled={form.cardInstallmentRates.length >= 24}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border bg-background px-4 text-sm font-semibold transition hover:bg-muted disabled:opacity-40"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar plan
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="hidden grid-cols-[1fr_1fr_42px] gap-3 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
+              <span>Cantidad de cuotas</span>
+              <span>Recargo sobre el total</span>
+              <span />
+            </div>
+            {form.cardInstallmentRates.map((plan, index) => (
+              <div key={index} className="grid gap-3 rounded-lg border bg-muted/25 p-3 sm:grid-cols-[1fr_1fr_42px] sm:items-end">
+                <label className="text-sm font-medium">
+                  <span className="sm:hidden">Cantidad de cuotas</span>
+                  <div className="relative">
+                    <input
+                      className={`${inputClass} pr-16`}
+                      type="number"
+                      min={1}
+                      max={60}
+                      step={1}
+                      value={plan.installments}
+                      onChange={(event) => updateCardPlan(index, "installments", Number(event.target.value))}
+                      required
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 mt-0.5 -translate-y-1/2 text-xs text-muted-foreground">cuotas</span>
+                  </div>
+                </label>
+                <label className="text-sm font-medium">
+                  <span className="sm:hidden">Recargo sobre el total</span>
+                  <div className="relative">
+                    <input
+                      className={`${inputClass} pr-9`}
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      value={plan.surchargeRate}
+                      onChange={(event) => updateCardPlan(index, "surchargeRate", Number(event.target.value))}
+                      required
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 mt-0.5 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                  </div>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeCardPlan(index)}
+                  disabled={form.cardInstallmentRates.length <= 1}
+                  className="grid h-10 w-full place-items-center rounded-md border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-35 sm:w-10"
+                  aria-label={`Eliminar plan de ${plan.installments} cuotas`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            Ejemplo: si configurás 6 cuotas con 18%, una venta de $100.000 se cobrará a $118.000, dividida en 6 pagos.
+          </p>
         </section>
 
         {error ? <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}

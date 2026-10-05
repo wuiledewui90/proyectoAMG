@@ -15,9 +15,13 @@ remanente SQLite y no forma parte de la configuracion activa.
 2. Instala dependencias con `pnpm install --frozen-lockfile`.
 3. Ejecuta `pnpm db:setup`.
 
-El script genera claves locales aleatorias, crea `.env` y `.env.docker`, inicia
+El script genera claves locales aleatorias, crea `.env.local` y `.env.docker`, inicia
 MySQL, espera el healthcheck, aplica migraciones y carga los productos iniciales.
 Al finalizar muestra una unica vez el usuario y la clave inicial del panel.
+
+Next.js y la CLI de Prisma leen la misma configuracion local desde `.env.local`.
+Ese archivo y `.env.docker` estan ignorados por Git. En Hostinger, las variables
+de produccion se configuran en el panel; no se copian desde la PC.
 
 ## Comandos diarios
 
@@ -38,5 +42,6 @@ Para usar otro puerto:
 powershell -File scripts/setup-docker-mysql.ps1 -HostPort 3308
 ```
 
-Para produccion usa una instancia MySQL administrada, reemplaza las credenciales
-locales y ejecuta `pnpm db:deploy`.
+Para produccion usa una instancia MySQL administrada y configura las variables
+en el panel de Hostinger. Nunca ejecutes migraciones de produccion desde una
+terminal local sin comprobar primero a que base apunta `DATABASE_URL`.

@@ -18,6 +18,7 @@ enum ErpPaymentMethod {
   CASH
   TRANSFER
   CARD
+  MERCADO_PAGO
   CURRENT_ACCOUNT
   COMBINED
 }
@@ -90,6 +91,7 @@ model product {
   updatedAt      DateTime
   saleItems      erpSaleItem[]
   documentItems  erpDocumentItem[]
+  workOrderItems workOrderItem[]
   stockMovements stockMovement[]
 
   @@index([name], map: "Product_name_idx")
@@ -363,27 +365,30 @@ model customer {
 }
 
 model erpSale {
-  id            Int              @id @default(autoincrement())
-  customerId    Int?
-  createdById   String?
-  voidedById    String?
-  subtotal      Decimal          @db.Decimal(12, 2)
-  discount      Decimal          @default(0) @db.Decimal(12, 2)
-  taxRate       Decimal          @default(0) @db.Decimal(5, 2)
-  taxAmount     Decimal          @default(0) @db.Decimal(12, 2)
-  total         Decimal          @db.Decimal(12, 2)
-  paymentMethod ErpPaymentMethod
-  status        ErpSaleStatus    @default(COMPLETED)
-  notes         String?          @db.Text
-  voidReason    String?          @db.VarChar(500)
-  voidedAt      DateTime?
-  customer      customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  createdBy     erpUser?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  voidedBy      erpUser?         @relation("ErpSaleVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
-  items         erpSaleItem[]
-  payments      erpSalePayment[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id                  Int              @id @default(autoincrement())
+  customerId          Int?
+  createdById         String?
+  voidedById          String?
+  subtotal            Decimal          @db.Decimal(12, 2)
+  discount            Decimal          @default(0) @db.Decimal(12, 2)
+  taxRate             Decimal          @default(0) @db.Decimal(5, 2)
+  taxAmount           Decimal          @default(0) @db.Decimal(12, 2)
+  cardInstallments    Int?
+  cardSurchargeRate   Decimal          @default(0) @db.Decimal(5, 2)
+  cardSurchargeAmount Decimal          @default(0) @db.Decimal(12, 2)
+  total               Decimal          @db.Decimal(12, 2)
+  paymentMethod       ErpPaymentMethod
+  status              ErpSaleStatus    @default(COMPLETED)
+  notes               String?          @db.Text
+  voidReason          String?          @db.VarChar(500)
+  voidedAt            DateTime?
+  customer            customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy           erpUser?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  voidedBy            erpUser?         @relation("ErpSaleVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  items               erpSaleItem[]
+  payments            erpSalePayment[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
   @@index([createdAt], map: "ErpSale_createdAt_idx")
   @@index([customerId], map: "ErpSale_customerId_idx")
@@ -399,6 +404,8 @@ model erpSaleItem {
   productName String   @db.VarChar(191)
   quantity    Int
   unitPrice   Decimal  @db.Decimal(12, 2)
+  unitCost    Decimal? @db.Decimal(12, 2)
+  isStockItem Boolean?
   subtotal    Decimal  @db.Decimal(12, 2)
   sale        erpSale  @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product     product? @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -413,6 +420,7 @@ model erpSalePayment {
   saleId    Int
   method    ErpPaymentMethod
   amount    Decimal          @db.Decimal(12, 2)
+  reference String?          @db.VarChar(120)
   sale      erpSale          @relation(fields: [saleId], references: [id], onDelete: Cascade)
   createdAt DateTime         @default(now())
 
@@ -424,6 +432,7 @@ model workOrder {
   id                 Int             @id @default(autoincrement())
   customerId         Int?
   assignedToId       String?
+  invoiceDocumentId  Int?
   vehiclePlate       String          @db.VarChar(20)
   vehicleDescription String?         @db.VarChar(191)
   problem            String          @db.Text
@@ -433,17 +442,39 @@ model workOrder {
   laborCost          Decimal         @default(0) @db.Decimal(12, 2)
   total              Decimal         @default(0) @db.Decimal(12, 2)
   status             WorkOrderStatus @default(OPEN)
+  receivedAt         DateTime        @default(now())
   estimatedDelivery  DateTime?
   deliveredAt        DateTime?
   customer           customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
   assignedTo         erpUser?        @relation("WorkOrderAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  invoiceDocument    erpDocument?    @relation("WorkOrderInvoice", fields: [invoiceDocumentId], references: [id], onDelete: SetNull)
+  items              workOrderItem[]
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
   @@index([status, createdAt], map: "WorkOrder_status_createdAt_idx")
   @@index([vehiclePlate], map: "WorkOrder_vehiclePlate_idx")
   @@index([customerId], map: "WorkOrder_customerId_idx")
+  @@index([invoiceDocumentId], map: "WorkOrder_invoiceDocumentId_idx")
   @@map("WorkOrder")
+}
+
+model workOrderItem {
+  id          Int       @id @default(autoincrement())
+  workOrderId Int
+  productId   Int?
+  kind        String    @default("PART") @db.VarChar(20)
+  description String    @db.VarChar(255)
+  quantity    Decimal   @db.Decimal(10, 2)
+  unitPrice   Decimal   @db.Decimal(12, 2)
+  subtotal    Decimal   @db.Decimal(12, 2)
+  workOrder   workOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  product     product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@index([workOrderId], map: "WorkOrderItem_workOrderId_idx")
+  @@index([productId], map: "WorkOrderItem_productId_idx")
+  @@map("WorkOrderItem")
 }
 
 model erpExpense {
@@ -509,6 +540,7 @@ model erpDocument {
   createdBy          erpUser?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
   sourceDocument     erpDocument?      @relation("DocumentConversion", fields: [sourceDocumentId], references: [id], onDelete: SetNull)
   convertedDocuments erpDocument[]     @relation("DocumentConversion")
+  workOrders         workOrder[]       @relation("WorkOrderInvoice")
   items              erpDocumentItem[]
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
@@ -537,20 +569,21 @@ model erpDocumentItem {
 }
 
 model erpSetting {
-  id                Int      @id @default(1)
-  businessName      String   @default("Radiadores AMG") @db.VarChar(160)
-  tagline           String?  @db.VarChar(191)
-  taxId             String?  @db.VarChar(40)
-  phone             String?  @db.VarChar(40)
-  email             String?  @db.VarChar(191)
-  address           String?  @db.VarChar(255)
-  whatsapp          String?  @db.VarChar(40)
-  quoteValidityDays Int      @default(15)
-  invoiceDueDays    Int      @default(30)
-  defaultTaxRate    Decimal  @default(0) @db.Decimal(5, 2)
-  defaultTerms      String?  @db.Text
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                   Int      @id @default(1)
+  businessName         String   @default("Radiadores AMG") @db.VarChar(160)
+  tagline              String?  @db.VarChar(191)
+  taxId                String?  @db.VarChar(40)
+  phone                String?  @db.VarChar(40)
+  email                String?  @db.VarChar(191)
+  address              String?  @db.VarChar(255)
+  whatsapp             String?  @db.VarChar(40)
+  quoteValidityDays    Int      @default(15)
+  invoiceDueDays       Int      @default(30)
+  defaultTaxRate       Decimal  @default(0) @db.Decimal(5, 2)
+  cardInstallmentRates Json?
+  defaultTerms         String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@map("ErpSetting")
 }

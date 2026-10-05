@@ -16,7 +16,7 @@
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "images:webp": "node scripts/convert-images-to-webp.mjs",
-    "images:supabase": "node --env-file=.env scripts/migrate-product-images-to-supabase.mjs",
+    "images:supabase": "node --env-file=.env.local scripts/migrate-product-images-to-supabase.mjs",
     "catalog:images": "node scripts/import-amg-catalog-images.mjs",
     "db:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-docker-mysql.ps1",
     "db:setup:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-mysql.ps1",
@@ -29,11 +29,9 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@next/env": "16.3.8",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",

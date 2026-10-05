@@ -12,7 +12,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$envPath = Join-Path $projectRoot '.env'
+$envPath = Join-Path $projectRoot '.env.local'
+
+if (Test-Path -LiteralPath $envPath) {
+  throw '.env.local ya existe. No se reemplazará la configuración local ni se modificará MySQL.'
+}
 $mysqlCandidates = @(
   'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe',
   'C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe',
@@ -111,7 +115,7 @@ FLUSH PRIVILEGES;
     if ($LASTEXITCODE -ne 0) { throw 'Fallo la carga de datos iniciales.' }
   }
 
-  Write-Host "Base '$DatabaseName' lista y .env creado correctamente." -ForegroundColor Green
+  Write-Host "Base '$DatabaseName' lista y .env.local creado correctamente." -ForegroundColor Green
 }
 finally {
   Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue

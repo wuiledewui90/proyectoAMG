@@ -63,6 +63,7 @@ const paymentLabels: Record<string, string> = {
   CASH: "Efectivo",
   TRANSFER: "Transferencias",
   CARD: "Tarjetas",
+  MERCADO_PAGO: "Mercado Pago",
   CURRENT_ACCOUNT: "Cuenta corriente",
   COMBINED: "Combinado",
 }
@@ -178,9 +179,12 @@ export default function CashPage() {
     const transferIncome = sumGroup(
       incomes.filter((item) => item.paymentMethod === "TRANSFER")
     )
+    const mercadoPagoIncome = sumGroup(
+      incomes.filter((item) => item.paymentMethod === "MERCADO_PAGO")
+    )
     const otherIncome = sumGroup(
       incomes.filter(
-        (item) => !["CASH", "TRANSFER"].includes(item.paymentMethod)
+        (item) => !["CASH", "TRANSFER", "MERCADO_PAGO"].includes(item.paymentMethod)
       )
     )
     const materialWords = ["repuesto", "insumo", "herramienta", "material"]
@@ -219,6 +223,7 @@ export default function CashPage() {
     return {
       cashIncome,
       transferIncome,
+      mercadoPagoIncome,
       otherIncome,
       materialExpense: sumGroup(materialItems),
       serviceExpense: sumGroup(serviceItems),
@@ -259,7 +264,7 @@ export default function CashPage() {
             </span>
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[.16em] text-white/70">Operación diaria · Tesorería</p>
-              <h1 className="text-2xl font-semibold tracking-[-.035em]">Caja</h1>
+              <h1 data-quick-access-label="Abrir caja" className="text-2xl font-semibold tracking-[-.035em]">Caja</h1>
               <p className="text-xs text-white/75">Ingresos, egresos y arqueo de la jornada en un solo lugar.</p>
             </div>
           </div>
@@ -294,7 +299,8 @@ export default function CashPage() {
         <SummaryPanel eyebrow="Movimientos del turno" title="Ingresos" total={data.summary.income} tone="income" description="Dinero realmente cobrado durante esta jornada, separado por medio de pago." footer={`${data.summary.incomeCount} cobros registrados`}>
           <CategoryTile icon={Banknote} label="Efectivo" value={dashboard.cashIncome.amount} count={dashboard.cashIncome.count} tone="income" detail="Billetes y monedas que entraron en caja." />
           <CategoryTile icon={Landmark} label="Transferencias" value={dashboard.transferIncome.amount} count={dashboard.transferIncome.count} tone="income" detail="Cobros acreditados por transferencia." />
-          <CategoryTile icon={CreditCard} label="Otros medios" value={dashboard.otherIncome.amount} count={dashboard.otherIncome.count} tone="income" detail="Tarjetas, cheques y otros cobros." />
+          <CategoryTile icon={Wallet} label="Mercado Pago" value={dashboard.mercadoPagoIncome.amount} count={dashboard.mercadoPagoIncome.count} tone="income" detail="Ingresos registrados en la cuenta digital del negocio." />
+          <CategoryTile icon={CreditCard} label="Tarjetas y otros" value={dashboard.otherIncome.amount} count={dashboard.otherIncome.count} tone="income" detail="Tarjetas, cheques y otros cobros." />
         </SummaryPanel>
 
         <SummaryPanel eyebrow="Salidas registradas" title="Egresos" total={data.summary.expense} tone="expense" description="Gastos registrados para esta caja, agrupados por concepto." footer={`${data.summary.expenseCount} gastos registrados`}>
@@ -339,9 +345,9 @@ export default function CashPage() {
       </div>
 
       <section className="overflow-hidden rounded-[18px] border border-slate-200/80 bg-white/90 shadow-[0_10px_32px_rgba(15,23,42,.05)]">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] uppercase tracking-[.13em] text-slate-400">Trazabilidad</p><h2 className="mt-1 text-lg font-semibold">Movimientos del día</h2></div><div className="flex items-center gap-3"><span className="text-[10px] text-slate-400">{data.movements.length} registros</span>{data.session && !closed && isToday && <button onClick={() => setShowMovement((current) => !current)} className="flex h-9 items-center gap-2 rounded-lg bg-[#0874e5] px-4 text-xs font-semibold text-white"><Plus className="h-3.5 w-3.5" /> Movimiento manual</button>}</div></div>
+        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] uppercase tracking-[.13em] text-slate-400">Trazabilidad</p><h2 data-quick-access-label="Movimientos del día" className="mt-1 text-lg font-semibold">Movimientos del día</h2></div><div className="flex items-center gap-3"><span className="text-[10px] text-slate-400">{data.movements.length} registros</span>{data.session && !closed && isToday && <button onClick={() => setShowMovement((current) => !current)} className="flex h-9 items-center gap-2 rounded-lg bg-[#0874e5] px-4 text-xs font-semibold text-white"><Plus className="h-3.5 w-3.5" /> Movimiento manual</button>}</div></div>
         {showMovement && (
-          <div className="grid gap-2 border-b border-blue-100 bg-[#f4f8fc] p-4 sm:grid-cols-2 xl:grid-cols-[150px_1fr_170px_180px_130px]"><select className={inputClass} value={movement.type} onChange={(event) => setMovement({ ...movement, type: event.target.value })}><option value="INCOME">Ingreso</option><option value="EXPENSE">Egreso</option></select><input className={inputClass} value={movement.description} onChange={(event) => setMovement({ ...movement, description: event.target.value })} placeholder="Concepto del movimiento" /><input type="number" min="0.01" step="0.01" className={inputClass} value={movement.amount} onChange={(event) => setMovement({ ...movement, amount: event.target.value })} placeholder="Importe" /><select className={inputClass} value={movement.paymentMethod} onChange={(event) => setMovement({ ...movement, paymentMethod: event.target.value })}><option value="CASH">Efectivo</option><option value="TRANSFER">Transferencia</option><option value="CARD">Tarjeta</option><option value="CURRENT_ACCOUNT">Cuenta corriente</option></select><button disabled={busy} onClick={() => void action({ action: "movement", ...movement, amount: Number(movement.amount) })} className="h-11 rounded-lg bg-slate-950 px-4 text-xs font-semibold text-white disabled:opacity-50">Registrar</button></div>
+          <div className="grid gap-2 border-b border-blue-100 bg-[#f4f8fc] p-4 sm:grid-cols-2 xl:grid-cols-[150px_1fr_170px_180px_130px]"><select className={inputClass} value={movement.type} onChange={(event) => setMovement({ ...movement, type: event.target.value })}><option value="INCOME">Ingreso</option><option value="EXPENSE">Egreso</option></select><input className={inputClass} value={movement.description} onChange={(event) => setMovement({ ...movement, description: event.target.value })} placeholder="Concepto del movimiento" /><input type="number" min="0.01" step="0.01" className={inputClass} value={movement.amount} onChange={(event) => setMovement({ ...movement, amount: event.target.value })} placeholder="Importe" /><select className={inputClass} value={movement.paymentMethod} onChange={(event) => setMovement({ ...movement, paymentMethod: event.target.value })}><option value="CASH">Efectivo</option><option value="TRANSFER">Transferencia</option><option value="CARD">Tarjeta</option><option value="MERCADO_PAGO">Mercado Pago</option><option value="CURRENT_ACCOUNT">Cuenta corriente</option></select><button disabled={busy} onClick={() => void action({ action: "movement", ...movement, amount: Number(movement.amount) })} className="h-11 rounded-lg bg-slate-950 px-4 text-xs font-semibold text-white disabled:opacity-50">Registrar</button></div>
         )}
         <div className="overflow-x-auto p-4"><table className="w-full min-w-[760px] text-xs"><thead className="bg-[#edf5fd] text-[9px] uppercase tracking-wider text-slate-400"><tr><th className="px-3 py-2 text-left font-medium">Hora</th><th className="px-3 py-2 text-left font-medium">Concepto</th><th className="px-3 py-2 text-left font-medium">Medio</th><th className="px-3 py-2 text-right font-medium">Entrada</th><th className="px-3 py-2 text-right font-medium">Salida</th></tr></thead><tbody>{data.movements.map((item) => <tr key={item.id} className="border-b border-slate-100 last:border-0"><td className="px-3 py-3 text-slate-500">{movementTime(item.createdAt)}</td><td className="px-3 py-3"><p className="font-medium">{sourceLabels[item.source] || item.description}</p><p className="mt-0.5 text-[10px] text-slate-400">{item.source === "MANUAL" ? item.description : item.detail}</p></td><td className="px-3 py-3 capitalize">{paymentLabels[item.paymentMethod] || item.paymentMethod}</td><td className="px-3 py-3 text-right font-medium text-emerald-700">{item.type === "INCOME" ? formatPrice(item.amount) : "—"}</td><td className="px-3 py-3 text-right font-medium text-rose-600">{item.type === "EXPENSE" ? formatPrice(item.amount) : "—"}</td></tr>)}</tbody></table>{!data.movements.length && <p className="py-12 text-center text-xs text-slate-400">No hay movimientos en esta jornada.</p>}</div>
       </section>
@@ -353,7 +359,7 @@ export default function CashPage() {
 
 function SummaryPanel({ eyebrow, title, total, tone, description, footer, children }: { eyebrow: string; title: string; total: number; tone: "income" | "expense"; description: string; footer: string; children: React.ReactNode }) {
   const color = tone === "income" ? "text-emerald-700" : "text-rose-600"
-  return <section className="flex min-h-[350px] flex-col rounded-[18px] border border-slate-200/80 bg-white/90 p-4 shadow-[0_10px_32px_rgba(15,23,42,.055)]"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.13em] text-slate-400">{eyebrow}</p><h2 className={`mt-1 text-lg font-semibold ${color}`}>{title}</h2></div><strong className={`text-lg font-medium ${color}`}>{formatPrice(total)}</strong></div><p className="mt-2 text-xs leading-relaxed text-slate-500">{description}</p><div className="mt-4 grid grid-cols-3 gap-2">{children}</div><div className="mt-auto flex items-center justify-between border border-blue-100 bg-[#f3f8fd] px-3 py-2 text-xs"><span className="uppercase tracking-wide text-slate-400">Total de {title.toLowerCase()}</span><div className="text-right"><strong className={color}>{formatPrice(total)}</strong><p className="text-[9px] text-slate-400">{footer}</p></div></div></section>
+  return <section className="flex min-h-[350px] flex-col rounded-[18px] border border-slate-200/80 bg-white/90 p-4 shadow-[0_10px_32px_rgba(15,23,42,.055)]"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.13em] text-slate-400">{eyebrow}</p><h2 className={`mt-1 text-lg font-semibold ${color}`}>{title}</h2></div><strong className={`text-lg font-medium ${color}`}>{formatPrice(total)}</strong></div><p className="mt-2 text-xs leading-relaxed text-slate-500">{description}</p><div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{children}</div><div className="mt-auto flex items-center justify-between border border-blue-100 bg-[#f3f8fd] px-3 py-2 text-xs"><span className="uppercase tracking-wide text-slate-400">Total de {title.toLowerCase()}</span><div className="text-right"><strong className={color}>{formatPrice(total)}</strong><p className="text-[9px] text-slate-400">{footer}</p></div></div></section>
 }
 
 function CategoryTile({ icon: Icon, label, value, count, tone, detail }: { icon: LucideIcon; label: string; value: number; count: number; tone: "income" | "expense"; detail: string }) {

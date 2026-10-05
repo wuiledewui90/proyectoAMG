@@ -19,7 +19,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$appEnvPath = Join-Path $projectRoot '.env'
+$appEnvPath = Join-Path $projectRoot '.env.local'
 $dockerEnvPath = Join-Path $projectRoot '.env.docker'
 
 function New-RandomBase64Url([int]$ByteCount) {
@@ -52,7 +52,7 @@ if ($occupiedPort) {
 }
 
 if (-not $Force -and ((Test-Path -LiteralPath $appEnvPath) -or (Test-Path -LiteralPath $dockerEnvPath))) {
-  throw 'Ya existe .env o .env.docker. Usa -Force solamente si deseas reemplazar la configuracion local.'
+  throw 'Ya existe .env.local o .env.docker. Usa -Force solamente si deseas reemplazar la configuracion local.'
 }
 
 if ([string]::IsNullOrWhiteSpace($AdminPassword)) {

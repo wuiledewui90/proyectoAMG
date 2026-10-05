@@ -8,6 +8,7 @@ const encoder = new TextEncoder()
 export const ADMIN_COOKIE_NAME = "amg_admin_session"
 
 const SESSION_TTL_SECONDS = 60 * 60 * 8
+const REMEMBERED_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$.{53}$/
 const DUMMY_PASSWORD_HASH = "$2b$12$2Shlf6Z2OPyiykPD90YhU.1bpCOWS3c9N5V7uDC5nCt.4msKXL15y"
 
@@ -220,11 +221,13 @@ export async function createAdminSessionToken(
     user: getAdminUsername(),
     name: "Administrador",
     role: "ADMIN",
-  }
+  },
+  options: { remember?: boolean } = {}
 ) {
+  const maxAge = getAdminSessionMaxAge(options.remember)
   const payload: AdminSessionPayload = {
     ...principal,
-    exp: Date.now() + SESSION_TTL_SECONDS * 1000,
+    exp: Date.now() + maxAge * 1000,
   }
 
   const encodedPayload = base64UrlEncode(JSON.stringify(payload))
@@ -287,6 +290,6 @@ export async function readAdminSessionToken(token?: string | null) {
   }
 }
 
-export function getAdminSessionMaxAge() {
-  return SESSION_TTL_SECONDS
+export function getAdminSessionMaxAge(remember = false) {
+  return remember ? REMEMBERED_SESSION_TTL_SECONDS : SESSION_TTL_SECONDS
 }

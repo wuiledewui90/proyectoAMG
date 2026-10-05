@@ -42,6 +42,9 @@ type Product = {
   sku: string | null
   price: number
   isActive: boolean
+  category: string | null
+  stockType: string | null
+  stockCategory: string | null
 }
 
 type DocumentItem = {
@@ -98,6 +101,13 @@ function storedDateInput(value: string | null | undefined) {
   return value ? value.slice(0, 10) : ""
 }
 
+function itemKind(product: Product) {
+  const value = `${product.stockType || ""} ${product.category || ""} ${product.stockCategory || ""}`.toLowerCase()
+  if (value.includes("mano de obra")) return "LABOR"
+  if (value.includes("servicio")) return "SERVICE"
+  return "PRODUCT"
+}
+
 const emptyForm = (settings: ErpSettings = defaultErpSettings) => ({
   type: "QUOTE" as "QUOTE" | "QUOTATION" | "INVOICE",
   customerId: "",
@@ -121,6 +131,8 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<CommercialDocument[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [itemQuery, setItemQuery] = useState("")
+  const [itemKindFilter, setItemKindFilter] = useState<"ALL" | "PRODUCT" | "SERVICE" | "LABOR">("ALL")
   const [form, setForm] = useState(emptyForm)
   const [lines, setLines] = useState<FormLine[]>([emptyLine()])
   const [query, setQuery] = useState("")
@@ -224,6 +236,25 @@ export default function DocumentsPage() {
   const discount = Math.min(Math.max(Number(form.discount) || 0, 0), subtotal)
   const taxAmount = (subtotal - discount) * ((Number(form.taxRate) || 0) / 100)
   const total = subtotal - discount + taxAmount
+
+  const filteredProducts = useMemo(() => {
+    const normalized = itemQuery.trim().toLowerCase()
+    return products.filter((product) => {
+      if (!product.isActive) return false
+      const matchesKind = itemKindFilter === "ALL" || itemKind(product) === itemKindFilter
+      const matchesQuery = !normalized || `${product.name} ${product.sku || ""} ${product.category || ""} ${product.stockType || ""} ${product.stockCategory || ""}`
+        .toLowerCase()
+        .includes(normalized)
+      return matchesKind && matchesQuery
+    })
+  }, [itemKindFilter, itemQuery, products])
+
+  function productsForLine(productId: string) {
+    const selected = products.find((product) => product.id === Number(productId))
+    return selected && !filteredProducts.some((product) => product.id === selected.id)
+      ? [selected, ...filteredProducts]
+      : filteredProducts
+  }
 
   const visibleDocuments = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -544,15 +575,34 @@ export default function DocumentsPage() {
               <Plus className="h-4 w-4" /> Agregar ítem
             </button>
           </div>
+          <div className="grid gap-2 rounded-lg border bg-muted/30 p-3 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
+            <label className="text-xs font-medium text-muted-foreground">
+              Buscar producto, servicio o mano de obra
+              <div className="relative mt-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input className={`${inputClass} pl-9`} value={itemQuery} onChange={(event) => setItemQuery(event.target.value)} placeholder="Nombre, SKU o categoría" />
+              </div>
+            </label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Tipo
+              <select className={`${inputClass} mt-1`} value={itemKindFilter} onChange={(event) => setItemKindFilter(event.target.value as "ALL" | "PRODUCT" | "SERVICE" | "LABOR")}>
+                <option value="ALL">Todos</option>
+                <option value="PRODUCT">Productos</option>
+                <option value="SERVICE">Servicios</option>
+                <option value="LABOR">Mano de obra</option>
+              </select>
+            </label>
+            <p className="pb-2 text-xs text-muted-foreground">{filteredProducts.length} disponibles</p>
+          </div>
           <div className="space-y-3">
             {lines.map((line, index) => (
               <div key={index} className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1.1fr_2fr_100px_140px_44px] md:items-end">
                 <label className="text-xs font-medium text-muted-foreground">
-                  Producto opcional
+                  Producto, servicio o mano de obra
                   <select className={`${inputClass} mt-1`} value={line.productId} onChange={(event) => selectProduct(index, event.target.value)}>
-                    <option value="">Ítem libre / servicio</option>
-                    {products.filter((product) => product.isActive).map((product) => (
-                      <option key={product.id} value={product.id}>{product.name}{product.sku ? ` · ${product.sku}` : ""}</option>
+                    <option value="">Ítem libre</option>
+                    {productsForLine(line.productId).map((product) => (
+                      <option key={product.id} value={product.id}>[{itemKind(product) === "PRODUCT" ? "Producto" : itemKind(product) === "SERVICE" ? "Servicio" : "Mano de obra"}] {product.name}{product.sku ? ` · ${product.sku}` : ""}</option>
                     ))}
                   </select>
                 </label>

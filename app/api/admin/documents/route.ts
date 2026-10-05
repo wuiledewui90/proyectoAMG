@@ -56,8 +56,9 @@ export async function POST(req: Request) {
 
   const created = await prisma.$transaction(async (tx) => {
     let customerId = prepared.data.customerId
+    const saveCustomer = body.saveCustomer === true
 
-    if (!customerId && prepared.data.customerName !== "Consumidor final") {
+    if (!customerId && saveCustomer && prepared.data.customerName !== "Consumidor final") {
       const identifiers = [
         prepared.data.customerTaxId
           ? { taxId: prepared.data.customerTaxId }

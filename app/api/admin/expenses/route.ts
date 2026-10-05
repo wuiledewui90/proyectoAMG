@@ -20,8 +20,8 @@ export async function POST(req: Request) {
   const amount = Number(body.amount)
   const paymentMethod = String(body.paymentMethod || "")
   if (!body.category?.trim() || !body.description?.trim() || !Number.isFinite(amount) || amount <= 0) return NextResponse.json({ error: "Completá categoría, detalle e importe." }, { status: 400 })
-  if (!["CASH", "TRANSFER", "CARD", "CURRENT_ACCOUNT"].includes(paymentMethod)) return NextResponse.json({ error: "Medio de pago inválido." }, { status: 400 })
-  const expense = await prisma.erpExpense.create({ data: { category: body.category.trim(), description: body.description.trim(), amount, paymentMethod: paymentMethod as "CASH" | "TRANSFER" | "CARD" | "CURRENT_ACCOUNT", createdById: session.userId || null, expenseDate: body.expenseDate ? new Date(body.expenseDate) : new Date() }, include: { createdBy: true } })
+  if (!["CASH", "TRANSFER", "CARD", "MERCADO_PAGO", "CURRENT_ACCOUNT"].includes(paymentMethod)) return NextResponse.json({ error: "Medio de pago inválido." }, { status: 400 })
+  const expense = await prisma.erpExpense.create({ data: { category: body.category.trim(), description: body.description.trim(), amount, paymentMethod: paymentMethod as "CASH" | "TRANSFER" | "CARD" | "MERCADO_PAGO" | "CURRENT_ACCOUNT", createdById: session.userId || null, expenseDate: body.expenseDate ? new Date(body.expenseDate) : new Date() }, include: { createdBy: true } })
   return NextResponse.json(serialize(expense), { status: 201 })
 }
 

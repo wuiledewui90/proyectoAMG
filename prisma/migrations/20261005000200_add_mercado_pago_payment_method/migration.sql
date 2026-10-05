@@ -1,0 +1,15 @@
+-- Mercado Pago queda registrado como un medio de cobro independiente.
+ALTER TABLE `ErpSale`
+MODIFY `paymentMethod` ENUM('CASH', 'TRANSFER', 'CARD', 'MERCADO_PAGO', 'CURRENT_ACCOUNT', 'COMBINED') NOT NULL;
+
+ALTER TABLE `ErpSalePayment`
+MODIFY `method` ENUM('CASH', 'TRANSFER', 'CARD', 'MERCADO_PAGO', 'CURRENT_ACCOUNT', 'COMBINED') NOT NULL;
+
+ALTER TABLE `ErpSalePayment`
+ADD COLUMN `reference` VARCHAR(120) NULL;
+
+ALTER TABLE `ErpExpense`
+MODIFY `paymentMethod` ENUM('CASH', 'TRANSFER', 'CARD', 'MERCADO_PAGO', 'CURRENT_ACCOUNT', 'COMBINED') NOT NULL;
+
+ALTER TABLE `CashMovement`
+MODIFY `paymentMethod` ENUM('CASH', 'TRANSFER', 'CARD', 'MERCADO_PAGO', 'CURRENT_ACCOUNT', 'COMBINED') NOT NULL DEFAULT 'CASH';

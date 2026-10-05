@@ -26,7 +26,7 @@ export function AdminQuickAccess({ pathname }: { pathname: string }) {
 
         const seen = new Set<string>()
         const nextSections: QuickSection[] = []
-        const headings = Array.from(main.querySelectorAll<HTMLElement>("h2, h3"))
+        const headings = Array.from(main.querySelectorAll<HTMLElement>("h2, h3, [data-quick-access-label]"))
         const explicitHeadings = headings.filter((heading) => heading.hasAttribute("data-quick-access-label"))
         const candidateHeadings = explicitHeadings.length ? explicitHeadings : headings
 

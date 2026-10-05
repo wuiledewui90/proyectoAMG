@@ -8,6 +8,7 @@ const paymentLabels: Record<string, string> = {
   CASH: "Efectivo",
   TRANSFER: "Transferencia",
   CARD: "Tarjeta",
+  MERCADO_PAGO: "Mercado Pago",
   CURRENT_ACCOUNT: "Cuenta corriente",
 }
 
@@ -49,6 +50,9 @@ export async function POST(req: Request, { params }: RouteContext) {
     return NextResponse.json({ id: existing.id, existing: true })
   }
 
+  const cardSurchargeAmount = Number(sale.cardSurchargeAmount || 0)
+  const documentSubtotal = Number(sale.subtotal) + cardSurchargeAmount
+
   const invoice = await prisma.erpDocument.create({
     data: {
       type: "INVOICE",
@@ -69,7 +73,7 @@ export async function POST(req: Request, { params }: RouteContext) {
         .join(" ") || null,
       vehiclePlate: sale.customer?.vehiclePlate || null,
       issueDate: new Date(),
-      subtotal: sale.subtotal,
+      subtotal: documentSubtotal,
       discount: sale.discount,
       taxRate: sale.taxRate,
       taxAmount: sale.taxAmount,
@@ -80,22 +84,33 @@ export async function POST(req: Request, { params }: RouteContext) {
           ? `Pago combinado: ${sale.payments
               .map(
                 (payment) =>
-                  `${paymentLabels[payment.method] || payment.method} $ ${Number(payment.amount).toLocaleString("es-AR")}`
+                  `${paymentLabels[payment.method] || payment.method} $ ${Number(payment.amount).toLocaleString("es-AR")}${payment.reference ? ` · Op. ${payment.reference}` : ""}`
               )
               .join(" · ")}`
-          : `Medio de pago: ${paymentLabels[sale.paymentMethod] || sale.paymentMethod}`,
+          : `Medio de pago: ${paymentLabels[sale.paymentMethod] || sale.paymentMethod}${sale.cardInstallments ? ` · ${sale.cardInstallments} cuota${sale.cardInstallments === 1 ? "" : "s"}${Number(sale.cardSurchargeRate) > 0 ? ` · Recargo ${Number(sale.cardSurchargeRate).toLocaleString("es-AR")}%` : " · Sin recargo"}` : ""}${sale.payments[0]?.reference ? ` · Op. ${sale.payments[0].reference}` : ""}`,
       ]
         .filter(Boolean)
         .join("\n"),
       terms: sourceMarker,
       items: {
-        create: sale.items.map((item) => ({
-          productId: item.productId,
-          description: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          subtotal: item.subtotal,
-        })),
+        create: [
+          ...sale.items.map((item) => ({
+            productId: item.productId,
+            description: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            subtotal: item.subtotal,
+          })),
+          ...(cardSurchargeAmount > 0
+            ? [{
+                productId: null,
+                description: `Recargo por pago con tarjeta en ${sale.cardInstallments} cuotas (${Number(sale.cardSurchargeRate).toLocaleString("es-AR")}%)`,
+                quantity: 1,
+                unitPrice: cardSurchargeAmount,
+                subtotal: cardSurchargeAmount,
+              }]
+            : []),
+        ],
       },
     },
     select: { id: true },

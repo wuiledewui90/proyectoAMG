@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/db/prisma"
 import type { Prisma, product as Product } from "@prisma/client"
 
+export class StockAdjustmentConflictError extends Error {}
+export class StockAdjustmentReasonError extends Error {}
+export class ProductNotFoundError extends Error {}
+
+type StockAudit = { actorId?: string | null; reason?: string }
+
 export async function listProducts(params: {
   search?: string
   category?: string
@@ -58,12 +64,65 @@ export async function getProductById(id: number) {
   return prisma.product.findUnique({ where: { id } })
 }
 
-export async function createProduct(data: Prisma.productUncheckedCreateInput) {
-  return prisma.product.create({ data })
+export async function createProduct(data: Prisma.productUncheckedCreateInput, audit: StockAudit = {}) {
+  return prisma.$transaction(async (tx) => {
+    const created = await tx.product.create({ data })
+    if (created.stock > 0) {
+      await tx.stockMovement.create({
+        data: {
+          productId: created.id,
+          createdById: audit.actorId || null,
+          type: "ADJUSTMENT",
+          quantity: created.stock,
+          previousStock: 0,
+          newStock: created.stock,
+          notes: audit.reason?.slice(0, 255) || "Carga inicial de inventario",
+        },
+      })
+    }
+    return created
+  })
 }
 
-export async function updateProduct(id: number, data: Prisma.productUncheckedUpdateInput) {
-  return prisma.product.update({ where: { id }, data })
+export async function updateProduct(
+  id: number,
+  data: Prisma.productUncheckedUpdateInput,
+  nextStock?: number,
+  audit: StockAudit = {},
+) {
+  if (nextStock === undefined) return prisma.product.update({ where: { id }, data })
+
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.product.findUnique({ where: { id }, select: { stock: true } })
+    if (!current) throw new ProductNotFoundError("Producto no encontrado")
+    if (nextStock !== current.stock && (!audit.reason || audit.reason.trim().length < 5)) {
+      throw new StockAdjustmentReasonError("Indicá un motivo de al menos 5 caracteres para cambiar el stock.")
+    }
+
+    // The compare-and-set prevents an edit form from overwriting a concurrent sale.
+    const updated = await tx.product.updateMany({
+      where: { id, stock: current.stock },
+      data,
+    })
+    if (updated.count !== 1) {
+      throw new StockAdjustmentConflictError("El stock cambió durante la edición. Recargá el producto y volvé a intentar.")
+    }
+
+    if (nextStock !== current.stock) {
+      await tx.stockMovement.create({
+        data: {
+          productId: id,
+          createdById: audit.actorId || null,
+          type: "ADJUSTMENT",
+          quantity: nextStock - current.stock,
+          previousStock: current.stock,
+          newStock: nextStock,
+          notes: audit.reason!.trim().slice(0, 255),
+        },
+      })
+    }
+    return tx.product.findUniqueOrThrow({ where: { id } })
+  })
 }
 
 export async function softDeleteProduct(id: number) {

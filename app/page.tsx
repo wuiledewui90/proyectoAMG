@@ -92,7 +92,7 @@ export default async function HomePage() {
                 href="https://www.google.com/maps/place/RADIADORES+AMG/@-29.4002907,-66.8367486,17z/data=!3m1!4b1!4m6!3m5!1s0x9427da42c30e0433:0x576025b3cc0c6a5b!8m2!3d-29.4002907!4d-66.8341737!16s%2Fg%2F11h9z11xml?entry=ttu"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex min-h-10 items-center justify-center gap-2.5 rounded-xl border border-[#315caf] bg-[#0b2a69]/20 px-5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition duration-300 hover:border-[#4776d0] hover:bg-[#0b2a69]"
+                className="directions-soft-pulse group inline-flex min-h-10 items-center justify-center gap-2.5 rounded-xl border border-[#315caf] bg-[#0b2a69]/20 px-5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition duration-300 hover:border-[#4776d0] hover:bg-[#0b2a69]"
               >
                 Cómo llegar
                 <MapPin className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />

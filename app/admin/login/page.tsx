@@ -21,6 +21,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,7 +42,7 @@ export default function AdminLoginPage() {
         credentials: "include",
           body: JSON.stringify(
             mode === "login"
-              ? { username, password }
+              ? { username, password, remember }
               : { username, pin, newPassword }
           ),
         }
@@ -63,10 +64,7 @@ export default function AdminLoginPage() {
         return
       }
 
-      if (
-        mode === "login" &&
-        window.matchMedia("(max-width: 768px)").matches
-      ) {
+      if (mode === "login") {
         document.documentElement.classList.add(MOBILE_WELCOME_DOCUMENT_CLASS)
         window.sessionStorage.setItem(
           MOBILE_WELCOME_STORAGE_KEY,
@@ -101,6 +99,16 @@ export default function AdminLoginPage() {
         />
       </div>
       <div className="admin-login-mobile-overlay absolute inset-0 hidden" aria-hidden="true" />
+      <div className="admin-login-desktop-visual" aria-hidden="true">
+        <Image
+          src="/images/login/amg-login-mobile.png"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 769px) 50vw, 1px"
+          className="object-cover object-center"
+        />
+      </div>
 
       <div className="admin-login-card relative z-10 w-full max-w-md space-y-4 rounded-xl border bg-background p-6">
         <div className="admin-login-heading space-y-1">
@@ -204,8 +212,13 @@ export default function AdminLoginPage() {
 
           {mode === "login" && (
             <label className="admin-login-remember hidden items-center gap-2 text-sm text-white/75">
-              <input type="checkbox" className="h-4 w-4 rounded border-white/30 bg-white/10 accent-blue-500" />
-              Recordarme
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(event) => setRemember(event.target.checked)}
+                className="h-4 w-4 rounded border-white/30 bg-white/10 accent-blue-500"
+              />
+              Mantener mi sesión durante 30 días
             </label>
           )}
 

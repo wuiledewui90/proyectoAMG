@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { cookies } from "next/headers"
 import type { ComponentType } from "react"
 import {
   Activity,
@@ -19,6 +20,8 @@ import { RevenueTrendChart } from "@/components/admin-dashboard-charts"
 import { prisma } from "@/lib/db/prisma"
 import { formatPrice } from "@/lib/data"
 import { AdminMobileExpandableText } from "@/components/admin-mobile-expandable-text"
+import { getInventoryAnalytics } from "@/lib/products/inventory-analytics"
+import { ADMIN_COOKIE_NAME, readAdminSessionToken } from "@/lib/admin-session"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -27,6 +30,7 @@ const paymentLabels: Record<string, string> = {
   CASH: "Efectivo",
   TRANSFER: "Transferencia",
   CARD: "Tarjeta",
+  MERCADO_PAGO: "Mercado Pago",
   CURRENT_ACCOUNT: "Cuenta corriente",
   COMBINED: "Pago combinado",
 }
@@ -52,6 +56,7 @@ const orderColors: Record<string, string> = {
 }
 
 export default async function ReportsPage() {
+  const session = await readAdminSessionToken((await cookies()).get(ADMIN_COOKIE_NAME)?.value)
   const now = new Date()
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -127,6 +132,14 @@ export default async function ReportsPage() {
       orderBy: { expenseDate: "asc" },
     }),
   ])
+  let inventoryAnalytics: Awaited<ReturnType<typeof getInventoryAnalytics>> | null = null
+  if (session && session.role === "ADMIN") {
+    try {
+      inventoryAnalytics = await getInventoryAnalytics()
+    } catch {
+      // La migración de costos no debe impedir consultar los demás reportes.
+    }
+  }
 
   const revenue = Number(monthSales._sum.total ?? 0)
   const previousRevenue = Number(previousMonthSales._sum.total ?? 0)
@@ -135,7 +148,6 @@ export default async function ReportsPage() {
   const result = revenue - expenses
   const previousResult = previousRevenue - previousExpenses
   const averageTicket = monthSales._count > 0 ? revenue / monthSales._count : 0
-  const margin = revenue > 0 ? (result / revenue) * 100 : 0
   const maxTop = Math.max(...topItems.map((item) => Number(item._sum.subtotal ?? 0)), 1)
   const activeOrderTotal = workOrders
     .filter((order) => !["DELIVERED", "CANCELLED"].includes(order.status))
@@ -213,7 +225,7 @@ export default async function ReportsPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           icon={CircleDollarSign}
           label="Ventas de hoy"
@@ -231,12 +243,23 @@ export default async function ReportsPage() {
         />
         <StatCard
           icon={Activity}
-          label="Resultado neto"
+          label="Ventas menos gastos"
           value={formatPrice(result)}
-          detail={`${margin.toFixed(1)}% de margen`}
+          detail="No descuenta el costo de mercadería"
           change={percentageChange(result, previousResult)}
           tone={result >= 0 ? "green" : "red"}
         />
+        {inventoryAnalytics && (
+          <StatCard
+            icon={Boxes}
+            label="Ganancia bruta de productos"
+            value={formatPrice(inventoryAnalytics.month.grossProfit)}
+            detail={inventoryAnalytics.month.uncostedSaleLines + inventoryAnalytics.month.legacySaleLines > 0
+              ? "Parcial: hay ventas sin costo histórico"
+              : "Mes actual · sin gastos ni impuestos"}
+            tone="green"
+          />
+        )}
         <StatCard
           icon={ReceiptText}
           label="Ticket promedio"
@@ -245,6 +268,12 @@ export default async function ReportsPage() {
           tone="orange"
         />
       </div>
+
+      {session && session.role === "ADMIN" && !inventoryAnalytics && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
+          La ganancia bruta de productos no está disponible. Revisá la migración de costos de venta antes de usar este indicador.
+        </p>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.75fr)]">
         <section className="rounded-[28px] border border-white/80 bg-white/75 p-5 shadow-[0_18px_60px_rgba(15,23,42,.08)] backdrop-blur-2xl sm:p-6">

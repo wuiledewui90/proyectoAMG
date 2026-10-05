@@ -160,7 +160,7 @@ export default async function AdminDashboardPage() {
       <div className="pointer-events-none absolute -left-24 -top-24 -z-10 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-40 -z-10 h-80 w-80 rounded-full bg-violet-400/10 blur-3xl" />
 
-      <div className="admin-dashboard-mobile hidden space-y-5">
+      <div className="admin-dashboard-mobile space-y-5 lg:hidden">
         <header className="flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-medium capitalize text-slate-400">
@@ -218,7 +218,7 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
 
-      <div className="admin-dashboard-desktop space-y-6">
+      <div className="admin-dashboard-desktop hidden space-y-6 lg:block">
 
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>

@@ -53,7 +53,7 @@ Campos principales:
 - Client: app/catalogo/catalog-client.tsx filtra por busqueda/categoria/marca
 
 ## 7) Configuracion de entorno
-- `DATABASE_URL` en `.env` (MySQL)
+- `DATABASE_URL` en `.env.local` (MySQL local)
 - `ADMIN_USER`, `ADMIN_PASS_HASH` y `ADMIN_SECRET` son obligatorias
 - `.env.example` documenta el formato sin incluir secretos
 - Next.js por default (next.config.mjs)
@@ -62,7 +62,7 @@ Campos principales:
 1. Instalar dependencias:
    - pnpm install
 2. Iniciar Docker Desktop y ejecutar `pnpm db:setup` para crear MySQL en el
-   puerto 3307; en otros entornos, crear `.env` a partir de `.env.example`
+   puerto 3307; en otros entornos, crear `.env.local` a partir de `.env.example`
 3. Prisma:
    - pnpm db:deploy
    - pnpm exec prisma generate

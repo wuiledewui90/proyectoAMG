@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import { NextResponse } from "next/server"
-import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { getRequestAdminSession } from "@/lib/admin-request"
 import { InvalidProductImageError, prepareProductImage } from "@/lib/products/prepare-product-image"
 import { isTrustedMutationOrigin } from "@/lib/security/request"
 import { getSupabaseServerConfig } from "@/lib/supabase/config"
@@ -11,15 +11,6 @@ export const revalidate = 0
 export const runtime = "nodejs"
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
-
-function getAdminTokenFromCookieHeader(req: Request) {
-  return req.headers
-    .get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
-    ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
-}
 
 function normalizeFileName(value: string) {
   return value
@@ -37,9 +28,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Origen no permitido" }, { status: 403 })
   }
 
-  const token = getAdminTokenFromCookieHeader(req)
-  if (!(await verifyAdminSessionToken(token))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ((await getRequestAdminSession(req))?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede subir imágenes de productos." }, { status: 403 })
   }
 
   const formData = await req.formData().catch(() => null)

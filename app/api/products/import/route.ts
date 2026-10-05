@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import ExcelJS from "exceljs"
 import { Readable } from "node:stream"
-import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { getRequestAdminSession } from "@/lib/admin-request"
 import { prisma } from "@/lib/db/prisma"
 import * as service from "@/lib/products/product-service"
 import { serializeProduct } from "@/lib/products/product-serialize"
@@ -45,19 +45,16 @@ const columnAliases: Record<string, string> = {
   precio: "price",
   price: "price",
   contado: "price",
+  costo: "cost",
+  cost: "cost",
+  preciocompra: "cost",
+  purchaseprice: "cost",
+  minimo: "minimumStock",
+  minimumstock: "minimumStock",
   sku: "sku",
   slug: "slug",
   stock: "stock",
   urlimagen: "imageUrl",
-}
-
-function getAdminTokenFromCookieHeader(req: Request) {
-  return req.headers
-    .get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
-    ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
 }
 
 function normalizeHeader(value: string) {
@@ -206,7 +203,7 @@ function normalizeRow(row: ImportRow) {
       price: toNumber(source.contado),
       stock: toNumber(source.stock),
       minimumStock: toNumber(source.minimo),
-      cost: toNumber(source.costo),
+      cost: toStringValue(source.costo) ? toNumber(source.costo) : undefined,
       stockType,
       stockCategory,
       brands: allBrands,
@@ -242,7 +239,13 @@ function normalizeRow(row: ImportRow) {
     category,
     compatibility: toStringValue(normalized.compatibility),
     price: toNumber(normalized.price),
+    cost: normalized.cost === undefined || !toStringValue(normalized.cost)
+      ? undefined
+      : toNumber(normalized.cost),
     stock: toNumber(normalized.stock),
+    minimumStock: normalized.minimumStock === undefined || !toStringValue(normalized.minimumStock)
+      ? undefined
+      : toNumber(normalized.minimumStock),
     imageUrl,
     images: imageUrl ? [imageUrl] : [],
     isActive: toBoolean(normalized.isActive),
@@ -341,9 +344,8 @@ async function findExistingProduct(row: { slug: string; sku: string }) {
 }
 
 export async function POST(req: Request) {
-  const token = getAdminTokenFromCookieHeader(req)
-  if (!(await verifyAdminSessionToken(token))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ((await getRequestAdminSession(req))?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede importar productos y costos." }, { status: 403 })
   }
 
   const formData = await req.formData().catch(() => null)
@@ -413,8 +415,8 @@ export async function POST(req: Request) {
     try {
       const existingProduct = await findExistingProduct(payload)
       const product = existingProduct
-        ? await service.update(existingProduct.id, payload)
-        : await service.create(payload)
+        ? await service.update(existingProduct.id, payload, { reason: "Actualización de stock por importación de archivo" })
+        : await service.create(payload, { reason: "Carga inicial por importación de archivo" })
 
       if (existingProduct) {
         result.updated += 1

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import ExcelJS from "exceljs"
-import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { getRequestAdminSession } from "@/lib/admin-request"
 import { prisma } from "@/lib/db/prisma"
 
 export const dynamic = "force-dynamic"
@@ -27,23 +27,13 @@ const stockHeaders = [
   "Valor de venta",
 ]
 
-function getAdminTokenFromCookieHeader(req: Request) {
-  return req.headers
-    .get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
-    ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
-}
-
 function formulaCell(formula: string): ExcelJS.CellFormulaValue {
   return { formula, result: 0 }
 }
 
 export async function GET(req: Request) {
-  const token = getAdminTokenFromCookieHeader(req)
-  if (!(await verifyAdminSessionToken(token))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if ((await getRequestAdminSession(req))?.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede exportar costos." }, { status: 403 })
   }
 
   const products = await prisma.product.findMany({

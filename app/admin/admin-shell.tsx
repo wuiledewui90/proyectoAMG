@@ -67,7 +67,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               }))
             }
             className={cn(
-              "w-full rounded-md px-3 py-1.5 text-left text-[0.64rem] font-bold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              "w-full rounded-md px-3 py-1.5 text-left text-[0.64rem] font-bold tracking-[0.1em] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
               containsActiveLink && "text-foreground"
             )}
           >

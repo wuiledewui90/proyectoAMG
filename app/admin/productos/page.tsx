@@ -3,10 +3,11 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Ban, CloudDownload, FileDown, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
+import { AlertTriangle, Ban, BarChart3, CloudDownload, FileDown, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, Wallet, X } from "lucide-react"
 
 import { brands, categories, formatPrice } from "@/lib/data"
 import { AdminMobileExpandableText } from "@/components/admin-mobile-expandable-text"
+import { isServiceProduct } from "@/lib/products/stock-classification"
 
 type ApiProduct = {
   id: number
@@ -22,7 +23,11 @@ type ApiProduct = {
   imageUrl: string | null
   thumbnailUrl?: string
   price: number
+  cost: number | null
   stock: number
+  minimumStock: number
+  stockType: string | null
+  stockCategory: string | null
   isActive: boolean
   isFeatured: boolean
 }
@@ -64,6 +69,38 @@ type SupabaseImportResult = {
   stockNotice: string
 }
 
+type InventoryAnalytics = {
+  activeProducts: number
+  units: number
+  lowStock: number
+  outOfStock: number
+  missingCostProducts: number
+  missingCostUnits: number
+  missingCost: Array<{ id: number; name: string; sku: string | null; stock: number }>
+  investment: number
+  potentialRevenue: number
+  potentialGrossProfit: number
+  potentialMarginPercent: number
+  byCategory: Array<{ name: string; investment: number; units: number }>
+  recentMovements: Array<{
+    id: number
+    type: "SALE" | "PURCHASE" | "ADJUSTMENT" | "RETURN" | "WORK_ORDER"
+    quantity: number
+    previousStock: number
+    newStock: number
+    notes: string | null
+    createdAt: string
+    product: { name: string; sku: string | null }
+  }>
+  month: {
+    revenueWithKnownCost: number
+    costOfGoodsSold: number
+    grossProfit: number
+    uncostedSaleLines: number
+    legacySaleLines: number
+  }
+}
+
 type EditorState = {
   id?: number
   name: string
@@ -75,7 +112,11 @@ type EditorState = {
   category: string
   compatibility: string
   price: string
+  cost: string
   stock: string
+  originalStock: number
+  stockAdjustmentReason: string
+  minimumStock: string
   imageUrl: string
   isActive: boolean
   isFeatured: boolean
@@ -91,7 +132,11 @@ const emptyEditor: EditorState = {
   category: "",
   compatibility: "",
   price: "",
+  cost: "",
   stock: "",
+  originalStock: 0,
+  stockAdjustmentReason: "",
+  minimumStock: "0",
   imageUrl: "",
   isActive: true,
   isFeatured: false,
@@ -150,6 +195,9 @@ function AdminProductosContent() {
   const [orderMode, setOrderMode] = useState<"updated" | "category" | "stock">("updated")
 
   const [data, setData] = useState<ListResponse | null>(null)
+  const [canManageProducts, setCanManageProducts] = useState(false)
+  const [analytics, setAnalytics] = useState<InventoryAnalytics | null>(null)
+  const [analyticsError, setAnalyticsError] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [reloadKey, setReloadKey] = useState(0)
@@ -164,6 +212,15 @@ function AdminProductosContent() {
 
   const [editing, setEditing] = useState<EditorState | null>(null)
   const [isNew, setIsNew] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() as Promise<{ role?: string }> : null)
+      .then((session) => { if (!cancelled) setCanManageProducts(session?.role === "ADMIN") })
+      .catch(() => { if (!cancelled) setCanManageProducts(false) })
+    return () => { cancelled = true }
+  }, [])
 
   const queryString = useMemo(() => {
     const qs = new URLSearchParams()
@@ -206,6 +263,24 @@ function AdminProductosContent() {
       cancel = true
     }
   }, [queryString, reloadKey])
+
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/admin/inventory-analytics", { cache: "no-store" })
+      .then((response) => {
+        if (response.status === 403) return null
+        if (!response.ok) throw new Error("No se pudo calcular la analítica del inventario. Revisá las migraciones de la base de datos.")
+        return response.json() as Promise<InventoryAnalytics>
+      })
+      .then((result) => { if (!cancelled && result) { setAnalytics(result); setAnalyticsError("") } })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setAnalytics(null)
+          setAnalyticsError(error instanceof Error ? error.message : "No se pudo calcular la analítica.")
+        }
+      })
+    return () => { cancelled = true }
+  }, [reloadKey])
 
   const orderedItems = useMemo(() => {
     const items = data?.items ? [...data.items] : []
@@ -279,7 +354,11 @@ function AdminProductosContent() {
       category: product.category ?? "",
       compatibility: product.compatibility ?? "",
       price: String(product.price),
+      cost: product.cost === null ? "" : String(product.cost),
       stock: String(product.stock),
+      originalStock: product.stock,
+      stockAdjustmentReason: "",
+      minimumStock: String(product.minimumStock),
       imageUrl: product.imageUrl ?? product.images?.[0] ?? "/images/radiador-1.jpg",
       isActive: product.isActive,
       isFeatured: product.isFeatured,
@@ -287,6 +366,16 @@ function AdminProductosContent() {
     setIsNew(false)
     setImageUploadError("")
     setImagePreviewUrl("")
+  }
+
+  async function openProductById(id: number) {
+    const response = await fetch(`/api/products/${id}`, { cache: "no-store" })
+    if (!response.ok) {
+      setError("No se pudo abrir el producto para completar su costo.")
+      return
+    }
+    handleEdit(await response.json() as ApiProduct)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   async function handleUploadProductImage(file: File | null) {
@@ -329,7 +418,9 @@ function AdminProductosContent() {
     if (!editing) return
 
     const price = parseNonNegativeNumber(editing.price)
+    const cost = editing.cost.trim() ? parseNonNegativeNumber(editing.cost) : 0
     const stock = parseNonNegativeInteger(editing.stock)
+    const minimumStock = parseNonNegativeInteger(editing.minimumStock)
 
     if (price === null) {
       alert("Ingresa un precio valido.")
@@ -338,6 +429,16 @@ function AdminProductosContent() {
 
     if (stock === null) {
       alert("Ingresa un stock valido, sin decimales.")
+      return
+    }
+
+    if (cost === null || minimumStock === null) {
+      alert("Ingresá un costo y un stock mínimo válidos, sin valores negativos.")
+      return
+    }
+
+    if (!isNew && stock !== editing.originalStock && editing.stockAdjustmentReason.trim().length < 5) {
+      alert("Indicá un motivo de al menos 5 caracteres para ajustar el stock.")
       return
     }
 
@@ -351,7 +452,12 @@ function AdminProductosContent() {
       category: editing.category || "",
       compatibility: editing.compatibility || "",
       price,
+      cost,
       stock,
+      minimumStock,
+      ...(!isNew && stock !== editing.originalStock
+        ? { stockAdjustmentReason: editing.stockAdjustmentReason.trim() }
+        : {}),
       imageUrl: editing.imageUrl || "",
       images: editing.imageUrl ? [editing.imageUrl] : [],
       isActive: editing.isActive,
@@ -514,7 +620,7 @@ function AdminProductosContent() {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Inventario</p>
-            <h1 className="mt-0.5 text-3xl font-semibold leading-tight tracking-[-0.045em] sm:text-4xl">Productos</h1>
+            <h1 className="mt-0.5 text-3xl font-semibold leading-tight tracking-[-0.045em] sm:text-4xl">PRODUCTOS Y STOCK</h1>
             <p className="mt-1 text-sm text-slate-500">
               {data ? `${data.total} productos cargados` : "Listado de productos de la base de datos"}
             </p>
@@ -527,7 +633,7 @@ function AdminProductosContent() {
             </div>
           </div>
         </div>
-        <div className="grid gap-2 sm:flex sm:items-center max-lg:hidden">
+        {canManageProducts && <div className="grid gap-2 sm:flex sm:items-center max-lg:hidden">
           <input
             ref={importInputRef}
             type="file"
@@ -547,16 +653,12 @@ function AdminProductosContent() {
             )}
             {importing ? "Importando..." : "Importar Excel/CSV"}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/api/products/export"
-            }}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/90 bg-white/75 px-5 text-sm font-semibold text-slate-700 shadow-[0_8px_24px_rgba(15,23,42,.07)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white sm:w-auto"
-          >
-            <FileDown className="h-4 w-4" />
-            Exportar Excel
-          </button>
+          <form action="/api/products/export" method="get">
+            <button type="submit" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/90 bg-white/75 px-5 text-sm font-semibold text-slate-700 shadow-[0_8px_24px_rgba(15,23,42,.07)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white sm:w-auto">
+              <FileDown className="h-4 w-4" />
+              Exportar Excel
+            </button>
+          </form>
           <button
             onClick={handleNew}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(15,23,42,.2)] transition hover:-translate-y-0.5 hover:bg-slate-800 sm:w-auto"
@@ -564,10 +666,18 @@ function AdminProductosContent() {
             <Plus className="h-4 w-4" />
             Nuevo producto
           </button>
-        </div>
+        </div>}
       </header>
 
-      <section className="rounded-[28px] border border-blue-100 bg-white/80 p-4 shadow-[0_18px_55px_rgba(15,23,42,.06)] backdrop-blur-2xl sm:p-5">
+      {analytics && (
+        <InventoryAnalyticsPanel
+          analytics={analytics}
+          onEditMissingCost={(id) => void openProductById(id)}
+        />
+      )}
+      {canManageProducts && analyticsError && <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">{analyticsError}</p>}
+
+      {canManageProducts && <section className="rounded-[28px] border border-blue-100 bg-white/80 p-4 shadow-[0_18px_55px_rgba(15,23,42,.06)] backdrop-blur-2xl sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">Catálogo externo</p>
@@ -617,7 +727,7 @@ function AdminProductosContent() {
             Se agregaron {supabaseResult.created} productos. {supabaseResult.skipped} ya estaban presentes o se omitieron por duplicados. {supabaseResult.stockNotice}
           </p>
         )}
-      </section>
+      </section>}
 
       <div className="grid grid-cols-3 rounded-2xl border border-white/80 bg-white/80 p-1 shadow-sm backdrop-blur-xl lg:hidden">
         {([
@@ -640,7 +750,7 @@ function AdminProductosContent() {
         ))}
       </div>
 
-      <section className="grid gap-3 rounded-[28px] border border-white/80 bg-white/75 p-4 shadow-[0_18px_55px_rgba(15,23,42,.07)] backdrop-blur-2xl sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(240px,1fr)_170px_200px_180px_160px]">
+      <section data-quick-access-label="Inventario" className="grid gap-3 rounded-[28px] border border-white/80 bg-white/75 p-4 shadow-[0_18px_55px_rgba(15,23,42,.07)] backdrop-blur-2xl sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(240px,1fr)_170px_200px_180px_160px]">
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -746,7 +856,7 @@ function AdminProductosContent() {
         </div>
       )}
 
-      {editing && (
+      {canManageProducts && editing && (
         <section className="rounded-[28px] border border-white/80 bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,.1)] backdrop-blur-2xl sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -835,24 +945,66 @@ function AdminProductosContent() {
                 </div>
               </div>
             </div>
-            <Field label="Precio">
+            <Field label="Precio de venta">
               <input
                 type="number"
+                min="0"
+                step="0.01"
                 className={editorControlClass}
                 placeholder="Ej: 25000"
                 value={editing.price}
                 onChange={(e) => setEditing({ ...editing, price: e.target.value })}
               />
             </Field>
+            <Field label="Costo unitario de compra">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className={editorControlClass}
+                placeholder="Pendiente de cargar"
+                value={editing.cost}
+                onChange={(e) => setEditing({ ...editing, cost: e.target.value })}
+              />
+            </Field>
             <Field label="Stock">
               <input
                 type="number"
+                min="0"
+                step="1"
                 className={editorControlClass}
                 placeholder="Ej: 5"
                 value={editing.stock}
                 onChange={(e) => setEditing({ ...editing, stock: e.target.value })}
               />
             </Field>
+            <Field label="Stock mínimo (alerta)">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className={editorControlClass}
+                placeholder="Ej: 2"
+                value={editing.minimumStock}
+                onChange={(e) => setEditing({ ...editing, minimumStock: e.target.value })}
+              />
+            </Field>
+            {!isNew && Number(editing.stock) !== editing.originalStock && (
+              <Field label="Motivo del ajuste de stock *">
+                <input
+                  className={editorControlClass}
+                  maxLength={255}
+                  placeholder="Ej: compra, conteo físico o rotura"
+                  value={editing.stockAdjustmentReason}
+                  onChange={(e) => setEditing({ ...editing, stockAdjustmentReason: e.target.value })}
+                />
+              </Field>
+            )}
+            <p className="self-end rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-xs text-slate-600 md:col-span-2 xl:col-span-2">
+              {Number(editing.cost) > 0 && Number(editing.price) > 0
+                ? `Margen bruto estimado por unidad: ${formatPrice(Number(editing.price) - Number(editing.cost))} (${(((Number(editing.price) - Number(editing.cost)) / Number(editing.price)) * 100).toFixed(1)}%). No incluye gastos ni impuestos.`
+                : "Sin costo de compra no se puede calcular el margen ni la inversión de este producto."}
+            </p>
             <Field label="Marca">
               <select
                 className={editorControlClass}
@@ -942,10 +1094,10 @@ function AdminProductosContent() {
               <th className="w-16 px-4 py-3 text-center font-medium">N.º</th>
               <th className="w-24 px-4 py-3 font-medium">Imagen</th>
               <th className="px-4 py-3 font-medium">Producto</th>
-              <th className="w-36 px-4 py-3 font-medium">Precio</th>
+              <th className="w-40 px-4 py-3 font-medium">{canManageProducts ? "Venta / costo" : "Precio"}</th>
               <th className="w-24 px-4 py-3 font-medium">Stock</th>
               <th className="w-28 px-4 py-3 font-medium">Estado</th>
-              <th className="w-32 px-4 py-3 font-medium">Acciones</th>
+              {canManageProducts && <th className="w-32 px-4 py-3 font-medium">Acciones</th>}
             </tr>
           </thead>
           <tbody>
@@ -971,12 +1123,23 @@ function AdminProductosContent() {
                     {productSubtitle(product)}
                   </p>
                 </td>
-                <td className="px-4 py-3 font-semibold">{formatPrice(product.price)}</td>
-                <td className="px-4 py-3">{product.stock}</td>
+                <td className="px-4 py-3">
+                  <p className="font-semibold">{formatPrice(product.price)}</p>
+                  {canManageProducts && <p className={`text-xs ${Number(product.cost) > 0 ? "text-slate-500" : "font-semibold text-amber-700"}`}>
+                    {Number(product.cost) > 0 ? `Costo ${formatPrice(Number(product.cost))}` : isServiceProduct(product) ? "Servicio" : "Costo pendiente"}
+                  </p>}
+                </td>
+                <td className="px-4 py-3">
+                  <p>{isServiceProduct(product) ? "—" : product.stock}</p>
+                  {!isServiceProduct(product) && product.stock === 0 && <span className="text-xs font-semibold text-rose-600">Agotado</span>}
+                  {!isServiceProduct(product) && product.stock > 0 && product.minimumStock > 0 && product.stock <= product.minimumStock && (
+                    <span className="text-xs font-semibold text-amber-700">Stock bajo</span>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <StatusBadge active={product.isActive} />
                 </td>
-                <td className="px-4 py-3">
+                {canManageProducts && <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <ActionButton onClick={() => handleEdit(product)} label="Editar">
                       <Pencil className="h-4 w-4" />
@@ -995,12 +1158,12 @@ function AdminProductosContent() {
                       <Trash2 className="h-4 w-4" />
                     </ActionButton>
                   </div>
-                </td>
+                </td>}
               </tr>
             ))}
             {!loading && data?.items?.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                <td colSpan={canManageProducts ? 7 : 6} className="p-8 text-center text-muted-foreground">
                   No hay productos.
                 </td>
               </tr>
@@ -1042,15 +1205,21 @@ function AdminProductosContent() {
                   <div>
                     <p className="text-xs text-muted-foreground">Precio</p>
                     <p className="font-semibold">{formatPrice(product.price)}</p>
+                    {canManageProducts && <p className={`text-xs ${Number(product.cost) > 0 ? "text-slate-500" : "font-semibold text-amber-700"}`}>
+                      {Number(product.cost) > 0 ? `Costo ${formatPrice(Number(product.cost))}` : isServiceProduct(product) ? "Servicio" : "Costo pendiente"}
+                    </p>}
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Stock</p>
-                    <p className="font-semibold">{product.stock}</p>
+                    <p className="font-semibold">{isServiceProduct(product) ? "No aplica" : product.stock}</p>
+                    {!isServiceProduct(product) && product.stock > 0 && product.minimumStock > 0 && product.stock <= product.minimumStock && (
+                      <p className="text-xs font-semibold text-amber-700">Bajo mínimo ({product.minimumStock})</p>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            {canManageProducts && <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 onClick={() => handleEdit(product)}
                 className="inline-flex h-9 items-center justify-center gap-1 rounded-full border border-slate-200 bg-white text-xs font-medium"
@@ -1073,7 +1242,7 @@ function AdminProductosContent() {
                 <Trash2 className="h-3.5 w-3.5" />
                 Borrar
               </button>
-            </div>
+            </div>}
           </article>
         ))}
 
@@ -1134,15 +1303,121 @@ function AdminProductosContent() {
         </nav>
       )}
 
-      <button
+      {canManageProducts && <button
         type="button"
         onClick={handleNew}
         className="admin-mobile-tap fixed bottom-[calc(5.7rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#0878f9] text-white shadow-[0_14px_32px_rgba(8,120,249,.34)] lg:hidden"
         aria-label="Nuevo producto"
       >
         <Plus className="h-6 w-6" />
-      </button>
+      </button>}
     </div>
+  )
+}
+
+function InventoryAnalyticsPanel({
+  analytics,
+  onEditMissingCost,
+}: {
+  analytics: InventoryAnalytics
+  onEditMissingCost: (id: number) => void
+}) {
+  const maxInvestment = Math.max(1, ...analytics.byCategory.map((item) => item.investment))
+  const incompleteSales = analytics.month.uncostedSaleLines + analytics.month.legacySaleLines
+
+  return (
+    <section className="overflow-hidden rounded-[30px] border border-white/80 bg-white/80 p-4 shadow-[0_24px_70px_rgba(15,23,42,.09)] backdrop-blur-2xl sm:p-6" aria-label="Analítica de stock y rentabilidad">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-600"><BarChart3 className="h-4 w-4" /> Stock analytics</p>
+          <h2 data-quick-access-label="Stock y analytics" className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">Inversión y rentabilidad</h2>
+          <p className="mt-1 text-sm text-slate-600">Valores calculados sobre productos físicos activos del ERP; no modifican Supabase.</p>
+        </div>
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">{analytics.activeProducts} productos · {analytics.units} unidades</span>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-[24px] border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4">
+          <Wallet className="h-5 w-5 text-blue-600" aria-hidden="true" />
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Invertido en stock</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{formatPrice(analytics.investment)}</p>
+          <p className="mt-1 text-xs text-slate-500">Solo unidades con costo cargado</p>
+        </div>
+        <div className="rounded-[24px] border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-4">
+          <BarChart3 className="h-5 w-5 text-violet-600" aria-hidden="true" />
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Ganancia bruta potencial</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{formatPrice(analytics.potentialGrossProfit)}</p>
+          <p className="mt-1 text-xs text-slate-500">{analytics.potentialMarginPercent.toFixed(1)}% si se vende el stock costeado al precio actual</p>
+        </div>
+        <div className="rounded-[24px] border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4">
+          <BarChart3 className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Ganancia bruta registrada este mes</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{formatPrice(analytics.month.grossProfit)}</p>
+          <p className="mt-1 text-xs text-slate-500">Ventas de productos con costo al vender, sin impuestos ni gastos</p>
+        </div>
+        <div className="rounded-[24px] border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-600" aria-hidden="true" />
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Costos pendientes</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{analytics.missingCostProducts}</p>
+          <p className="mt-1 text-xs text-slate-500">{analytics.missingCostUnits} unidades sin inversión calculable</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-[24px] border border-slate-100 bg-slate-50/80 p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-slate-950">Inversión por categoría</h3>
+          <div className="mt-4 space-y-3">
+            {analytics.byCategory.map((item) => (
+              <div key={item.name}>
+                <div className="flex justify-between gap-2 text-xs"><span className="truncate font-medium text-slate-600">{item.name}</span><span className="shrink-0 font-semibold text-slate-900">{formatPrice(item.investment)}</span></div>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400" style={{ width: `${Math.max(2, item.investment / maxInvestment * 100)}%` }} /></div>
+              </div>
+            ))}
+            {!analytics.byCategory.length && <p className="text-sm text-slate-500">Cargá costos para ver la distribución.</p>}
+          </div>
+        </div>
+        <div className="rounded-[24px] border border-slate-100 bg-slate-50/80 p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-slate-950">Alertas del inventario</h3>
+          <p className="mt-2 text-sm text-slate-600">{analytics.outOfStock} agotados · {analytics.lowStock} bajo el mínimo configurado.</p>
+          {incompleteSales > 0 && (
+            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              La ganancia del mes es parcial: {analytics.month.uncostedSaleLines} líneas vendidas sin costo y {analytics.month.legacySaleLines} líneas anteriores sin costo histórico. No se estiman con el costo actual.
+            </p>
+          )}
+          {analytics.missingCost.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Completar costo de compra</p>
+              {analytics.missingCost.map((item) => (
+                <button key={item.id} type="button" onClick={() => onEditMissingCost(item.id)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-white bg-white p-2.5 text-left text-xs shadow-sm transition hover:border-blue-300">
+                  <span className="min-w-0 truncate font-medium text-slate-800">{item.name} {item.sku ? `· ${item.sku}` : ""}</span>
+                  <span className="shrink-0 font-semibold text-blue-600">Editar</span>
+                </button>
+              ))}
+              {analytics.missingCostProducts > analytics.missingCost.length && <p className="text-xs text-slate-500">Se muestran los primeros {analytics.missingCost.length} de {analytics.missingCostProducts}.</p>}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="mt-4 rounded-[24px] border border-slate-100 bg-slate-50/80 p-4 sm:p-5">
+        <h3 className="text-sm font-semibold text-slate-950">Últimos movimientos de stock</h3>
+        <p className="mt-1 text-xs text-slate-500">Los cambios manuales conservan el motivo y las cantidades anterior y nueva.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {analytics.recentMovements.map((movement) => (
+            <div key={movement.id} className="min-w-0 rounded-2xl border border-white bg-white p-3 text-xs shadow-sm">
+              <div className="flex items-start justify-between gap-2">
+                <span className="min-w-0 break-words font-semibold text-slate-900">{movement.product.name}</span>
+                <span className={`shrink-0 font-semibold ${movement.quantity < 0 ? "text-rose-600" : "text-emerald-700"}`}>{movement.quantity > 0 ? "+" : ""}{movement.quantity}</span>
+              </div>
+              <p className="mt-1 text-slate-600">{movement.previousStock} → {movement.newStock} unidades · {movement.type === "ADJUSTMENT" ? "Ajuste" : movement.type === "SALE" ? "Venta" : movement.type === "RETURN" ? "Devolución" : movement.type === "PURCHASE" ? "Compra" : "Taller"}</p>
+              {movement.notes && <p className="mt-1 break-words text-slate-500">{movement.notes}</p>}
+              <p className="mt-1 text-slate-400">{new Date(movement.createdAt).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Argentina/Buenos_Aires" })}</p>
+            </div>
+          ))}
+          {!analytics.recentMovements.length && <p className="text-sm text-slate-500">Todavía no hay movimientos registrados.</p>}
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-slate-500">Inversión = stock × costo. Ganancia potencial = stock × (venta − costo). La ganancia registrada descuenta el costo guardado al vender y distribuye los descuentos; no equivale a utilidad neta.</p>
+    </section>
   )
 }
 

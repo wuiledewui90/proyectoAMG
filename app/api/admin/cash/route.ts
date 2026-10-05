@@ -4,7 +4,7 @@ import { getRequestAdminSession } from "@/lib/admin-request"
 import { argentinaDate, getCashMovements, summarizeCash, validBusinessDate } from "@/lib/cash"
 import { prisma } from "@/lib/db/prisma"
 
-const paymentMethods = ["CASH", "TRANSFER", "CARD", "CURRENT_ACCOUNT"] as const
+const paymentMethods = ["CASH", "TRANSFER", "CARD", "MERCADO_PAGO", "CURRENT_ACCOUNT"] as const
 
 function serializeSession(session: Awaited<ReturnType<typeof findSession>>) {
   if (!session) return null

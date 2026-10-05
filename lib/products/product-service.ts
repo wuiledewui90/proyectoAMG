@@ -12,6 +12,12 @@ export class NotFoundError extends Error {
   status = 404
 }
 
+export class ProductValidationError extends Error {
+  status = 400
+}
+
+type ProductAudit = { actorId?: string | null; reason?: string }
+
 function normalizeOptionalString(value: unknown): string | undefined {
   if (value === undefined || value === null) return undefined
   if (typeof value !== "string") return undefined
@@ -40,7 +46,7 @@ export async function getById(id: number) {
   return product
 }
 
-export async function create(input: unknown) {
+export async function create(input: unknown, audit: ProductAudit = {}) {
   const parsed = productCreateSchema.parse(input)
   const now = new Date()
 
@@ -76,7 +82,7 @@ export async function create(input: unknown) {
   }
 
   try {
-    return await repo.createProduct(data)
+    return await repo.createProduct(data, audit)
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       throw new ConflictError("SKU o slug ya existe")
@@ -86,7 +92,7 @@ export async function create(input: unknown) {
   }
 }
 
-export async function update(id: number, input: unknown) {
+export async function update(id: number, input: unknown, audit: ProductAudit = {}) {
   const parsed = productUpdateSchema.parse(input)
 
   const normalizedImages =
@@ -140,8 +146,17 @@ export async function update(id: number, input: unknown) {
   }
 
   try {
-    return await repo.updateProduct(id, data)
+    return await repo.updateProduct(id, data, parsed.stock, audit)
   } catch (err) {
+    if (err instanceof repo.StockAdjustmentConflictError) {
+      throw new ConflictError(err.message)
+    }
+    if (err instanceof repo.StockAdjustmentReasonError) {
+      throw new ProductValidationError(err.message)
+    }
+    if (err instanceof repo.ProductNotFoundError) {
+      throw new NotFoundError(err.message)
+    }
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
       throw new NotFoundError("Producto no encontrado")
     }

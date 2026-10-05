@@ -4,12 +4,14 @@
 import { useEffect, useMemo, useState } from "react"
 import {
   Ban,
+  CheckCircle2,
   ClipboardCheck,
   ExternalLink,
   FileText,
   Loader2,
   ReceiptText,
   Trash2,
+  Wrench,
   X,
 } from "lucide-react"
 import { formatPrice } from "@/lib/data"
@@ -26,6 +28,11 @@ type Product = {
   category: string | null
   stockType: string | null
   stockCategory: string | null
+}
+
+type ProductPage = {
+  items: Product[]
+  totalPages: number
 }
 
 type Customer = {
@@ -48,6 +55,9 @@ type Sale = {
   discount: number
   taxRate: number
   taxAmount: number
+  cardInstallments?: number | null
+  cardSurchargeRate?: number
+  cardSurchargeAmount?: number
   total: number
   paymentMethod: string
   status: string
@@ -62,8 +72,8 @@ type Sale = {
 
 type InvoiceMode = "INTERNAL" | "ARCA"
 type OperationType = "SALE" | "QUOTE" | "QUOTATION"
-type PaymentMethod = "CASH" | "TRANSFER" | "CARD" | "CURRENT_ACCOUNT"
-type PaymentSplit = { id: number; method: PaymentMethod; amount: string }
+type PaymentMethod = "CASH" | "TRANSFER" | "CARD" | "MERCADO_PAGO" | "CURRENT_ACCOUNT"
+type PaymentSplit = { id: number; method: PaymentMethod; amount: string; reference: string }
 type CatalogGroup = "PRODUCTS" | "SERVICES" | "LABOR"
 type LaborLine = {
   id: number
@@ -76,6 +86,7 @@ const payLabels: Record<string, string> = {
   CASH: "Efectivo",
   TRANSFER: "Transferencia",
   CARD: "Tarjeta",
+  MERCADO_PAGO: "Mercado Pago",
   CURRENT_ACCOUNT: "Cuenta corriente",
   COMBINED: "Pago combinado",
 }
@@ -85,8 +96,8 @@ const payableMethods = Object.entries(payLabels).filter(
 ) as Array<[PaymentMethod, string]>
 
 const initialPaymentSplits = (): PaymentSplit[] => [
-  { id: 1, method: "CASH", amount: "" },
-  { id: 2, method: "TRANSFER", amount: "" },
+  { id: 1, method: "CASH", amount: "", reference: "" },
+  { id: 2, method: "TRANSFER", amount: "", reference: "" },
 ]
 
 const arcaUrl = "https://www.arca.gob.ar/"
@@ -111,6 +122,36 @@ function isService(product: Product) {
     .includes("servicio")
 }
 
+function catalogCategory(product: Product) {
+  return product.stockCategory?.trim() || product.category?.trim() || "SIN CATEGORÍA"
+}
+
+async function loadAllActiveProducts() {
+  const pageSize = 100
+  const firstResponse = await fetch(
+    `/api/products?isActive=true&limit=${pageSize}&page=1`,
+    { cache: "no-store" }
+  )
+  if (!firstResponse.ok) return null
+
+  const firstPage = (await firstResponse.json()) as ProductPage
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, async (_, index) => {
+      const response = await fetch(
+        `/api/products?isActive=true&limit=${pageSize}&page=${index + 2}`,
+        { cache: "no-store" }
+      )
+      return response.ok ? ((await response.json()) as ProductPage) : null
+    })
+  )
+
+  if (remainingPages.some((page) => page === null)) return null
+  return [
+    ...firstPage.items,
+    ...remainingPages.flatMap((page) => page?.items || []),
+  ]
+}
+
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -129,7 +170,12 @@ export default function SalesPage() {
   const [customerAddress, setCustomerAddress] = useState("")
   const [vehicleDescription, setVehicleDescription] = useState("")
   const [vehiclePlate, setVehiclePlate] = useState("")
+  const [saveCustomer, setSaveCustomer] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState("CASH")
+  const [paymentReference, setPaymentReference] = useState("")
+  const [cardInstallments, setCardInstallments] = useState(
+    String(defaultErpSettings.cardInstallmentRates[0].installments)
+  )
   const [paymentSplits, setPaymentSplits] = useState<PaymentSplit[]>(initialPaymentSplits)
   const [discount, setDiscount] = useState("0")
   const [taxRate, setTaxRate] = useState(String(defaultErpSettings.defaultTaxRate))
@@ -141,6 +187,10 @@ export default function SalesPage() {
   const [terms, setTerms] = useState(defaultErpSettings.defaultTerms || "")
   const [settings, setSettings] = useState<ErpSettings>(defaultErpSettings)
   const [query, setQuery] = useState("")
+  const [openCatalogCategories, setOpenCatalogCategories] = useState<Record<string, boolean>>({})
+  const [mobileCatalogOpen, setMobileCatalogOpen] = useState(false)
+  const [mobileAddedItem, setMobileAddedItem] = useState<string | null>(null)
+  const [mobileCatalogError, setMobileCatalogError] = useState("")
   const [message, setMessage] = useState("")
   const [workingAction, setWorkingAction] = useState<"QUOTE" | "QUOTATION" | "SALE" | null>(null)
   const [operationType, setOperationType] = useState<OperationType>("SALE")
@@ -153,19 +203,20 @@ export default function SalesPage() {
   const [voidError, setVoidError] = useState("")
 
   async function load() {
-    const [productsResponse, customersResponse, salesResponse, settingsResponse] = await Promise.all([
-      fetch("/api/products", { cache: "no-store" }),
+    const [loadedProducts, customersResponse, salesResponse, settingsResponse] = await Promise.all([
+      loadAllActiveProducts(),
       fetch("/api/admin/customers", { cache: "no-store" }),
       fetch("/api/admin/sales", { cache: "no-store" }),
       fetch("/api/admin/settings", { cache: "no-store" }),
     ])
-    if (productsResponse.ok) setProducts(await productsResponse.json())
+    if (loadedProducts) setProducts(loadedProducts)
     if (customersResponse.ok) setCustomers(await customersResponse.json())
     if (salesResponse.ok) setSales(await salesResponse.json())
     if (settingsResponse.ok) {
       const loadedSettings = (await settingsResponse.json()) as ErpSettings
       setSettings(loadedSettings)
       setTaxRate(String(loadedSettings.defaultTaxRate))
+      setCardInstallments(String(loadedSettings.cardInstallmentRates[0]?.installments ?? 1))
       setValidUntil(dateInput(loadedSettings.quoteValidityDays))
       setTerms(loadedSettings.defaultTerms || "")
     }
@@ -188,6 +239,20 @@ export default function SalesPage() {
     [catalogGroup, products, query]
   )
 
+  const productsByCategory = useMemo(() => {
+    const grouped = new Map<string, Product[]>()
+    visibleProducts.forEach((product) => {
+      const category = catalogCategory(product)
+      grouped.set(category, [...(grouped.get(category) || []), product])
+    })
+    return [...grouped.entries()]
+      .sort(([left], [right]) => left.localeCompare(right, "es"))
+      .map(([category, items]) => ({
+        category,
+        items: [...items].sort((left, right) => left.name.localeCompare(right.name, "es")),
+      }))
+  }, [visibleProducts])
+
   const selectedProducts = useMemo(
     () => products.filter((product) => (cart[product.id] || 0) > 0),
     [cart, products]
@@ -209,7 +274,17 @@ export default function SalesPage() {
   const taxAmount =
     (subtotal - appliedDiscount) *
     (Math.min(Math.max(Number(taxRate) || 0, 0), 100) / 100)
-  const total = subtotal - appliedDiscount + taxAmount
+  const totalBeforeCardSurcharge = subtotal - appliedDiscount + taxAmount
+  const selectedCardPlan = settings.cardInstallmentRates.find(
+    (plan) => plan.installments === Number(cardInstallments)
+  ) ?? settings.cardInstallmentRates[0]
+  const cardSurchargeRate =
+    operationType === "SALE" && paymentMethod === "CARD"
+      ? selectedCardPlan?.surchargeRate || 0
+      : 0
+  const cardSurchargeAmount =
+    Math.round(totalBeforeCardSurcharge * (cardSurchargeRate / 100) * 100) / 100
+  const total = Math.round((totalBeforeCardSurcharge + cardSurchargeAmount) * 100) / 100
   const combinedDistributed = paymentSplits.reduce(
     (sum, payment) => sum + (Number(payment.amount) || 0),
     0
@@ -225,14 +300,18 @@ export default function SalesPage() {
 
   function changePaymentMethod(value: string) {
     setPaymentMethod(value)
+    if (value === "CARD" && !settings.cardInstallmentRates.some((plan) => plan.installments === Number(cardInstallments))) {
+      setCardInstallments(String(settings.cardInstallmentRates[0]?.installments ?? 1))
+    }
     if (value === "COMBINED") {
       const firstAmount = Math.round((total / 2) * 100) / 100
       setPaymentSplits([
-        { id: 1, method: "CASH", amount: String(firstAmount) },
+        { id: 1, method: "CASH", amount: String(firstAmount), reference: "" },
         {
           id: 2,
           method: "TRANSFER",
           amount: String(Math.round((total - firstAmount) * 100) / 100),
+          reference: "",
         },
       ])
     }
@@ -257,6 +336,7 @@ export default function SalesPage() {
         id: Math.max(...current.map((payment) => payment.id)) + 1,
         method: nextMethod,
         amount: "",
+        reference: "",
       },
     ])
   }
@@ -306,6 +386,7 @@ export default function SalesPage() {
       customerAddress,
       vehicleDescription,
       vehiclePlate,
+      saveCustomer,
     }
   }
 
@@ -323,7 +404,10 @@ export default function SalesPage() {
     setCustomerAddress("")
     setVehicleDescription("")
     setVehiclePlate("")
+    setSaveCustomer(false)
     setPaymentMethod("CASH")
+    setPaymentReference("")
+    setCardInstallments(String(settings.cardInstallmentRates[0]?.installments ?? 1))
     setPaymentSplits(initialPaymentSplits())
     setDiscount("0")
     setTaxRate(String(settings.defaultTaxRate))
@@ -341,6 +425,20 @@ export default function SalesPage() {
     setCart((current) => ({
       ...current,
       [product.id]: (current[product.id] || 0) + 1,
+    }))
+  }
+
+  function addFromMobileCatalog(product: Product) {
+    if (!isService(product) && (cart[product.id] || 0) >= product.stock) return
+    add(product)
+    setMobileCatalogOpen(false)
+    setMobileAddedItem(product.name)
+  }
+
+  function toggleCatalogCategory(category: string) {
+    setOpenCatalogCategories((current) => ({
+      ...current,
+      [category]: !current[category],
     }))
   }
 
@@ -385,7 +483,7 @@ export default function SalesPage() {
     const price = Number(laborPrice)
     if (!description || !Number.isFinite(price) || price < 0) {
       setMessage("Completá la descripción y el precio de la mano de obra.")
-      return
+      return false
     }
     setLaborLines((current) => [
       ...current,
@@ -399,6 +497,20 @@ export default function SalesPage() {
     setLaborDescription("")
     setLaborPrice("")
     setMessage("")
+    return true
+  }
+
+  function addLaborFromMobileCatalog() {
+    const addedDescription = laborDescription.trim()
+    const price = Number(laborPrice)
+    if (!addedDescription || !Number.isFinite(price) || price < 0) {
+      setMobileCatalogError("Completá el trabajo y su precio para agregar la mano de obra.")
+      return
+    }
+    if (!addLaborLine()) return
+    setMobileCatalogError("")
+    setMobileCatalogOpen(false)
+    setMobileAddedItem(addedDescription)
   }
 
   async function createPreSaleDocument(type: "QUOTE" | "QUOTATION") {
@@ -479,9 +591,11 @@ export default function SalesPage() {
           items,
           ...customerPayload(),
           paymentMethod,
+          paymentReference,
+          cardInstallments: paymentMethod === "CARD" ? Number(cardInstallments) : null,
           payments:
             paymentMethod === "COMBINED"
-              ? paymentSplits.map(({ method, amount }) => ({ method, amount }))
+              ? paymentSplits.map(({ method, amount, reference }) => ({ method, amount, reference }))
               : [],
           discount: Number(discount) || 0,
           taxRate: Number(taxRate) || 0,
@@ -609,10 +723,10 @@ export default function SalesPage() {
       </header>
 
       <div className="grid items-start gap-3 lg:grid-cols-2">
-        <section className="min-w-0 overflow-hidden rounded-xl border bg-card shadow-sm">
+        <section className="order-2 hidden min-w-0 overflow-hidden rounded-xl border bg-card shadow-sm lg:order-1 lg:block">
           <div className="border-b p-4">
             <div className="mb-3">
-              <h2 className="font-semibold">Catálogo</h2>
+              <h2 data-quick-access-label="Catálogo" className="font-semibold">Catálogo</h2>
               <p className="text-xs text-muted-foreground">
                 Elegí repuestos, servicios o cargá la mano de obra.
               </p>
@@ -646,7 +760,7 @@ export default function SalesPage() {
               />
             )}
           </div>
-          <div className="grid gap-3 p-4 sm:grid-cols-2">
+          <div className="space-y-5 p-4">
             {catalogGroup === "LABOR" && (
               <div className="col-span-full rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
                 <p className="font-semibold">Agregar mano de obra</p>
@@ -685,26 +799,36 @@ export default function SalesPage() {
                 </div>
               </div>
             )}
-            {catalogGroup !== "LABOR" && visibleProducts.map((product) => (
-              <button
-                key={product.id}
-                type="button"
-                onClick={() => add(product)}
-                disabled={!isService(product) && !product.stock}
-                className="rounded-lg border p-4 text-left transition hover:border-primary disabled:opacity-40"
-              >
-                <div className="flex justify-between gap-3">
-                  <span className="font-semibold">{product.name}</span>
-                  <span className="font-bold text-primary">
-                    {formatPrice(product.price)}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {isService(product)
-                    ? `Servicio · Cargado ${cart[product.id] || 0}`
-                    : `Stock ${product.stock} · En venta ${cart[product.id] || 0}`}
-                </p>
-              </button>
+            {catalogGroup !== "LABOR" && productsByCategory.map(({ category, items }) => (
+              <section key={category}>
+                <button type="button" onClick={() => toggleCatalogCategory(category)} aria-expanded={Boolean(openCatalogCategories[category])} className="flex w-full items-center justify-between gap-3 border-b pb-2 text-left">
+                  <span><span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{category}</span><span className="ml-2 text-xs text-muted-foreground">{items.length} {items.length === 1 ? "ítem" : "ítems"}</span></span>
+                  <span className="grid h-6 w-6 place-items-center rounded-full border text-lg font-medium leading-none text-foreground" aria-hidden="true">{openCatalogCategories[category] ? "−" : "+"}</span>
+                </button>
+                {openCatalogCategories[category] && <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {items.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => add(product)}
+                        disabled={!isService(product) && !product.stock}
+                        className="rounded-lg border p-4 text-left transition hover:border-primary disabled:opacity-40"
+                      >
+                        <div className="flex justify-between gap-3">
+                          <span className="font-semibold">{product.name}</span>
+                          <span className="font-bold text-primary">
+                            {formatPrice(product.price)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {isService(product)
+                            ? `Servicio · Cargado ${cart[product.id] || 0}`
+                            : `Stock ${product.stock} · En ventas ${cart[product.id] || 0}`}
+                        </p>
+                      </button>
+                    ))}
+                  </div>}
+              </section>
             ))}
             {catalogGroup !== "LABOR" && !visibleProducts.length && (
               <p className="col-span-full py-10 text-center text-sm text-muted-foreground">
@@ -715,7 +839,7 @@ export default function SalesPage() {
 
           <div className="border-t">
             <div className="border-b px-5 py-4">
-              <h2 className="font-semibold">Últimas ventas</h2>
+              <h2 data-quick-access-label="Últimas ventas" className="font-semibold">Últimas ventas</h2>
               <p className="text-xs text-muted-foreground">
                 Las ventas alimentan Caja y Reportes. Facturar crea el comprobante sin duplicar la operación.
               </p>
@@ -796,7 +920,7 @@ export default function SalesPage() {
           </div>
         </section>
 
-        <aside className="h-fit rounded-xl border bg-card shadow-sm lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto">
+        <aside className="order-1 h-fit rounded-xl border bg-card shadow-sm lg:order-2 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto">
           <div className="border-b p-5">
             <h2 className="font-semibold">Operación actual</h2>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -828,9 +952,21 @@ export default function SalesPage() {
           <div className="border-b p-5">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold">Detalle</h3>
-              <span className="text-xs text-muted-foreground">
-                {selectedProducts.length + laborLines.length} ítems
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {selectedProducts.length + laborLines.length} ítems
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileCatalogError("")
+                    setMobileCatalogOpen(true)
+                  }}
+                  className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground lg:hidden"
+                >
+                  + Agregar ítem
+                </button>
+              </div>
             </div>
             <div className="mt-3 space-y-2">
             {selectedProducts.map((product) => {
@@ -991,9 +1127,16 @@ export default function SalesPage() {
               <label className="text-xs font-medium text-muted-foreground">Vehículo<input className={`${inputClass} mt-1`} value={vehicleDescription} onChange={(event) => setVehicleDescription(event.target.value)} /></label>
               <label className="text-xs font-medium text-muted-foreground">Patente<input className={`${inputClass} mt-1 uppercase`} value={vehiclePlate} onChange={(event) => setVehiclePlate(event.target.value)} /></label>
             </div>
-            <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
-              Los datos ingresados se guardarán automáticamente en la agenda.
-            </p>
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-md border bg-muted/30 px-3 py-2.5 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={saveCustomer}
+                onChange={(event) => setSaveCustomer(event.target.checked)}
+                className="h-4 w-4 rounded border accent-primary"
+              />
+              <span>Guardar cliente</span>
+              <span className="text-xs font-normal text-muted-foreground">Agrega o actualiza sus datos en la agenda.</span>
+            </label>
           </div>
 
           <div className="space-y-4 border-b p-5">
@@ -1024,6 +1167,50 @@ export default function SalesPage() {
           </label>
             )}
 
+            {operationType === "SALE" && ["CARD", "MERCADO_PAGO"].includes(paymentMethod) && (
+              <label className="mt-3 block text-xs font-medium text-muted-foreground">
+                {paymentMethod === "MERCADO_PAGO" ? "N.º de operación de Mercado Pago" : "N.º de cupón u operación de la tarjeta"}
+                <input
+                  className={`${inputClass} mt-1`}
+                  value={paymentReference}
+                  onChange={(event) => setPaymentReference(event.target.value)}
+                  maxLength={120}
+                  placeholder="Opcional, para conciliar el cobro"
+                />
+              </label>
+            )}
+
+            {operationType === "SALE" && paymentMethod === "CARD" && (
+              <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50/70 p-3">
+                <label className="block text-xs font-medium text-slate-600">
+                  Cantidad de cuotas
+                  <select
+                    className={`${inputClass} mt-1 bg-white`}
+                    value={cardInstallments}
+                    onChange={(event) => setCardInstallments(event.target.value)}
+                  >
+                    {settings.cardInstallmentRates.map((plan) => (
+                      <option key={plan.installments} value={plan.installments}>
+                        {plan.installments} {plan.installments === 1 ? "cuota" : "cuotas"} · {plan.surchargeRate > 0 ? `${plan.surchargeRate}% de recargo` : "sin recargo"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-md bg-white/80 p-2.5">
+                    <span className="text-slate-500">Recargo</span>
+                    <strong className="mt-0.5 block text-slate-950">{formatPrice(cardSurchargeAmount)}</strong>
+                  </div>
+                  <div className="rounded-md bg-white/80 p-2.5 text-right">
+                    <span className="text-slate-500">Valor por cuota</span>
+                    <strong className="mt-0.5 block text-slate-950">
+                      {formatPrice(total / Math.max(1, Number(cardInstallments)))}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {operationType === "SALE" && paymentMethod === "COMBINED" && (
               <div className="mt-3 rounded-lg border bg-muted/50 p-3">
                 <div className="flex items-center justify-between gap-3">
@@ -1046,8 +1233,9 @@ export default function SalesPage() {
 
                 <div className="mt-3 space-y-2">
                   {paymentSplits.map((payment, index) => (
-                    <div key={payment.id} className="grid grid-cols-[1fr_125px_34px] gap-2">
-                      <select
+                    <div key={payment.id} className="space-y-2">
+                      <div className="grid grid-cols-[1fr_125px_34px] gap-2">
+                        <select
                         aria-label={`Medio de pago ${index + 1}`}
                         className={inputClass}
                         value={payment.method}
@@ -1069,8 +1257,8 @@ export default function SalesPage() {
                             {label}
                           </option>
                         ))}
-                      </select>
-                      <input
+                        </select>
+                        <input
                         aria-label={`Importe del medio ${index + 1}`}
                         className={`${inputClass} text-right`}
                         type="number"
@@ -1082,8 +1270,8 @@ export default function SalesPage() {
                             amount: event.target.value,
                           })
                         }
-                      />
-                      <button
+                        />
+                        <button
                         type="button"
                         onClick={() =>
                           setPaymentSplits((current) =>
@@ -1093,9 +1281,22 @@ export default function SalesPage() {
                         disabled={paymentSplits.length <= 2}
                         className="flex h-10 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground disabled:opacity-30"
                         aria-label={`Quitar medio ${index + 1}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {["CARD", "MERCADO_PAGO"].includes(payment.method) && (
+                        <input
+                          aria-label={`Referencia del medio ${index + 1}`}
+                          className={inputClass}
+                          value={payment.reference}
+                          onChange={(event) =>
+                            updatePaymentSplit(payment.id, { reference: event.target.value })
+                          }
+                          maxLength={120}
+                          placeholder={payment.method === "MERCADO_PAGO" ? "N.º de operación de Mercado Pago (opcional)" : "N.º de cupón u operación (opcional)"}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1145,6 +1346,12 @@ export default function SalesPage() {
               <span>Impuestos</span>
               <span>{formatPrice(taxAmount)}</span>
             </div>
+            {cardSurchargeAmount > 0 && (
+              <div className="flex justify-between font-medium text-blue-700">
+                <span>Recargo tarjeta ({cardInstallments} cuotas · {cardSurchargeRate}%)</span>
+                <span>+ {formatPrice(cardSurchargeAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
               <span>{formatPrice(total)}</span>
@@ -1237,6 +1444,101 @@ export default function SalesPage() {
           </div>
         </aside>
       </div>
+
+      {mobileCatalogOpen && (
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-slate-950/55 p-3 backdrop-blur-md lg:hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-catalog-title">
+          <div className="flex h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/75 shadow-[0_24px_80px_rgba(2,8,23,.45)] backdrop-blur-3xl">
+            <div className="flex items-start justify-between border-b border-white/60 bg-white/30 p-5">
+              <div>
+                <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-primary">Operación actual</p>
+                <h2 id="mobile-catalog-title" className="mt-1 text-xl font-bold">Agregar a la venta</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Elegí un producto, servicio o mano de obra.</p>
+              </div>
+              <button type="button" onClick={() => setMobileCatalogOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-400/70 bg-white/45 shadow-sm backdrop-blur-xl" aria-label="Cerrar catálogo">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto bg-white/15 p-4">
+              <div className="grid grid-cols-3 gap-2" role="group" aria-label="Tipo de ítem">
+                {([
+                  ["PRODUCTS", "Productos"],
+                  ["SERVICES", "Servicios"],
+                  ["LABOR", "Mano de obra"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCatalogGroup(value)}
+                    className={`min-h-12 rounded-xl border px-2 text-xs font-bold shadow-sm backdrop-blur-xl transition ${catalogGroup === value ? "border-primary bg-primary text-primary-foreground shadow-primary/20" : "border-white/70 bg-white/45"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {catalogGroup !== "LABOR" && (
+                <input
+                  autoFocus
+                  className={`${inputClass} mt-3`}
+                  placeholder={catalogGroup === "SERVICES" ? "Buscar servicio" : "Buscar producto o SKU"}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              )}
+
+              {catalogGroup === "LABOR" ? (
+                <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/[0.03] p-4">
+                  <div className="flex items-center gap-2"><Wrench className="h-4 w-4 text-primary" /><p className="font-bold">Nueva mano de obra</p></div>
+                  <label className="mt-4 block text-xs font-medium text-muted-foreground">Trabajo realizado
+                    <input className={`${inputClass} mt-1`} value={laborDescription} onChange={(event) => { setLaborDescription(event.target.value); setMobileCatalogError("") }} placeholder="Ej.: Reparación y colocación de radiador" />
+                  </label>
+                  <label className="mt-3 block text-xs font-medium text-muted-foreground">Precio
+                    <input className={`${inputClass} mt-1`} type="number" min="0" step="0.01" value={laborPrice} onChange={(event) => { setLaborPrice(event.target.value); setMobileCatalogError("") }} placeholder="0" />
+                  </label>
+                  {mobileCatalogError && <p className="mt-3 text-xs font-medium text-destructive">{mobileCatalogError}</p>}
+                  <button type="button" onClick={addLaborFromMobileCatalog} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground"><Wrench className="h-4 w-4" /> Agregar mano de obra</button>
+                </div>
+              ) : (
+                <div className="mt-4 space-y-5">
+                  {productsByCategory.map(({ category, items }) => (
+                    <section key={category}>
+                      <button type="button" onClick={() => toggleCatalogCategory(category)} aria-expanded={Boolean(openCatalogCategories[category])} className="flex w-full items-center justify-between gap-3 border-b pb-2 text-left">
+                        <span><span className="text-[0.68rem] font-bold uppercase tracking-wider text-muted-foreground">{category}</span><span className="ml-2 text-xs text-muted-foreground">{items.length}</span></span>
+                        <span className="grid h-7 w-7 place-items-center rounded-full border text-xl font-medium leading-none text-foreground" aria-hidden="true">{openCatalogCategories[category] ? "−" : "+"}</span>
+                      </button>
+                      {openCatalogCategories[category] && <div className="mt-3 space-y-2">
+                          {items.map((product) => (
+                          <button key={product.id} type="button" onClick={() => addFromMobileCatalog(product)} disabled={!isService(product) && !product.stock} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/55 p-4 text-left shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-xl transition active:scale-[.99] disabled:opacity-40">
+                              <span className="min-w-0"><strong className="block text-sm leading-snug">{product.name}</strong><small className="mt-1 block text-xs text-muted-foreground">{isService(product) ? "Servicio" : `Stock ${product.stock}`}</small></span>
+                              <strong className="shrink-0 text-sm text-primary">{formatPrice(product.price)}</strong>
+                            </button>
+                          ))}
+                        </div>}
+                    </section>
+                  ))}
+                  {!visibleProducts.length && <p className="py-10 text-center text-sm text-muted-foreground">No hay elementos que coincidan con la búsqueda.</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mobileAddedItem && (
+        <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-950/55 p-5 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true" aria-labelledby="item-added-title">
+          <div className="w-full max-w-sm rounded-[28px] bg-card p-6 text-center shadow-2xl">
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 className="h-7 w-7" /></span>
+            <p className="mt-5 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-emerald-700">Ítem agregado</p>
+            <h2 id="item-added-title" className="mt-1 text-lg font-bold">{mobileAddedItem}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Ya está incluido en la operación actual.</p>
+            <div className="mt-6 grid gap-2">
+              <button type="button" onClick={() => { setMobileAddedItem(null); setMobileCatalogOpen(true) }} className="h-12 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground">Agregar otro ítem</button>
+              <button type="button" onClick={() => setMobileAddedItem(null)} className="h-12 rounded-xl border px-4 text-sm font-bold">Ver operación</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {saleToVoid && (
         <div

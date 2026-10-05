@@ -28,16 +28,20 @@ export function SiteFooter() {
       <div className="mx-auto max-w-[90rem] px-5 pb-8 pt-14 sm:px-8 sm:pt-16 lg:px-12 xl:px-16">
         <div className="flex flex-col justify-between gap-10 border-b border-white/12 pb-12 lg:flex-row lg:items-end">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center bg-primary text-xl font-black italic">R</span>
-              <div className="leading-none">
-                <p className="font-display text-xl font-black uppercase tracking-[0.08em]">Radiadores AMG</p>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">
-                  Especialistas térmicos
-                </p>
-              </div>
-            </div>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-white/55">
+            <Link href="/" className="inline-flex" aria-label="Radiadores AMG, inicio">
+              <Image
+                src="/images/logo-navbar-amg.png"
+                alt="Radiadores AMG"
+                width={2172}
+                height={724}
+                sizes="(max-width: 640px) 180px, 210px"
+                className="h-14 w-auto object-contain drop-shadow-[0_3px_14px_rgba(190,198,204,.14)] sm:h-16"
+              />
+            </Link>
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">
+              Especialistas térmicos
+            </p>
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-white/55">
               Radiadores, repuestos y servicio técnico para mantener cada motor
               trabajando a la temperatura correcta.
             </p>

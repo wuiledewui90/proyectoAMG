@@ -25,15 +25,9 @@ export function MobileWelcomeOverlay() {
   const [exiting, setExiting] = useState(false)
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)")
     const stored = window.sessionStorage.getItem(MOBILE_WELCOME_STORAGE_KEY)
 
     if (!stored) return
-    if (!media.matches) {
-      window.sessionStorage.removeItem(MOBILE_WELCOME_STORAGE_KEY)
-      document.documentElement.classList.remove(MOBILE_WELCOME_DOCUMENT_CLASS)
-      return
-    }
 
     try {
       const payload = JSON.parse(stored) as WelcomePayload

@@ -4,14 +4,14 @@ import { resolve } from "node:path"
 import bcrypt from "bcryptjs"
 import { parse } from "dotenv"
 
-const source = resolve(process.cwd(), ".env")
+const source = resolve(process.cwd(), ".env.local")
 const destination = resolve(process.cwd(), ".env.hostinger-admin.local")
 
 const variables = parse(await readFile(source, "utf8"))
 const password = variables.ADMIN_PASS_HASH?.trim()
 
 if (!password || /^\$2[aby]\$\d{2}\$/.test(password)) {
-  throw new Error("El .env local debe contener la contraseña anterior en ADMIN_PASS_HASH para convertirla una sola vez.")
+  throw new Error(".env.local debe contener la contraseña anterior en ADMIN_PASS_HASH para convertirla una sola vez.")
 }
 
 const hash = await bcrypt.hash(password, 12)

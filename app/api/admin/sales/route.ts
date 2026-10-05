@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db/prisma"
 import { getRequestAdminSession } from "@/lib/admin-request"
 import { argentinaDate } from "@/lib/cash"
+import { normalizeCardInstallmentRates } from "@/lib/erp-settings"
+import { isServiceProduct } from "@/lib/products/stock-classification"
 
 type SaleLineInput = {
   productId?: unknown
@@ -11,9 +13,9 @@ type SaleLineInput = {
   unitPrice?: unknown
   kind?: unknown
 }
-type SalePaymentInput = { method?: unknown; amount?: unknown }
+type SalePaymentInput = { method?: unknown; amount?: unknown; reference?: unknown }
 
-const paymentMethods = ["CASH", "TRANSFER", "CARD", "CURRENT_ACCOUNT"] as const
+const paymentMethods = ["CASH", "TRANSFER", "CARD", "MERCADO_PAGO", "CURRENT_ACCOUNT"] as const
 
 function optionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null
@@ -28,13 +30,20 @@ function serializeSale(sale: any) {
     discount: Number(sale.discount),
     taxRate: Number(sale.taxRate),
     taxAmount: Number(sale.taxAmount),
+    cardInstallments: sale.cardInstallments,
+    cardSurchargeRate: Number(sale.cardSurchargeRate || 0),
+    cardSurchargeAmount: Number(sale.cardSurchargeAmount || 0),
     total: Number(sale.total),
     payments: (sale.payments || []).map((payment: any) => ({
       ...payment,
       amount: Number(payment.amount),
     })),
     items: (sale.items || []).map((item: any) => ({
-      ...item,
+      id: item.id,
+      saleId: item.saleId,
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
       unitPrice: Number(item.unitPrice),
       subtotal: Number(item.subtotal),
     })),
@@ -119,8 +128,7 @@ export async function POST(req: Request) {
 
         const product = productsById.get(item.productId)
         if (!product) throw new Error("Hay productos inválidos o inactivos.")
-        const serviceText = `${product.stockType || ""} ${product.category || ""} ${product.stockCategory || ""}`.toLowerCase()
-        const isService = serviceText.includes("servicio") || serviceText.includes("mano de obra")
+        const isService = isServiceProduct(product)
         if (!isService && product.stock < item.quantity) {
           throw new Error(`Stock insuficiente para ${product.name}.`)
         }
@@ -146,14 +154,29 @@ export async function POST(req: Request) {
       const taxRate = Number.isFinite(requestedTaxRate)
         ? Math.min(Math.max(requestedTaxRate, 0), 100)
         : 0
-      const taxAmount = (subtotal - discount) * (taxRate / 100)
-      const total = subtotal - discount + taxAmount
+      const taxAmount = Math.round((subtotal - discount) * (taxRate / 100) * 100) / 100
+      const totalBeforeCardSurcharge = subtotal - discount + taxAmount
+      let cardInstallments: number | null = null
+      let cardSurchargeRate = 0
+      let cardSurchargeAmount = 0
+      if (paymentMethod === "CARD") {
+        const settings = await tx.erpSetting.findUnique({ where: { id: 1 } })
+        const availablePlans = normalizeCardInstallmentRates(settings?.cardInstallmentRates)
+        const requestedInstallments = Number(body.cardInstallments)
+        const selectedPlan = availablePlans.find((plan) => plan.installments === requestedInstallments)
+        if (!selectedPlan) throw new Error("Seleccioná un plan de cuotas configurado para tarjeta.")
+        cardInstallments = selectedPlan.installments
+        cardSurchargeRate = selectedPlan.surchargeRate
+        cardSurchargeAmount = Math.round(totalBeforeCardSurcharge * (cardSurchargeRate / 100) * 100) / 100
+      }
+      const total = Math.round((totalBeforeCardSurcharge + cardSurchargeAmount) * 100) / 100
       const rawPayments = Array.isArray(body.payments)
         ? (body.payments as SalePaymentInput[])
         : []
       let paymentLines: Array<{
         method: (typeof paymentMethods)[number]
         amount: number
+        reference: string | null
       }>
 
       if (paymentMethod === "COMBINED") {
@@ -161,6 +184,7 @@ export async function POST(req: Request) {
           .map((payment) => ({
             method: String(payment.method || "") as (typeof paymentMethods)[number],
             amount: Number(payment.amount),
+            reference: optionalText(payment.reference, 120),
           }))
           .filter(
             (payment) =>
@@ -187,6 +211,7 @@ export async function POST(req: Request) {
           {
             method: paymentMethod as (typeof paymentMethods)[number],
             amount: total,
+            reference: optionalText(body.paymentReference, 120),
           },
         ]
       }
@@ -200,6 +225,7 @@ export async function POST(req: Request) {
       const customerAddress = optionalText(body.customerAddress, 255)
       const vehiclePlate = optionalText(body.vehiclePlate, 20)?.toUpperCase() || null
       const vehicleDescription = optionalText(body.vehicleDescription, 191)
+      const saveCustomer = body.saveCustomer === true
       let customerId: number | null = null
 
       if (Number.isInteger(requestedCustomerId) && requestedCustomerId > 0) {
@@ -208,20 +234,22 @@ export async function POST(req: Request) {
         })
         if (!currentCustomer) throw new Error("El cliente seleccionado ya no está disponible.")
 
-        const updatedCustomer = await tx.customer.update({
-          where: { id: currentCustomer.id },
-          data: {
-            ...(enteredName ? { name: enteredName } : {}),
-            ...(customerPhone ? { phone: customerPhone } : {}),
-            ...(customerEmail ? { email: customerEmail } : {}),
-            ...(customerTaxId ? { taxId: customerTaxId } : {}),
-            ...(customerAddress ? { address: customerAddress } : {}),
-            ...(vehiclePlate ? { vehiclePlate } : {}),
-            ...(vehicleDescription ? { vehicleModel: vehicleDescription } : {}),
-          },
-        })
-        customerId = updatedCustomer.id
-      } else if (customerName !== "Consumidor final") {
+        if (saveCustomer) {
+          await tx.customer.update({
+            where: { id: currentCustomer.id },
+            data: {
+              ...(enteredName ? { name: enteredName } : {}),
+              ...(customerPhone ? { phone: customerPhone } : {}),
+              ...(customerEmail ? { email: customerEmail } : {}),
+              ...(customerTaxId ? { taxId: customerTaxId } : {}),
+              ...(customerAddress ? { address: customerAddress } : {}),
+              ...(vehiclePlate ? { vehiclePlate } : {}),
+              ...(vehicleDescription ? { vehicleModel: vehicleDescription } : {}),
+            },
+          })
+        }
+        customerId = currentCustomer.id
+      } else if (saveCustomer && customerName !== "Consumidor final") {
         const identifiers = [
           customerTaxId ? { taxId: customerTaxId } : null,
           customerEmail ? { email: customerEmail } : null,
@@ -267,8 +295,11 @@ export async function POST(req: Request) {
           discount,
           taxRate,
           taxAmount,
+          cardInstallments,
+          cardSurchargeRate,
+          cardSurchargeAmount,
           total,
-          paymentMethod: paymentMethod as "CASH" | "TRANSFER" | "CARD" | "CURRENT_ACCOUNT" | "COMBINED",
+          paymentMethod: paymentMethod as "CASH" | "TRANSFER" | "CARD" | "MERCADO_PAGO" | "CURRENT_ACCOUNT" | "COMBINED",
           notes: typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null,
           items: {
             create: lines.map((line) => ({
@@ -276,6 +307,10 @@ export async function POST(req: Request) {
               productName: line.productName,
               quantity: line.quantity,
               unitPrice: line.unitPrice,
+              unitCost: line.affectsStock && line.product && Number(line.product.cost) > 0
+                ? line.product.cost
+                : null,
+              isStockItem: line.affectsStock,
               subtotal: line.subtotal,
             })),
           },
@@ -291,14 +326,18 @@ export async function POST(req: Request) {
           data: { stock: { decrement: line.quantity } },
         })
         if (updated.count !== 1) throw new Error(`El stock de ${line.product.name} cambió. Intentá nuevamente.`)
+        const current = await tx.product.findUniqueOrThrow({
+          where: { id: line.product.id },
+          select: { stock: true },
+        })
         await tx.stockMovement.create({
           data: {
             productId: line.product.id,
             createdById: session.userId || null,
             type: "SALE",
             quantity: -line.quantity,
-            previousStock: line.product.stock,
-            newStock: line.product.stock - line.quantity,
+            previousStock: current.stock + line.quantity,
+            newStock: current.stock,
             referenceId: String(created.id),
             notes: `Venta #${created.id}`,
           },
@@ -380,8 +419,7 @@ export async function PATCH(req: Request) {
 
       for (const item of current.items) {
         if (!item.productId || !item.product) continue
-        const serviceText = `${item.product.stockType || ""} ${item.product.category || ""} ${item.product.stockCategory || ""}`.toLowerCase()
-        if (serviceText.includes("servicio") || serviceText.includes("mano de obra")) continue
+        if (isServiceProduct(item.product)) continue
         const product = await tx.product.update({
           where: { id: item.productId },
           data: { stock: { increment: item.quantity } },

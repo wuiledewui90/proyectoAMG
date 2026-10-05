@@ -6,7 +6,7 @@ import { z } from "zod"
 import * as service from "@/lib/products/product-service"
 import { serializeProduct } from "@/lib/products/product-serialize"
 import { preferSupabaseProductImage } from "@/lib/products/product-supabase-images"
-import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { getRequestAdminSession } from "@/lib/admin-request"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -25,22 +25,13 @@ function parseId(raw: string) {
   return { ok: true as const, raw, id }
 }
 
-function getAdminTokenFromCookieHeader(req: Request) {
-  return req.headers
-    .get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
-    ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
-}
-
-async function ensureAdmin(req: Request) {
-  return verifyAdminSessionToken(getAdminTokenFromCookieHeader(req))
-}
-
 export async function PUT(req: Request, context: RouteContext) {
-  if (!(await ensureAdmin(req))) {
+  const session = await getRequestAdminSession(req)
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (session.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede modificar productos." }, { status: 403 })
   }
 
   const params = await context.params
@@ -62,13 +53,20 @@ export async function PUT(req: Request, context: RouteContext) {
   }
 
   try {
-    const product = await service.update(parsed.id, body)
-    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
+    const reason = body && typeof body === "object" && "stockAdjustmentReason" in body
+      ? String(body.stockAdjustmentReason ?? "")
+      : ""
+    const product = await service.update(parsed.id, body, { actorId: session.userId, reason })
+    const serialized = await preferSupabaseProductImage(serializeProduct(product))
+    return NextResponse.json(session.role === "ADMIN" ? serialized : { ...serialized, cost: null })
   } catch (err) {
     if (err instanceof service.NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: err.status })
     }
     if (err instanceof service.ConflictError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    if (err instanceof service.ProductValidationError) {
       return NextResponse.json({ error: err.message }, { status: err.status })
     }
     if (err instanceof z.ZodError) {
@@ -82,7 +80,8 @@ export async function PUT(req: Request, context: RouteContext) {
 }
 
 export async function GET(req: Request, context: RouteContext) {
-  if (!(await ensureAdmin(req))) {
+  const session = await getRequestAdminSession(req)
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -98,7 +97,8 @@ export async function GET(req: Request, context: RouteContext) {
 
   try {
     const product = await service.getById(parsed.id)
-    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
+    const serialized = await preferSupabaseProductImage(serializeProduct(product))
+    return NextResponse.json(session.role === "ADMIN" ? serialized : { ...serialized, cost: null })
   } catch (err) {
     if (err instanceof service.NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: err.status })
@@ -108,8 +108,12 @@ export async function GET(req: Request, context: RouteContext) {
 }
 
 export async function DELETE(req: Request, context: RouteContext) {
-  if (!(await ensureAdmin(req))) {
+  const session = await getRequestAdminSession(req)
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (session.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede eliminar productos." }, { status: 403 })
   }
 
   const params = await context.params
@@ -128,7 +132,8 @@ export async function DELETE(req: Request, context: RouteContext) {
     const product = hard
       ? await service.hardDelete(parsed.id)
       : await service.softDelete(parsed.id)
-    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
+    const serialized = await preferSupabaseProductImage(serializeProduct(product))
+    return NextResponse.json(session.role === "ADMIN" ? serialized : { ...serialized, cost: null })
   } catch (err) {
     if (err instanceof service.NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: err.status })

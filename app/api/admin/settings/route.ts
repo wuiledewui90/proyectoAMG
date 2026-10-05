@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db/prisma"
 import { getRequestAdminSession, requireOwnerOrAdmin } from "@/lib/admin-request"
-import { defaultErpSettings, serializeErpSettings } from "@/lib/erp-settings"
+import { defaultErpSettings, normalizeCardInstallmentRates, serializeErpSettings } from "@/lib/erp-settings"
 
 function optionalText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null
@@ -41,6 +41,7 @@ export async function PUT(req: Request) {
   const quoteValidityDays = boundedInteger(body.quoteValidityDays, 1, 365)
   const invoiceDueDays = boundedInteger(body.invoiceDueDays, 0, 365)
   const defaultTaxRate = Number(body.defaultTaxRate)
+  const rawCardInstallmentRates = body.cardInstallmentRates
 
   if (!businessName) {
     return NextResponse.json({ error: "Ingresá el nombre del negocio." }, { status: 400 })
@@ -57,6 +58,25 @@ export async function PUT(req: Request) {
       { status: 400 }
     )
   }
+  if (
+    !Array.isArray(rawCardInstallmentRates) ||
+    rawCardInstallmentRates.length < 1 ||
+    rawCardInstallmentRates.length > 24 ||
+    rawCardInstallmentRates.some((entry) => {
+      if (!entry || typeof entry !== "object") return true
+      const installments = Number((entry as Record<string, unknown>).installments)
+      const surchargeRate = Number((entry as Record<string, unknown>).surchargeRate)
+      return !Number.isInteger(installments) || installments < 1 || installments > 60 ||
+        !Number.isFinite(surchargeRate) || surchargeRate < 0 || surchargeRate > 100
+    }) ||
+    new Set(rawCardInstallmentRates.map((entry) => Number((entry as Record<string, unknown>).installments))).size !== rawCardInstallmentRates.length
+  ) {
+    return NextResponse.json(
+      { error: "Configurá entre 1 y 24 planes de tarjeta, sin repetir cuotas y con recargos entre 0 y 100%." },
+      { status: 400 }
+    )
+  }
+  const cardInstallmentRates = normalizeCardInstallmentRates(rawCardInstallmentRates)
 
   const settings = await prisma.erpSetting.upsert({
     where: { id: 1 },
@@ -72,6 +92,7 @@ export async function PUT(req: Request) {
       quoteValidityDays,
       invoiceDueDays,
       defaultTaxRate,
+      cardInstallmentRates,
       defaultTerms: optionalText(body.defaultTerms, 5000),
     },
     update: {
@@ -85,6 +106,7 @@ export async function PUT(req: Request) {
       quoteValidityDays,
       invoiceDueDays,
       defaultTaxRate,
+      cardInstallmentRates,
       defaultTerms: optionalText(body.defaultTerms, 5000),
     },
   })

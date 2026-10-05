@@ -7,23 +7,14 @@ import {
   preferSupabaseProductImage,
   preferSupabaseProductImages,
 } from "@/lib/products/product-supabase-images"
-import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { getRequestAdminSession } from "@/lib/admin-request"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-function getAdminTokenFromCookieHeader(req: Request) {
-  return req.headers
-    .get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${ADMIN_COOKIE_NAME}=`))
-    ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
-}
-
 export async function GET(req: Request) {
-  const token = getAdminTokenFromCookieHeader(req)
-  if (!(await verifyAdminSessionToken(token))) {
+  const session = await getRequestAdminSession(req)
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -48,7 +39,8 @@ export async function GET(req: Request) {
 
   const { search, category, brand, isActive, page, limit } = parsed.data
   const { total, items } = await service.list({ search, category, brand, isActive, page, limit })
-  const serializedItems = await preferSupabaseProductImages(serializeProducts(items))
+  const serializedItems = (await preferSupabaseProductImages(serializeProducts(items)))
+    .map((product) => session.role === "ADMIN" ? product : { ...product, cost: null })
 
   if (!wantsPaged) {
     return NextResponse.json(serializedItems, {
@@ -74,9 +66,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const token = getAdminTokenFromCookieHeader(req)
-  if (!(await verifyAdminSessionToken(token))) {
+  const session = await getRequestAdminSession(req)
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (session.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo un administrador puede modificar productos." }, { status: 403 })
   }
 
   let body: unknown
@@ -87,8 +82,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const product = await service.create(body)
-    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
+    const product = await service.create(body, { actorId: session.userId })
+    const serialized = await preferSupabaseProductImage(serializeProduct(product))
+    return NextResponse.json(session.role === "ADMIN" ? serialized : { ...serialized, cost: null })
   } catch (err) {
     if (err instanceof service.ConflictError) {
       return NextResponse.json({ error: err.message }, { status: err.status })
