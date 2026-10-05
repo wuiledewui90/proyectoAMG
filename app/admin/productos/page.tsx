@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Ban, FileDown, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
+import { Ban, CloudDownload, FileDown, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
 
 import { brands, categories, formatPrice } from "@/lib/data"
 import { AdminMobileExpandableText } from "@/components/admin-mobile-expandable-text"
@@ -43,6 +43,25 @@ type ImportResponse = {
   failed: number
   total: number
   errors: Array<{ row: number; error: string }>
+}
+
+type SupabaseImportPreview = {
+  total: number
+  alreadyPresent: number
+  toCreate: number
+  withImage: number
+  conflictCount: number
+  conflicts: Array<{ code: string; reason: string }>
+  fingerprint: string
+  stockNotice: string
+}
+
+type SupabaseImportResult = {
+  created: number
+  skipped: number
+  total: number
+  withImage: number
+  stockNotice: string
 }
 
 type EditorState = {
@@ -136,6 +155,9 @@ function AdminProductosContent() {
   const [reloadKey, setReloadKey] = useState(0)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportResponse | null>(null)
+  const [supabasePreview, setSupabasePreview] = useState<SupabaseImportPreview | null>(null)
+  const [supabaseResult, setSupabaseResult] = useState<SupabaseImportResult | null>(null)
+  const [supabaseBusy, setSupabaseBusy] = useState(false)
   const [imageUploading, setImageUploading] = useState(false)
   const [imageUploadError, setImageUploadError] = useState("")
   const [imagePreviewUrl, setImagePreviewUrl] = useState("")
@@ -439,6 +461,47 @@ function AdminProductosContent() {
     }
   }
 
+  async function handlePreviewSupabase() {
+    setSupabaseBusy(true)
+    setSupabasePreview(null)
+    setSupabaseResult(null)
+    setError("")
+    try {
+      const response = await fetch("/api/products/import-supabase", { cache: "no-store" })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || `Error ${response.status}`)
+      setSupabasePreview(payload as SupabaseImportPreview)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo revisar Supabase.")
+    } finally {
+      setSupabaseBusy(false)
+    }
+  }
+
+  async function handleImportSupabase() {
+    if (!supabasePreview || supabasePreview.conflictCount || !supabasePreview.toCreate) return
+    setSupabaseBusy(true)
+    setError("")
+    try {
+      const response = await fetch("/api/products/import-supabase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true, fingerprint: supabasePreview.fingerprint }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || `Error ${response.status}`)
+      setSupabaseResult(payload as SupabaseImportResult)
+      setSupabasePreview(null)
+      setReloadKey((key) => key + 1)
+      router.refresh()
+    } catch (err) {
+      setSupabasePreview(null)
+      setError(err instanceof Error ? err.message : "No se pudo importar desde Supabase.")
+    } finally {
+      setSupabaseBusy(false)
+    }
+  }
+
   return (
     <div className="relative mx-auto w-full max-w-[1500px] space-y-6 pb-10 text-slate-950">
       <div className="pointer-events-none absolute -left-24 -top-24 -z-10 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
@@ -503,6 +566,58 @@ function AdminProductosContent() {
           </button>
         </div>
       </header>
+
+      <section className="rounded-[28px] border border-blue-100 bg-white/80 p-4 shadow-[0_18px_55px_rgba(15,23,42,.06)] backdrop-blur-2xl sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">Catálogo externo</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-950">Productos de Supabase</h2>
+            <p className="mt-1 text-sm text-slate-600">Compará ambos catálogos antes de agregar los productos que faltan. Los existentes no se sobrescriben.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handlePreviewSupabase()}
+            disabled={supabaseBusy}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-5 text-sm font-semibold text-blue-800 transition hover:bg-blue-100 disabled:opacity-60"
+          >
+            {supabaseBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudDownload className="h-4 w-4" />}
+            Revisar importación
+          </button>
+        </div>
+
+        {supabasePreview && (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800" aria-live="polite">
+            <p className="font-semibold">Vista previa: {supabasePreview.total} en Supabase · {supabasePreview.alreadyPresent} ya presentes · {supabasePreview.toCreate} para agregar · {supabasePreview.withImage} nuevos con imagen.</p>
+            <p className="mt-2 text-slate-600">{supabasePreview.stockNotice}</p>
+            {supabasePreview.conflictCount > 0 && (
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                <p className="font-semibold">Hay {supabasePreview.conflictCount} conflictos. No se importará nada hasta resolverlos.</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {supabasePreview.conflicts.map((item, index) => (
+                    <li key={`${item.code}-${index}`}>{item.code}: {item.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void handleImportSupabase()}
+                disabled={supabaseBusy || supabasePreview.conflictCount > 0 || supabasePreview.toCreate === 0}
+                className="min-h-10 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Agregar {supabasePreview.toCreate} productos
+              </button>
+              <button type="button" onClick={() => setSupabasePreview(null)} className="min-h-10 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700">Cancelar</button>
+            </div>
+          </div>
+        )}
+        {supabaseResult && (
+          <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900" role="status">
+            Se agregaron {supabaseResult.created} productos. {supabaseResult.skipped} ya estaban presentes o se omitieron por duplicados. {supabaseResult.stockNotice}
+          </p>
+        )}
+      </section>
 
       <div className="grid grid-cols-3 rounded-2xl border border-white/80 bg-white/80 p-1 shadow-sm backdrop-blur-xl lg:hidden">
         {([
