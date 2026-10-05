@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --port 3002",
-    "build": "prisma migrate deploy && prisma generate && next build --webpack && node scripts/prepare-standalone.mjs",
+    "build": "prisma migrate deploy && node scripts/validate-env.mjs && prisma generate && next build --webpack && node scripts/prepare-standalone.mjs",
     "hostinger:build": "node scripts/validate-env.mjs && prisma generate && next build --webpack && node scripts/prepare-standalone.mjs",
     "deploy:check": "node scripts/validate-env.mjs",
     "deploy:package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-hostinger-package.ps1",
