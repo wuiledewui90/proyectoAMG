@@ -87,11 +87,43 @@ export function CheckoutClient() {
         throw new Error(payload?.error ?? `Error ${res.status}`)
       }
 
-      const existingOrders = JSON.parse(
-        localStorage.getItem(ORDERS_STORAGE_KEY) || "[]"
-      ) as StoredOrder[]
-      existingOrders.push(order)
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(existingOrders))
+      const savedOrder = (await res.json()) as StoredOrder
+      try {
+        const existingOrders = JSON.parse(
+          localStorage.getItem(ORDERS_STORAGE_KEY) || "[]"
+        ) as StoredOrder[]
+        existingOrders.push(savedOrder)
+        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(existingOrders))
+      } catch {
+        // El pedido ya está guardado en el servidor. El historial local es opcional.
+      }
+
+      const message = buildCheckoutWhatsAppMessage({
+        address: form.address,
+        email: form.email,
+        items: savedOrder.items.map((line) => ({
+          product: {
+            name: line.productName,
+            sku: line.sku,
+            brand: line.brand,
+            model: line.model,
+            category: line.category,
+            compatibility: line.compatibility,
+            price: line.price,
+          },
+          quantity: line.quantity,
+        })),
+        name: form.name,
+        notes: form.notes,
+        phone: form.phone,
+        totalPrice: savedOrder.total,
+      })
+      const url = getWhatsAppUrl(message)
+
+      setWhatsAppUrl(url)
+      clearCart()
+      setSubmitted(true)
+      window.location.href = url
     } catch (err) {
       setErrors({
         submit:
@@ -102,22 +134,6 @@ export function CheckoutClient() {
       setSubmitting(false)
       return
     }
-
-    const message = buildCheckoutWhatsAppMessage({
-      address: form.address,
-      email: form.email,
-      items,
-      name: form.name,
-      notes: form.notes,
-      phone: form.phone,
-      totalPrice,
-    })
-    const url = getWhatsAppUrl(message)
-
-    setWhatsAppUrl(url)
-    clearCart()
-    setSubmitted(true)
-    window.location.href = url
   }
 
   if (items.length === 0 && !submitted) {

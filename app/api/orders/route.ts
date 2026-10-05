@@ -3,8 +3,9 @@ import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { prisma } from "@/lib/db/prisma"
 import type { StoredOrder, StoredOrderItem } from "@/lib/orders"
 import { getPublicCatalogProducts } from "@/lib/catalog/public-products"
+import { validateCatalogOrderItems } from "@/lib/orders/catalog-validation"
 import { checkRateLimit } from "@/lib/security/rate-limit"
-import { getRequestIp } from "@/lib/security/request"
+import { getRequestIp, isTrustedMutationOrigin } from "@/lib/security/request"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -66,6 +67,10 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!isTrustedMutationOrigin(req)) {
+    return NextResponse.json({ error: "Origen no permitido" }, { status: 403 })
+  }
+
   const rateLimit = checkRateLimit(`public-order:${getRequestIp(req)}`, {
     limit: 8,
     windowMs: 15 * 60 * 1000,
@@ -91,8 +96,7 @@ export async function POST(req: Request) {
   const address = cleanText(body.address, 240)
   if (
     !customerName ||
-    !customerEmail ||
-    !/^\S+@\S+\.\S+$/.test(customerEmail) ||
+    (customerEmail.length > 0 && !/^\S+@\S+\.\S+$/.test(customerEmail)) ||
     !customerPhone ||
     !address ||
     items.length === 0 ||
@@ -103,23 +107,16 @@ export async function POST(req: Request) {
   }
 
   const catalog = await getPublicCatalogProducts()
-  const catalogById = new Map(catalog.map((product) => [product.id, product]))
-  const verifiedItems = items.map((item) => ({ item, product: catalogById.get(item.productId!) }))
+  const { verifiedItems, invalid, insufficient } = validateCatalogOrderItems(items, catalog)
 
-  if (verifiedItems.some(({ product }) => !product || !product.isActive)) {
+  if (invalid) {
     return NextResponse.json(
       { error: "Uno o más productos ya no están disponibles." },
       { status: 409 }
     )
   }
 
-  const insufficientStock = verifiedItems.some(({ item, product }) => {
-    if (!product) return true
-    const isService = product.category?.toLowerCase() === "servicios"
-    return !isService && item.quantity! > product.stock
-  })
-
-  if (insufficientStock) {
+  if (insufficient) {
     return NextResponse.json(
       { error: "Uno o más productos no tienen stock suficiente." },
       { status: 409 }

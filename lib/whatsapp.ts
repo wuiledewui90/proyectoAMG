@@ -1,4 +1,15 @@
-import type { CartItem } from "@/lib/cart-context"
+type CheckoutMessageItem = {
+  product: {
+    name: string
+    sku?: string | null
+    brand?: string | null
+    model?: string | null
+    category?: string | null
+    compatibility?: string | null
+    price: number
+  }
+  quantity: number
+}
 
 export const COMPANY_WHATSAPP_NUMBER = "5493804524590"
 
@@ -17,7 +28,7 @@ export function buildCheckoutWhatsAppMessage({
 }: {
   address: string
   email: string
-  items: CartItem[]
+  items: CheckoutMessageItem[]
   name: string
   notes?: string
   phone: string

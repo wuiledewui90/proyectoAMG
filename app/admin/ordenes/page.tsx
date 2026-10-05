@@ -330,18 +330,20 @@ export default function AdminOrdersPage() {
                   Confirmar y descontar stock
                 </button>
               )}
-              <button
-                onClick={() => deleteOrder(selected)}
-                disabled={deletingId === selected.id}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-destructive/40 px-4 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
-              >
-                {deletingId === selected.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-                Eliminar orden
-              </button>
+              {selected.status === "pendiente" && (
+                <button
+                  onClick={() => deleteOrder(selected)}
+                  disabled={deletingId === selected.id}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-destructive/40 px-4 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
+                >
+                  {deletingId === selected.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Eliminar orden
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -397,18 +399,20 @@ export default function AdminOrdersPage() {
                         Confirmar
                       </button>
                     )}
-                    <button
-                      onClick={() => deleteOrder(order)}
-                      disabled={deletingId === order.id}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-60"
-                      aria-label={`Eliminar orden ${order.id}`}
-                    >
-                      {deletingId === order.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </button>
+                    {order.status === "pendiente" && (
+                      <button
+                        onClick={() => deleteOrder(order)}
+                        disabled={deletingId === order.id}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                        aria-label={`Eliminar orden ${order.id}`}
+                      >
+                        {deletingId === order.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -463,18 +467,20 @@ export default function AdminOrdersPage() {
                   Confirmar
                 </button>
               )}
-              <button
-                onClick={() => deleteOrder(order)}
-                disabled={deletingId === order.id}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-medium text-destructive disabled:opacity-60"
-              >
-                {deletingId === order.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-                Eliminar
-              </button>
+              {order.status === "pendiente" && (
+                <button
+                  onClick={() => deleteOrder(order)}
+                  disabled={deletingId === order.id}
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-medium text-destructive disabled:opacity-60"
+                >
+                  {deletingId === order.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Eliminar
+                </button>
+              )}
             </div>
           </article>
         ))}

@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto"
 import { NextResponse } from "next/server"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { InvalidProductImageError, prepareProductImage } from "@/lib/products/prepare-product-image"
+import { isTrustedMutationOrigin } from "@/lib/security/request"
 import { getSupabaseServerConfig } from "@/lib/supabase/config"
 import { supabaseServer } from "@/lib/supabase/server"
 
@@ -9,12 +11,6 @@ export const revalidate = 0
 export const runtime = "nodejs"
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
-
-const allowedTypes = new Map([
-  ["image/jpeg", "jpg"],
-  ["image/png", "png"],
-  ["image/webp", "webp"],
-])
 
 function getAdminTokenFromCookieHeader(req: Request) {
   return req.headers
@@ -37,6 +33,10 @@ function normalizeFileName(value: string) {
 }
 
 export async function POST(req: Request) {
+  if (!isTrustedMutationOrigin(req)) {
+    return NextResponse.json({ error: "Origen no permitido" }, { status: 403 })
+  }
+
   const token = getAdminTokenFromCookieHeader(req)
   if (!(await verifyAdminSessionToken(token))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -49,14 +49,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Imagen requerida" }, { status: 400 })
   }
 
-  const extension = allowedTypes.get(file.type)
-  if (!extension) {
-    return NextResponse.json(
-      { error: "Formato no soportado. Usa JPG, PNG o WEBP." },
-      { status: 400 }
-    )
-  }
-
   if (file.size > MAX_IMAGE_SIZE) {
     return NextResponse.json(
       { error: "La imagen no puede superar los 5 MB." },
@@ -64,14 +56,27 @@ export async function POST(req: Request) {
     )
   }
 
+  let optimized: Buffer
+  try {
+    optimized = await prepareProductImage(Buffer.from(await file.arrayBuffer()), file.type)
+  } catch (error) {
+    if (error instanceof InvalidProductImageError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    throw error
+  }
+  if (optimized.length > MAX_IMAGE_SIZE) {
+    return NextResponse.json({ error: "La imagen optimizada supera los 5 MB." }, { status: 413 })
+  }
+
   const baseName = normalizeFileName(file.name) || "producto"
-  const objectPath = `erp/${baseName}-${randomUUID()}.${extension}`
+  const objectPath = `erp/${baseName}-${randomUUID()}.webp`
   const { storageBucket } = getSupabaseServerConfig()
 
   const { error } = await supabaseServer.storage
     .from(storageBucket)
-    .upload(objectPath, Buffer.from(await file.arrayBuffer()), {
-      contentType: file.type,
+    .upload(objectPath, optimized, {
+      contentType: "image/webp",
       cacheControl: "31536000",
       upsert: false,
     })

@@ -24,7 +24,6 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const { addItem, totalItems } = useCart()
-  const isSupabaseProduct = product.source === "supabase"
 
   function handleAdd() {
     addItem(product, quantity)
@@ -95,13 +94,7 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
             </p>
           </div>
 
-          {isSupabaseProduct && (
-            <p className="mt-6 rounded-md border border-primary/20 bg-primary/5 p-4 text-sm leading-relaxed text-muted-foreground">
-              Stock y precio actualizados desde el inventario del taller. La compra se confirma por WhatsApp.
-            </p>
-          )}
-
-          {product.stock > 0 && !isSupabaseProduct && (
+          {product.stock > 0 && (
             <div className="mt-8">
               <div className="flex items-center gap-4">
                 <label
