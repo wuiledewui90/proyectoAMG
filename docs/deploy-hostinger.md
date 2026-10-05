@@ -13,6 +13,19 @@ Configuración recomendada:
 - Inicio: `pnpm start`.
 - Puerto: dejar que Hostinger asigne `PORT`; `next start` lo respeta.
 
+### Dependencias del paquete publicado
+
+El repositorio usa `nodeLinker: hoisted` en `pnpm-workspace.yaml` y
+`node-linker=hoisted` en `.npmrc` para los runners de pnpm 10 y 11 de Hostinger.
+Esto instala las dependencias como directorios reales: el publicador de Hostinger
+perdía enlaces del almacén de pnpm y Next.js fallaba al buscar React y SWC.
+
+El build genera `.next/standalone`, copia `public` y `.next/static`, y comprueba
+que sus dependencias estén dentro del paquete y no sean enlaces externos.
+Hostinger publica ese servidor con `node server.js`; no ejecutar `next start`
+dentro de la carpeta standalone. Una compilación exitosa debe verificarse también
+en ejecución: `/admin/login` debe entregar HTML y `/management.webmanifest` JSON.
+
 ## 2. Publicación recomendada
 
 Vincular un repositorio Git privado. No subir `node_modules`, `.next`, archivos `.env`, registros ni copias de base de datos. Antes de publicar, confirmar que todos los cambios previstos estén versionados y que no haya secretos en el historial.
