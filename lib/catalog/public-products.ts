@@ -14,17 +14,24 @@ import {
   preferSupabaseProductImage,
   preferSupabaseProductImages,
 } from "@/lib/products/product-supabase-images"
+import type { SerializedProduct } from "@/lib/products/product-serialize"
+
+function publicProduct(product: SerializedProduct): SerializedProduct {
+  // El costo y la ubicación del depósito son datos internos del ERP. Los
+  // productos públicos se serializan en HTML y deben excluir esos valores.
+  return { ...product, cost: 0, minimumStock: 0, location: null }
+}
 
 // MySQL es la única fuente de productos, precios y stock. Las URL de las
 // imágenes pueden apuntar al bucket de Supabase, pero no se consulta su tabla.
 export const getPublicCatalogProducts = cache(async () => {
   const products = await getCatalogProducts()
-  return preferSupabaseProductImages(serializeProducts(products))
+  return (await preferSupabaseProductImages(serializeProducts(products))).map(publicProduct)
 })
 
 export async function getPublicFeaturedProducts(limit = 4) {
   const products = await getFeaturedProducts(limit)
-  return preferSupabaseProductImages(serializeProducts(products))
+  return (await preferSupabaseProductImages(serializeProducts(products))).map(publicProduct)
 }
 
 export async function getPublicProductBySlug(slug: string) {
@@ -35,5 +42,7 @@ export async function getPublicProductBySlug(slug: string) {
       ? await getProductBySlug(`supabase-${slug.slice("producto-".length)}`)
       : null)
 
-  return product?.isActive ? preferSupabaseProductImage(serializeProduct(product)) : null
+  return product?.isActive
+    ? publicProduct(await preferSupabaseProductImage(serializeProduct(product)))
+    : null
 }

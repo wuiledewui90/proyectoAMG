@@ -82,6 +82,10 @@ export async function PUT(req: Request, context: RouteContext) {
 }
 
 export async function GET(req: Request, context: RouteContext) {
+  if (!(await ensureAdmin(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const params = await context.params
   const rawId = getIdFromRequest(req, params)
   const parsed = parseId(rawId)

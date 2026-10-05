@@ -22,6 +22,11 @@ function getAdminTokenFromCookieHeader(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const token = getAdminTokenFromCookieHeader(req)
+  if (!(await verifyAdminSessionToken(token))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   const { searchParams } = new URL(req.url)
   const wantsPaged = searchParams.has("page") || searchParams.has("limit")
 
