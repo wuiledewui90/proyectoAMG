@@ -22,25 +22,32 @@ export const adminLinkGroups: AdminNavGroup[] = [
     label: "Operación del taller",
     links: [
       { href: "/admin/taller", label: "Órdenes de taller", image: "/images/admin-icons/taller.webp" },
+      { href: "/admin/documentos", label: "Facturas", image: "/images/admin-icons/presupuestos.webp" },
       { href: "/admin/ventas", label: "Ventas", image: "/images/admin-icons/ventas.webp" },
-      { href: "/admin/documentos", label: "Presupuestos y facturas", image: "/images/admin-icons/presupuestos.webp" },
       { href: "/admin/ordenes", label: "Pedidos web", image: "/images/admin-icons/pedidos-web.webp" },
       { href: "/admin/caja", label: "Caja", image: "/images/admin-icons/caja.webp" },
     ],
   },
   {
-    label: "Gestión",
+    label: "Clientes",
     links: [
-      { href: "/admin/productos", label: "Productos", image: "/images/admin-icons/productos.webp" },
       { href: "/admin/clientes", label: "Clientes", image: "/images/admin-icons/clientes.webp" },
-      { href: "/admin/gastos", label: "Gastos", image: "/images/admin-icons/gastos.webp" },
-      { href: "/admin/reportes", label: "Reportes", image: "/images/admin-icons/reportes.webp" },
-      { href: "/admin/empleados", label: "Empleados", image: "/images/admin-icons/empleados.webp" },
+      { href: "/admin/mensajes", label: "Mensajes", image: "/images/admin-icons/mensajes.webp" },
     ],
   },
   {
-    label: "Comunicación",
-    links: [{ href: "/admin/mensajes", label: "Mensajes", image: "/images/admin-icons/mensajes.webp" }],
+    label: "Inventario y compras",
+    links: [
+      { href: "/admin/productos", label: "Stock", image: "/images/admin-icons/productos.webp" },
+      { href: "/admin/gastos", label: "Gastos", image: "/images/admin-icons/gastos.webp" },
+    ],
+  },
+  {
+    label: "Análisis y equipo",
+    links: [
+      { href: "/admin/reportes", label: "Reportes", image: "/images/admin-icons/reportes.webp" },
+      { href: "/admin/empleados", label: "Empleados", image: "/images/admin-icons/empleados.webp" },
+    ],
   },
   {
     label: "Administración",
