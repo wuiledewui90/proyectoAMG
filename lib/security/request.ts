@@ -7,14 +7,28 @@ export function getRequestIp(req: Request) {
   return /^[a-f0-9:.]{2,64}$/i.test(value) ? value : "unknown"
 }
 
-function configuredOrigin() {
+function configuredOrigins() {
   const value = process.env.APP_URL?.trim()
-  if (!value) return null
+  if (!value) return new Set<string>()
 
   try {
-    return new URL(value).origin
+    const url = new URL(value)
+    const origins = new Set([url.origin])
+
+    // Hostinger sirve tanto el dominio raíz como www. El proxy puede entregar
+    // req.url con el host interno, por eso ambas variantes se validan contra
+    // APP_URL en lugar de confiar en cabeceras reenviadas por el cliente.
+    if (url.protocol === "https:" && url.hostname.includes(".")) {
+      const alias = new URL(url.origin)
+      alias.hostname = url.hostname.startsWith("www.")
+        ? url.hostname.slice(4)
+        : `www.${url.hostname}`
+      origins.add(alias.origin)
+    }
+
+    return origins
   } catch {
-    return null
+    return new Set<string>()
   }
 }
 
@@ -29,7 +43,7 @@ export function isTrustedMutationOrigin(req: Request) {
   try {
     const sourceOrigin = new URL(source).origin
     const requestOrigin = new URL(req.url).origin
-    return sourceOrigin === requestOrigin || sourceOrigin === configuredOrigin()
+    return sourceOrigin === requestOrigin || configuredOrigins().has(sourceOrigin)
   } catch {
     return false
   }
