@@ -1,6 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 import { useEffect, useState } from "react"
+import { ShieldCheck, UserCheck, UserRoundCog, UsersRound } from "lucide-react"
+import { AdminMobileMetrics } from "@/components/admin-mobile-metrics"
 
 type User = { id: string; name: string; username: string; role: string; active: boolean; lastLoginAt: string | null }
 const MAX_USERS = 6
@@ -11,6 +13,8 @@ export default function UsersPage() {
   const [form, setForm] = useState({ name: "", username: "", password: "", role: "SALES" })
   const [message, setMessage] = useState("")
   const reachedLimit = users.length >= MAX_USERS
+  const activeUsers = users.filter((user) => user.active).length
+  const adminUsers = users.filter((user) => user.role === "ADMIN").length
 
   async function load() {
     const response = await fetch("/api/admin/users", { cache: "no-store" })
@@ -33,6 +37,12 @@ export default function UsersPage() {
 
   return <div className="mx-auto max-w-7xl space-y-5">
     <header className="rounded-xl border bg-card p-5"><p className="text-xs font-bold uppercase tracking-widest text-primary">Equipo</p><h1 className="mt-1 text-2xl font-bold">Usuarios y permisos</h1><p className="mt-1 text-sm text-muted-foreground">Cada integrante puede ingresar con su propio usuario y rol.</p></header>
+    <AdminMobileMetrics items={[
+      { label: "Usuarios", value: users.length, detail: `Máximo ${MAX_USERS}`, icon: UsersRound, tone: "blue" },
+      { label: "Activos", value: activeUsers, detail: "Con acceso", icon: UserCheck, tone: "emerald" },
+      { label: "Administradores", value: adminUsers, detail: "Control total", icon: ShieldCheck, tone: "violet" },
+      { label: "Disponibles", value: Math.max(0, MAX_USERS - users.length), detail: "Nuevas cuentas", icon: UserRoundCog, tone: "cyan" },
+    ]} />
     <form onSubmit={submit} className="grid gap-3 rounded-xl border bg-card p-5 md:grid-cols-2 xl:grid-cols-5">
       <input className="rounded-md border px-3 py-2" placeholder="Nombre completo" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required />
       <input className="rounded-md border px-3 py-2" placeholder="Usuario" value={form.username} onChange={e=>setForm({...form,username:e.target.value})} required />

@@ -66,6 +66,7 @@ export default async function DocumentDetailPage({
       <DocumentActions
         id={document.id}
         canEdit={document.status === "DRAFT"}
+        canDelete={document.type !== "INVOICE" || document.status === "DRAFT"}
         canConvert={
           document.type !== "INVOICE" && document.convertedDocuments.length === 0
         }

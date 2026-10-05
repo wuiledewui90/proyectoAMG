@@ -148,43 +148,213 @@ model adminCredential {
 }
 
 model erpUser {
-  id             String          @id @default(cuid())
-  name           String          @db.VarChar(160)
-  username       String          @unique(map: "ErpUser_username_key") @db.VarChar(80)
-  passwordHash   String          @db.VarChar(60)
-  role           ErpUserRole     @default(VIEWER)
-  active         Boolean         @default(true)
-  lastLoginAt    DateTime?
-  sales          erpSale[]
-  assignedOrders workOrder[]     @relation("WorkOrderAssignee")
-  expenses       erpExpense[]
-  documents      erpDocument[]
-  stockMovements stockMovement[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                 String          @id @default(cuid())
+  name               String          @db.VarChar(160)
+  username           String          @unique(map: "ErpUser_username_key") @db.VarChar(80)
+  passwordHash       String          @db.VarChar(60)
+  role               ErpUserRole     @default(VIEWER)
+  active             Boolean         @default(true)
+  lastLoginAt        DateTime?
+  sales              erpSale[]
+  assignedOrders     workOrder[]     @relation("WorkOrderAssignee")
+  expenses           erpExpense[]
+  documents          erpDocument[]
+  stockMovements     stockMovement[]
+  cashSessionsOpened cashSession[]   @relation("CashSessionOpenedBy")
+  cashSessionsClosed cashSession[]   @relation("CashSessionClosedBy")
+  cashMovements      cashMovement[]
+  salesVoided        erpSale[]       @relation("ErpSaleVoidedBy")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 
   @@index([active, role], map: "ErpUser_active_role_idx")
   @@map("ErpUser")
 }
 
+model cashSession {
+  id             Int            @id @default(autoincrement())
+  businessDate   String         @unique(map: "CashSession_businessDate_key") @db.VarChar(10)
+  openingBalance Decimal        @default(0) @db.Decimal(12, 2)
+  openedById     String?
+  closedById     String?
+  openedAt       DateTime       @default(now())
+  closedAt       DateTime?
+  totalIncome    Decimal?       @db.Decimal(12, 2)
+  totalExpense   Decimal?       @db.Decimal(12, 2)
+  cashIncome     Decimal?       @db.Decimal(12, 2)
+  cashExpense    Decimal?       @db.Decimal(12, 2)
+  expectedCash   Decimal?       @db.Decimal(12, 2)
+  countedCash    Decimal?       @db.Decimal(12, 2)
+  difference     Decimal?       @db.Decimal(12, 2)
+  notes          String?        @db.Text
+  openedBy       erpUser?       @relation("CashSessionOpenedBy", fields: [openedById], references: [id], onDelete: SetNull)
+  closedBy       erpUser?       @relation("CashSessionClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  movements      cashMovement[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([closedAt], map: "CashSession_closedAt_idx")
+  @@map("CashSession")
+}
+
+model cashMovement {
+  id            Int              @id @default(autoincrement())
+  sessionId     Int
+  type          String           @db.VarChar(20)
+  description   String           @db.VarChar(255)
+  amount        Decimal          @db.Decimal(12, 2)
+  paymentMethod ErpPaymentMethod @default(CASH)
+  createdById   String?
+  session       cashSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdBy     erpUser?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  payroll       employeePayroll?
+  createdAt     DateTime         @default(now())
+
+  @@index([sessionId, createdAt], map: "CashMovement_session_created_idx")
+  @@map("CashMovement")
+}
+
+model employee {
+  id                          Int                  @id @default(autoincrement())
+  employeeNumber              String               @unique(map: "Employee_employeeNumber_key") @db.VarChar(30)
+  firstName                   String               @db.VarChar(100)
+  lastName                    String               @db.VarChar(100)
+  dni                         String               @unique(map: "Employee_dni_key") @db.VarChar(20)
+  cuil                        String?              @unique(map: "Employee_cuil_key") @db.VarChar(20)
+  birthDate                   DateTime?
+  phone                       String?              @db.VarChar(40)
+  email                       String?              @db.VarChar(191)
+  address                     String?              @db.VarChar(255)
+  city                        String?              @db.VarChar(100)
+  position                    String               @db.VarChar(120)
+  department                  String?              @db.VarChar(100)
+  contractType                String               @default("PERMANENT") @db.VarChar(30)
+  startDate                   DateTime
+  endDate                     DateTime?
+  baseSalary                  Decimal              @default(0) @db.Decimal(12, 2)
+  hourlyRate                  Decimal              @default(0) @db.Decimal(12, 2)
+  paymentFrequency            String               @default("MONTHLY") @db.VarChar(20)
+  hoursPerDay                 Decimal              @default(8) @db.Decimal(5, 2)
+  workDaysPerWeek             Decimal              @default(5) @db.Decimal(4, 2)
+  aguinaldoEnabled            Boolean              @default(false)
+  aguinaldoMonths             String               @default("06,12") @db.VarChar(35)
+  aguinaldoMethod             String               @default("HALF") @db.VarChar(20)
+  aguinaldoPercent            Decimal              @default(50) @db.Decimal(6, 2)
+  aguinaldoAmount             Decimal              @default(0) @db.Decimal(12, 2)
+  bank                        String?              @db.VarChar(100)
+  cbu                         String?              @db.VarChar(30)
+  emergencyContact            String?              @db.VarChar(160)
+  emergencyPhone              String?              @db.VarChar(40)
+  healthInsurance             String?              @db.VarChar(120)
+  healthInsuranceMemberNumber String?              @db.VarChar(80)
+  companyPaysHealthInsurance  Boolean              @default(false)
+  healthInsuranceAmount       Decimal              @default(0) @db.Decimal(12, 2)
+  active                      Boolean              @default(true)
+  notes                       String?              @db.Text
+  overtimeEntries             employeeOvertime[]
+  adjustments                 employeeAdjustment[]
+  payrolls                    employeePayroll[]
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+
+  @@index([active, lastName], map: "Employee_active_lastName_idx")
+  @@map("Employee")
+}
+
+model employeeOvertime {
+  id              Int              @id @default(autoincrement())
+  employeeId      Int
+  payrollId       Int?
+  calculationType String           @default("MULTIPLIER") @db.VarChar(20)
+  workDate        DateTime
+  hours           Decimal          @db.Decimal(8, 2)
+  multiplier      Decimal          @default(1.5) @db.Decimal(4, 2)
+  hourlyRate      Decimal          @db.Decimal(12, 2)
+  amount          Decimal          @db.Decimal(12, 2)
+  description     String?          @db.VarChar(255)
+  settled         Boolean          @default(false)
+  employee        employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payroll         employeePayroll? @relation(fields: [payrollId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+
+  @@index([employeeId, workDate], map: "EmployeeOvertime_employee_date_idx")
+  @@index([payrollId], map: "EmployeeOvertime_payroll_idx")
+  @@map("EmployeeOvertime")
+}
+
+model employeePayroll {
+  id                   Int                  @id @default(autoincrement())
+  employeeId           Int
+  period               String               @db.VarChar(7)
+  baseSalary           Decimal              @db.Decimal(12, 2)
+  overtimeHours        Decimal              @default(0) @db.Decimal(8, 2)
+  overtimeAmount       Decimal              @default(0) @db.Decimal(12, 2)
+  bonuses              Decimal              @default(0) @db.Decimal(12, 2)
+  deductions           Decimal              @default(0) @db.Decimal(12, 2)
+  adjustmentAdditions  Decimal              @default(0) @db.Decimal(12, 2)
+  adjustmentDeductions Decimal              @default(0) @db.Decimal(12, 2)
+  aguinaldoAmount      Decimal              @default(0) @db.Decimal(12, 2)
+  grossSalary          Decimal              @db.Decimal(12, 2)
+  netSalary            Decimal              @db.Decimal(12, 2)
+  status               String               @default("DRAFT") @db.VarChar(20)
+  paymentMethod        String?              @db.VarChar(20)
+  cashMovementId       Int?                 @unique(map: "EmployeePayroll_cashMovementId_key")
+  paidAt               DateTime?
+  notes                String?              @db.Text
+  employee             employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  cashMovement         cashMovement?        @relation(fields: [cashMovementId], references: [id], onDelete: SetNull)
+  overtimeEntries      employeeOvertime[]
+  adjustments          employeeAdjustment[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  @@unique([employeeId, period], map: "EmployeePayroll_employee_period_key")
+  @@index([period, status], map: "EmployeePayroll_period_status_idx")
+  @@map("EmployeePayroll")
+}
+
+model employeeAdjustment {
+  id          Int              @id @default(autoincrement())
+  employeeId  Int
+  payrollId   Int?
+  type        String           @db.VarChar(30)
+  impact      String           @default("DEDUCTION") @db.VarChar(20)
+  eventDate   DateTime
+  endDate     DateTime?
+  quantity    Decimal          @default(1) @db.Decimal(8, 2)
+  unit        String           @default("AMOUNT") @db.VarChar(20)
+  unitValue   Decimal          @default(0) @db.Decimal(12, 2)
+  amount      Decimal          @default(0) @db.Decimal(12, 2)
+  description String?          @db.VarChar(500)
+  settled     Boolean          @default(false)
+  employee    employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  payroll     employeePayroll? @relation(fields: [payrollId], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+
+  @@index([employeeId, eventDate], map: "EmployeeAdjustment_employee_date_idx")
+  @@index([payrollId], map: "EmployeeAdjustment_payroll_idx")
+  @@map("EmployeeAdjustment")
+}
+
 model customer {
-  id           Int           @id @default(autoincrement())
-  name         String        @db.VarChar(160)
-  phone        String?       @db.VarChar(40)
-  email        String?       @db.VarChar(191)
-  taxId        String?       @db.VarChar(40)
-  address      String?       @db.VarChar(255)
-  vehiclePlate String?       @db.VarChar(20)
-  vehicleBrand String?       @db.VarChar(80)
-  vehicleModel String?       @db.VarChar(120)
-  vehicleYear  Int?
-  notes        String?       @db.Text
-  active       Boolean       @default(true)
-  sales        erpSale[]
-  workOrders   workOrder[]
-  documents    erpDocument[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                    Int           @id @default(autoincrement())
+  name                  String        @db.VarChar(160)
+  phone                 String?       @db.VarChar(40)
+  email                 String?       @db.VarChar(191)
+  taxId                 String?       @db.VarChar(40)
+  address               String?       @db.VarChar(255)
+  vehiclePlate          String?       @db.VarChar(20)
+  vehicleBrand          String?       @db.VarChar(80)
+  vehicleModel          String?       @db.VarChar(120)
+  vehicleYear           Int?
+  currentAccountEnabled Boolean       @default(false)
+  notes                 String?       @db.Text
+  active                Boolean       @default(true)
+  sales                 erpSale[]
+  workOrders            workOrder[]
+  documents             erpDocument[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   @@index([name], map: "Customer_name_idx")
   @@index([phone], map: "Customer_phone_idx")
@@ -196,6 +366,7 @@ model erpSale {
   id            Int              @id @default(autoincrement())
   customerId    Int?
   createdById   String?
+  voidedById    String?
   subtotal      Decimal          @db.Decimal(12, 2)
   discount      Decimal          @default(0) @db.Decimal(12, 2)
   taxRate       Decimal          @default(0) @db.Decimal(5, 2)
@@ -204,8 +375,11 @@ model erpSale {
   paymentMethod ErpPaymentMethod
   status        ErpSaleStatus    @default(COMPLETED)
   notes         String?          @db.Text
+  voidReason    String?          @db.VarChar(500)
+  voidedAt      DateTime?
   customer      customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
   createdBy     erpUser?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  voidedBy      erpUser?         @relation("ErpSaleVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
   items         erpSaleItem[]
   payments      erpSalePayment[]
   createdAt     DateTime         @default(now())
@@ -213,6 +387,7 @@ model erpSale {
 
   @@index([createdAt], map: "ErpSale_createdAt_idx")
   @@index([customerId], map: "ErpSale_customerId_idx")
+  @@index([voidedById], map: "ErpSale_voidedById_idx")
   @@index([status, createdAt], map: "ErpSale_status_createdAt_idx")
   @@map("ErpSale")
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import * as XLSX from "xlsx"
+import ExcelJS from "exceljs"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { prisma } from "@/lib/db/prisma"
 
@@ -36,8 +36,8 @@ function getAdminTokenFromCookieHeader(req: Request) {
     ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
 }
 
-function formulaCell(formula: string) {
-  return { t: "n", v: 0, f: formula } as XLSX.CellObject
+function formulaCell(formula: string): ExcelJS.CellFormulaValue {
+  return { formula, result: 0 }
 }
 
 export async function GET(req: Request) {
@@ -99,35 +99,26 @@ export async function GET(req: Request) {
     formulaCell(`SUM(Q2:Q${lastProductRow})`),
   ])
 
-  const stockSheet = XLSX.utils.aoa_to_sheet(stockRows)
-  stockSheet["!cols"] = [
-    { wch: 22 },
-    { wch: 52 },
-    { wch: 13 },
-    { wch: 23 },
-    { wch: 16 },
-    { wch: 25 },
-    { wch: 28 },
-    { wch: 18 },
-    { wch: 18 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 12 },
-    { wch: 18 },
-    { wch: 18 },
-  ]
-  stockSheet["!autofilter"] = { ref: `A1:Q${lastProductRow}` }
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = "Radiadores AMG"
+  workbook.created = new Date()
+  workbook.calcProperties.fullCalcOnLoad = true
+  const stockSheet = workbook.addWorksheet("Stock", {
+    views: [{ state: "frozen", ySplit: 1 }],
+  })
+  stockSheet.addRows(stockRows)
+  ;[22, 52, 13, 23, 16, 25, 28, 18, 18, 10, 10, 15, 15, 15, 12, 18, 18]
+    .forEach((width, index) => {
+      stockSheet.getColumn(index + 1).width = width
+    })
+  stockSheet.autoFilter = { from: "A1", to: `Q${lastProductRow}` }
+  stockSheet.getRow(1).font = { bold: true }
 
   for (let row = 2; row <= totalsRow; row += 1) {
     for (const column of ["L", "M", "N", "P", "Q"]) {
-      const cell = stockSheet[`${column}${row}`]
-      if (cell) cell.z = '"$"#,##0'
+      stockSheet.getCell(`${column}${row}`).numFmt = '"$"#,##0'
     }
-    const marginCell = stockSheet[`O${row}`]
-    if (marginCell) marginCell.z = "0%"
+    stockSheet.getCell(`O${row}`).numFmt = "0%"
   }
 
   const categoryNames = Array.from(
@@ -168,23 +159,17 @@ export async function GET(req: Request) {
     ],
   ]
 
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows)
-  summarySheet["!cols"] = [{ wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 20 }]
+  const summarySheet = workbook.addWorksheet("Resumen")
+  summarySheet.addRows(summaryRows)
+  ;[30, 14, 14, 20].forEach((width, index) => {
+    summarySheet.getColumn(index + 1).width = width
+  })
+  summarySheet.getRow(1).font = { bold: true }
   for (let row = 2; row <= summaryRows.length; row += 1) {
-    const cell = summarySheet[`D${row}`]
-    if (cell) cell.z = '"$"#,##0'
+    summarySheet.getCell(`D${row}`).numFmt = '"$"#,##0'
   }
 
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, stockSheet, "Stock")
-  XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen")
-  workbook.Workbook = {
-    CalcPr: { calcMode: "auto", calcOnSave: "1", fullCalcOnLoad: "1" },
-  } as NonNullable<XLSX.WorkBook["Workbook"]> & {
-    CalcPr: Record<string, string>
-  }
-
-  const bytes = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" })
+  const bytes = await workbook.xlsx.writeBuffer()
   const date = new Date().toISOString().slice(0, 10)
 
   return new NextResponse(new Uint8Array(bytes), {

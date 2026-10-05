@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db/prisma"
 import { getRequestAdminSession } from "@/lib/admin-request"
+import { argentinaDate } from "@/lib/cash"
 
 type SaleLineInput = {
   productId?: unknown
@@ -47,7 +48,7 @@ export async function GET(req: Request) {
   const sales = await prisma.erpSale.findMany({
     orderBy: { createdAt: "desc" },
     take: 300,
-    include: { customer: true, createdBy: true, items: true, payments: true },
+    include: { customer: true, createdBy: true, voidedBy: true, items: true, payments: true },
   })
   return NextResponse.json(sales.map(serializeSale))
 }
@@ -321,16 +322,62 @@ export async function PATCH(req: Request) {
   }
   const body = await req.json().catch(() => ({}))
   const id = Number(body.id)
+  const reason = typeof body.reason === "string" ? body.reason.trim() : ""
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "Venta inválida." }, { status: 400 })
+  }
+  if (reason.length < 5) {
+    return NextResponse.json(
+      { error: "Ingresá un motivo de anulación de al menos 5 caracteres." },
+      { status: 400 }
+    )
+  }
+  if (reason.length > 500) {
+    return NextResponse.json(
+      { error: "El motivo de anulación no puede superar los 500 caracteres." },
+      { status: 400 }
+    )
   }
   try {
     const sale = await prisma.$transaction(async (tx) => {
       const current = await tx.erpSale.findUnique({
         where: { id },
-        include: { items: { include: { product: true } } },
+        include: { items: { include: { product: true } }, payments: true },
       })
       if (!current || current.status === "VOID") throw new Error("La venta no existe o ya está anulada.")
+
+      const claimed = await tx.erpSale.updateMany({
+        where: { id, status: "COMPLETED" },
+        data: {
+          status: "VOID",
+          voidReason: reason,
+          voidedAt: new Date(),
+          voidedById: session.userId || null,
+        },
+      })
+      if (claimed.count !== 1) throw new Error("La venta ya fue anulada por otra operación.")
+
+      const today = argentinaDate()
+      const saleBusinessDate = argentinaDate(current.createdAt)
+      const todayCash = await tx.cashSession.findUnique({ where: { businessDate: today } })
+      const originalCash = saleBusinessDate === today
+        ? todayCash
+        : await tx.cashSession.findUnique({ where: { businessDate: saleBusinessDate } })
+      let reversalSessionId: number | null = null
+
+      if (saleBusinessDate === today) {
+        if (originalCash?.closedAt) {
+          throw new Error("La caja de hoy está cerrada. Reabrila antes de anular esta venta.")
+        }
+      } else if (originalCash?.closedAt) {
+        if (!todayCash || todayCash.closedAt) {
+          throw new Error(
+            "Esta venta pertenece a una jornada anterior. Abrí la caja de hoy para registrar correctamente la devolución."
+          )
+        }
+        reversalSessionId = todayCash.id
+      }
+
       for (const item of current.items) {
         if (!item.productId || !item.product) continue
         const serviceText = `${item.product.stockType || ""} ${item.product.category || ""} ${item.product.stockCategory || ""}`.toLowerCase()
@@ -348,13 +395,47 @@ export async function PATCH(req: Request) {
             previousStock: product.stock - item.quantity,
             newStock: product.stock,
             referenceId: String(id),
-            notes: `Anulación venta #${id}`,
+            notes: `Anulación venta #${id}: ${reason}`.slice(0, 255),
           },
         })
       }
+      await tx.erpDocument.updateMany({
+        where: {
+          type: "INVOICE",
+          terms: `Generada desde venta de mostrador #${id}`,
+          status: { not: "VOID" },
+        },
+        data: { status: "VOID" },
+      })
+
+      if (reversalSessionId) {
+        const refunds = current.payments.length
+          ? current.payments
+          : [{ method: current.paymentMethod, amount: current.total }]
+        const accountableRefunds = refunds.filter((payment) => payment.method !== "CURRENT_ACCOUNT")
+        if (accountableRefunds.length) {
+          await tx.cashMovement.createMany({
+            data: accountableRefunds.map((payment) => ({
+              sessionId: reversalSessionId,
+              type: "EXPENSE",
+              description: `Devolución por anulación de venta #${id}: ${reason}`.slice(0, 255),
+              amount: payment.amount,
+              paymentMethod: payment.method,
+              createdById: session.userId || null,
+            })),
+          })
+        }
+      }
+
       return tx.erpSale.update({
         where: { id },
-        data: { status: "VOID" },
+        data: {
+          status: "VOID",
+          voidReason: reason,
+          voidedAt: new Date(),
+          voidedById: session.userId || null,
+        },
+        include: { customer: true, createdBy: true, voidedBy: true, items: true, payments: true },
       })
     })
     return NextResponse.json(serializeSale(sale))

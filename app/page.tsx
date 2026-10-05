@@ -1,16 +1,14 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, MapPin, Package } from "lucide-react"
-import { CatalogPreview } from "@/components/catalog-preview"
 import { HomeSequence } from "@/components/home-sequence"
-import { getFeaturedProducts } from "@/lib/products/product-repository"
-import { serializeProducts } from "@/lib/products/product-serialize"
+import { getPublicFeaturedProducts } from "@/lib/catalog/public-products"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export default async function HomePage() {
-  const products = serializeProducts(await getFeaturedProducts())
+  const products = await getPublicFeaturedProducts()
 
   return (
     <>
@@ -123,12 +121,12 @@ export default async function HomePage() {
                     key={product.id}
                     href={`/catalogo/${product.slug}`}
                     className="hero-product-card group snap-start overflow-hidden border border-white/15 bg-[#071019]/75 p-2 backdrop-blur-sm transition-colors duration-500 hover:border-primary/70 hover:bg-[#0d1824] sm:p-2.5"
-                    style={{ animationDelay: `${6100 + index * 650}ms` }}
+                    style={{ animationDelay: `${4900 + index * 500}ms` }}
                   >
                     <div className="relative aspect-video overflow-hidden bg-white/5">
                       {product.images[0] ? (
                         <Image
-                          src={product.images[0]}
+                          src={product.thumbnailUrl ?? product.images[0]}
                           alt={product.name}
                           fill
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
@@ -154,8 +152,6 @@ export default async function HomePage() {
 
       </section>
       </HomeSequence>
-
-      <CatalogPreview products={products} />
 
       <section className="bg-secondary text-secondary-foreground">
         <div className="mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center lg:px-8">

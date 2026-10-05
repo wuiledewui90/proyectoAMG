@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/db/prisma"
 import { requireOwnerOrAdmin } from "@/lib/admin-request"
+import { validatePasswordPolicy } from "@/lib/security/password-policy"
 
 const roles = new Set(["ADMIN", "SALES", "TECHNICIAN", "VIEWER"])
 const MAX_ERP_USERS = 6
@@ -42,8 +43,9 @@ export async function POST(req: Request) {
   if (!name || !/^[a-zA-Z0-9._-]{3,40}$/.test(username)) {
     return NextResponse.json({ error: "Nombre o usuario inválido." }, { status: 400 })
   }
-  if (password.length < 8 || password.length > 128) {
-    return NextResponse.json({ error: "La contraseña debe tener entre 8 y 128 caracteres." }, { status: 400 })
+  const passwordError = validatePasswordPolicy(password)
+  if (passwordError) {
+    return NextResponse.json({ error: passwordError }, { status: 400 })
   }
   if (!roles.has(role)) {
     return NextResponse.json({ error: "Rol inválido." }, { status: 400 })
@@ -92,8 +94,9 @@ export async function PATCH(req: Request) {
     data.role = body.role as "ADMIN" | "SALES" | "TECHNICIAN" | "VIEWER"
   }
   if (typeof body.password === "string" && body.password) {
-    if (body.password.length < 8 || body.password.length > 128) {
-      return NextResponse.json({ error: "La contraseña debe tener entre 8 y 128 caracteres." }, { status: 400 })
+    const passwordError = validatePasswordPolicy(body.password)
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 })
     }
     data.passwordHash = await bcrypt.hash(body.password, 12)
   }

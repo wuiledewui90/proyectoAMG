@@ -1,3 +1,5 @@
+import "server-only"
+
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db/prisma"
 
@@ -7,6 +9,7 @@ export const ADMIN_COOKIE_NAME = "amg_admin_session"
 
 const SESSION_TTL_SECONDS = 60 * 60 * 8
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$.{53}$/
+const DUMMY_PASSWORD_HASH = "$2b$12$2Shlf6Z2OPyiykPD90YhU.1bpCOWS3c9N5V7uDC5nCt.4msKXL15y"
 
 export type AdminSessionPayload = {
   user: string
@@ -77,6 +80,10 @@ async function validateConfiguredPassword(password: string, configured: string) 
     return bcrypt.compare(password, configured)
   }
 
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_PASS_HASH debe ser un hash bcrypt en producción.")
+  }
+
   // Compatibilidad temporal para instalaciones antiguas que guardaron la
   // contraseña directamente en ADMIN_PASS_HASH. Al primer acceso correcto se
   // migra automáticamente a un hash bcrypt en la base de datos.
@@ -133,7 +140,10 @@ export async function authenticateAdminCredentials(
   }
 
   const erpUser = await prisma.erpUser.findUnique({ where: { username } })
-  if (!erpUser?.active) return null
+  if (!erpUser?.active) {
+    await bcrypt.compare(password, DUMMY_PASSWORD_HASH)
+    return null
+  }
 
   const matches = await bcrypt.compare(password, erpUser.passwordHash)
   if (!matches) return null

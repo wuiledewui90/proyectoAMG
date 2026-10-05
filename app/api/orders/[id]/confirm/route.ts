@@ -9,6 +9,19 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
+type LockedOrder = Record<string, unknown> & {
+  id: string
+  status: string
+  total: unknown
+}
+
+type LockedOrderItem = Record<string, unknown> & {
+  productId: number
+  productName: string
+  quantity: number
+  price: unknown
+}
+
 function getAdminTokenFromCookieHeader(req: Request) {
   return req.headers
     .get("cookie")
@@ -18,11 +31,11 @@ function getAdminTokenFromCookieHeader(req: Request) {
     ?.slice(`${ADMIN_COOKIE_NAME}=`.length)
 }
 
-function serializeOrder(order: any, items = order.items ?? []) {
+function serializeOrder(order: LockedOrder, items: LockedOrderItem[] = []) {
   return {
     ...order,
     total: Number(order.total),
-    items: items.map((item: any) => ({
+    items: items.map((item) => ({
       ...item,
       price: Number(item.price),
     })),
@@ -39,7 +52,7 @@ export async function POST(req: Request, context: RouteContext) {
 
   try {
     const order = await prisma.$transaction(async (tx) => {
-      const [currentOrder] = await tx.$queryRaw<any[]>`
+      const [currentOrder] = await tx.$queryRaw<LockedOrder[]>`
         SELECT * FROM \`Order\` WHERE id = ${id} FOR UPDATE
       `
 
@@ -51,7 +64,7 @@ export async function POST(req: Request, context: RouteContext) {
         throw new Error("ORDER_ALREADY_CONFIRMED")
       }
 
-      const items = await tx.$queryRaw<any[]>`
+      const items = await tx.$queryRaw<LockedOrderItem[]>`
         SELECT * FROM \`OrderItem\` WHERE orderId = ${id} ORDER BY id ASC
       `
 
@@ -78,7 +91,7 @@ export async function POST(req: Request, context: RouteContext) {
         WHERE id = ${id}
       `
 
-      const [confirmedOrder] = await tx.$queryRaw<any[]>`
+      const [confirmedOrder] = await tx.$queryRaw<LockedOrder[]>`
         SELECT * FROM \`Order\` WHERE id = ${id}
       `
 

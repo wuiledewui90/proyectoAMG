@@ -32,15 +32,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem("amg-cart")
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored) as CartItem[])
-      } catch {
-        // ignore parse errors
+    const frame = window.requestAnimationFrame(() => {
+      const stored = localStorage.getItem("amg-cart")
+      if (stored) {
+        try {
+          setItems(JSON.parse(stored) as CartItem[])
+        } catch {
+          // Se descarta un carrito local inválido.
+        }
       }
-    }
-    setIsHydrated(true)
+      setIsHydrated(true)
+    })
+
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   useEffect(() => {

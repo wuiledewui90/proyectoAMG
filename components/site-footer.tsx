@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react"
+import { ArrowUpRight, LogIn, Mail, MapPin, Phone } from "lucide-react"
 
 const navLinks = [
   { href: "/catalogo", label: "Catálogo" },
@@ -107,10 +107,17 @@ export function SiteFooter() {
                 </a>
               ))}
             </div>
+            <Link
+              href="/admin/login"
+              className="mt-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/48 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-[#07090b]"
+            >
+              <LogIn className="h-4 w-4" aria-hidden="true" />
+              Acceso interno
+            </Link>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between gap-3 border-t border-white/12 pt-6 text-xs text-white/35 sm:flex-row">
+        <div className="flex flex-col justify-between gap-3 border-t border-white/12 pt-6 text-xs text-white/35 sm:flex-row sm:items-center">
           <p>{new Date().getFullYear()} © Radiadores AMG. Todos los derechos reservados.</p>
           <p>Refrigeración automotor · La Rioja, Argentina</p>
         </div>

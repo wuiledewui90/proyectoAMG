@@ -3,6 +3,10 @@ import { z } from "zod"
 import { productListQuerySchema } from "@/lib/products/product-schemas"
 import * as service from "@/lib/products/product-service"
 import { serializeProduct, serializeProducts } from "@/lib/products/product-serialize"
+import {
+  preferSupabaseProductImage,
+  preferSupabaseProductImages,
+} from "@/lib/products/product-supabase-images"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 export const dynamic = "force-dynamic"
@@ -39,9 +43,10 @@ export async function GET(req: Request) {
 
   const { search, category, brand, isActive, page, limit } = parsed.data
   const { total, items } = await service.list({ search, category, brand, isActive, page, limit })
+  const serializedItems = await preferSupabaseProductImages(serializeProducts(items))
 
   if (!wantsPaged) {
-    return NextResponse.json(serializeProducts(items), {
+    return NextResponse.json(serializedItems, {
       headers: { "Cache-Control": "no-store" },
     })
   }
@@ -51,7 +56,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json(
     {
-      items: serializeProducts(items),
+      items: serializedItems,
       page,
       limit,
       total,
@@ -78,7 +83,7 @@ export async function POST(req: Request) {
 
   try {
     const product = await service.create(body)
-    return NextResponse.json(serializeProduct(product))
+    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
   } catch (err) {
     if (err instanceof service.ConflictError) {
       return NextResponse.json({ error: err.message }, { status: err.status })

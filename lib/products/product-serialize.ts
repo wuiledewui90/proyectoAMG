@@ -1,10 +1,15 @@
 // lib/products/product-serialize.ts
 import type { product as Product } from "@prisma/client"
 
+import { resolveCatalogProductImages } from "@/lib/catalog/product-images"
+
 export type SerializedProduct = Omit<Product, "price" | "cost" | "images"> & {
   price: number
   cost: number
   images: string[]
+  thumbnailUrl?: string
+  source?: "local" | "supabase"
+  externalId?: string
 }
 
 export function parseProductImages(images: string | null | undefined, fallback?: string | null) {
@@ -32,11 +37,23 @@ export function stringifyProductImages(images: string[] | undefined, fallback?: 
 }
 
 export function serializeProduct(p: Product): SerializedProduct {
+  const storedImages = parseProductImages(p.images, p.imageUrl)
+  const catalogImages = resolveCatalogProductImages(p.sku)
+  const hasStoredImage = storedImages.length > 0 || Boolean(p.imageUrl)
+  const images = storedImages.length
+    ? storedImages
+    : p.imageUrl
+      ? [p.imageUrl]
+      : catalogImages.images
+
   return {
     ...p,
     price: Number(p.price),
     cost: Number(p.cost),
-    images: parseProductImages(p.images, p.imageUrl),
+    images,
+    imageUrl: p.imageUrl ?? images[0] ?? null,
+    thumbnailUrl: hasStoredImage ? undefined : catalogImages.thumbnailUrl,
+    source: "local",
   }
 }
 

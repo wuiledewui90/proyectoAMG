@@ -7,11 +7,17 @@ import {
   Eye,
   Loader2,
   ReceiptText,
+  ShoppingBag,
+  TimerReset,
+  CircleCheckBig,
+  CircleDollarSign,
   Trash2,
   X,
 } from "lucide-react"
 import { formatPrice } from "@/lib/data"
 import { ORDERS_STORAGE_KEY, type StoredOrder } from "@/lib/orders"
+import { AdminMobileExpandableText } from "@/components/admin-mobile-expandable-text"
+import { AdminMobileMetrics } from "@/components/admin-mobile-metrics"
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<StoredOrder[]>([])
@@ -28,6 +34,8 @@ export default function AdminOrdersPage() {
     () => orders.filter((order) => order.status === "pendiente").length,
     [orders]
   )
+  const confirmedCount = useMemo(() => orders.filter((order) => order.status !== "pendiente").length, [orders])
+  const orderTotal = useMemo(() => orders.reduce((sum, order) => sum + order.total, 0), [orders])
 
   const loadOrders = useCallback(async () => {
     setLoading(true)
@@ -174,6 +182,13 @@ export default function AdminOrdersPage() {
           {pendingCount !== 1 ? "s" : ""}
         </p>
       </div>
+
+      <AdminMobileMetrics items={[
+        { label: "Pedidos", value: orders.length, detail: "Recibidos", icon: ShoppingBag, tone: "blue" },
+        { label: "Pendientes", value: pendingCount, detail: "Requieren acción", icon: TimerReset, tone: "amber" },
+        { label: "Procesados", value: confirmedCount, detail: "Confirmados", icon: CircleCheckBig, tone: "emerald" },
+        { label: "Valor total", value: formatPrice(orderTotal), detail: "Todos los pedidos", icon: CircleDollarSign, tone: "violet" },
+      ]} />
 
       {loading && (
         <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
@@ -414,8 +429,8 @@ export default function AdminOrdersPage() {
           <article key={order.id} className="rounded-lg border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{order.id}</p>
-                <p className="mt-1 text-sm">{order.customerName}</p>
+                <AdminMobileExpandableText value={order.id} label="Número de pedido" className="text-sm font-semibold" />
+                <AdminMobileExpandableText value={order.customerName} label="Cliente" lines={2} className="mt-1 text-sm" />
                 <p className="text-xs text-muted-foreground">{order.customerPhone}</p>
               </div>
               <StatusBadge status={order.status} />

@@ -24,6 +24,7 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const { addItem, totalItems } = useCart()
+  const isSupabaseProduct = product.source === "supabase"
 
   function handleAdd() {
     addItem(product, quantity)
@@ -94,7 +95,13 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
             </p>
           </div>
 
-          {product.stock > 0 && (
+          {isSupabaseProduct && (
+            <p className="mt-6 rounded-md border border-primary/20 bg-primary/5 p-4 text-sm leading-relaxed text-muted-foreground">
+              Stock y precio actualizados desde el inventario del taller. La compra se confirma por WhatsApp.
+            </p>
+          )}
+
+          {product.stock > 0 && !isSupabaseProduct && (
             <div className="mt-8">
               <div className="flex items-center gap-4">
                 <label
@@ -173,32 +180,32 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
 
-                <a
-                  href={getWhatsAppUrl(
-                    [
-                      "Hola, me interesa este producto:",
-                      product.name,
-                      product.sku ? `SKU: ${product.sku}` : null,
-                      product.brand ? `Marca: ${product.brand}` : null,
-                      product.model ? `Modelo: ${product.model}` : null,
-                      product.category ? `Categoria: ${product.category}` : null,
-                      product.compatibility
-                        ? `Compatibilidad: ${product.compatibility}`
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join("\n")
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 rounded-md border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted hover:shadow-md active:translate-y-0"
-                >
-                  <MessageCircle className="h-4 w-4 text-primary transition-transform duration-200 group-hover:scale-110" />
-                  Consultar
-                </a>
               </div>
             </div>
           )}
+
+          <a
+            href={getWhatsAppUrl(
+              [
+                "Hola, me interesa este producto:",
+                product.name,
+                product.sku ? `Código: ${product.sku}` : null,
+                product.brand ? `Marca: ${product.brand}` : null,
+                product.category ? `Categoría: ${product.category}` : null,
+                product.compatibility
+                  ? `Compatibilidad: ${product.compatibility}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join("\n")
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group mt-4 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
+          >
+            <MessageCircle className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+            Consultar por WhatsApp
+          </a>
         </div>
       </div>
     </section>

@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  poweredByHeader: false,
+  compress: true,
+  productionBrowserSourceMaps: false,
   images: {
     unoptimized: true,
   },

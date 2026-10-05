@@ -1,0 +1,9 @@
+ALTER TABLE `Employee`
+  ADD COLUMN `aguinaldoEnabled` BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN `aguinaldoMonths` VARCHAR(35) NOT NULL DEFAULT '06,12',
+  ADD COLUMN `aguinaldoMethod` VARCHAR(20) NOT NULL DEFAULT 'HALF',
+  ADD COLUMN `aguinaldoPercent` DECIMAL(6, 2) NOT NULL DEFAULT 50,
+  ADD COLUMN `aguinaldoAmount` DECIMAL(12, 2) NOT NULL DEFAULT 0;
+
+ALTER TABLE `EmployeePayroll`
+  ADD COLUMN `aguinaldoAmount` DECIMAL(12, 2) NOT NULL DEFAULT 0;

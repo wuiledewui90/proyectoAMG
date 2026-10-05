@@ -1,0 +1,2 @@
+ALTER TABLE `EmployeeOvertime`
+  ADD COLUMN `calculationType` VARCHAR(20) NOT NULL DEFAULT 'MULTIPLIER';

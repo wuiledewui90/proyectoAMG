@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { CatalogClient } from "./catalog-client"
-import { getCatalogProducts } from "@/lib/products/product-repository"
-import { serializeProducts } from "@/lib/products/product-serialize"
+import { getPublicCatalogProducts } from "@/lib/catalog/public-products"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -13,8 +12,7 @@ export const metadata: Metadata = {
 }
 
 export default async function CatalogoPage() {
-  const products = await getCatalogProducts()
-  const serialized = serializeProducts(products)
+  const products = await getPublicCatalogProducts()
 
-  return <CatalogClient products={serialized} />
+  return <CatalogClient products={products} />
 }

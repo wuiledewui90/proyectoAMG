@@ -1,15 +1,14 @@
 import { randomUUID } from "crypto"
-import { mkdir, writeFile } from "fs/promises"
-import path from "path"
 import { NextResponse } from "next/server"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
+import { getSupabaseServerConfig } from "@/lib/supabase/config"
+import { supabaseServer } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 export const runtime = "nodejs"
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
-const uploadDir = path.join(process.cwd(), "public", "uploads", "products")
 
 const allowedTypes = new Map([
   ["image/jpeg", "jpg"],
@@ -66,13 +65,27 @@ export async function POST(req: Request) {
   }
 
   const baseName = normalizeFileName(file.name) || "producto"
-  const fileName = `${baseName}-${randomUUID()}.${extension}`
-  const filePath = path.join(uploadDir, fileName)
+  const objectPath = `erp/${baseName}-${randomUUID()}.${extension}`
+  const { storageBucket } = getSupabaseServerConfig()
 
-  await mkdir(uploadDir, { recursive: true })
-  await writeFile(filePath, Buffer.from(await file.arrayBuffer()))
+  const { error } = await supabaseServer.storage
+    .from(storageBucket)
+    .upload(objectPath, Buffer.from(await file.arrayBuffer()), {
+      contentType: file.type,
+      cacheControl: "31536000",
+      upsert: false,
+    })
+
+  if (error) {
+    return NextResponse.json(
+      { error: `No se pudo guardar la imagen en Supabase Storage: ${error.message}` },
+      { status: 502 }
+    )
+  }
+
+  const { data } = supabaseServer.storage.from(storageBucket).getPublicUrl(objectPath)
 
   return NextResponse.json({
-    url: `/uploads/products/${fileName}`,
+    url: data.publicUrl,
   })
 }

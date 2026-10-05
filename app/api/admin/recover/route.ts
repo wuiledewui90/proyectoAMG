@@ -10,13 +10,11 @@ import {
   clearAdminRecoveryFailures,
   registerAdminRecoveryFailure,
 } from "@/lib/admin-recovery-rate-limit"
-
-function getClientKey(req: Request) {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local"
-}
+import { validatePasswordPolicy } from "@/lib/security/password-policy"
+import { getRequestIp } from "@/lib/security/request"
 
 export async function POST(req: Request) {
-  const clientKey = getClientKey(req)
+  const clientKey = getRequestIp(req)
 
   if (!canAttemptAdminRecovery(clientKey)) {
     return NextResponse.json(
@@ -36,14 +34,17 @@ export async function POST(req: Request) {
     !username ||
     !pin ||
     !/^\d{4,8}$/.test(pin) ||
-    !newPassword ||
-    newPassword.length < 8 ||
-    newPassword.length > 128
+    !newPassword
   ) {
     return NextResponse.json(
       { error: "Revisá el usuario, el PIN y la nueva contraseña." },
       { status: 400 }
     )
+  }
+
+  const passwordError = validatePasswordPolicy(newPassword, true)
+  if (passwordError) {
+    return NextResponse.json({ error: passwordError }, { status: 400 })
   }
 
   const recovered = await recoverAdminPassword({ username, pin, newPassword })

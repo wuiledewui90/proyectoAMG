@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library"
 import { z } from "zod"
-import * as XLSX from "xlsx"
+import ExcelJS from "exceljs"
+import { Readable } from "node:stream"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 import { prisma } from "@/lib/db/prisma"
 import * as service from "@/lib/products/product-service"
@@ -13,6 +14,7 @@ export const revalidate = 0
 type ImportRow = Record<string, unknown>
 
 const MAX_IMPORT_ROWS = 1000
+const MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024
 
 const columnAliases: Record<string, string> = {
   activo: "isActive",
@@ -280,6 +282,51 @@ function getImportErrorMessage(err: unknown) {
   return "Error inesperado"
 }
 
+function excelCellValue(cell: ExcelJS.Cell) {
+  const value = cell.value
+  if (value === null || value === undefined) return ""
+  if (value instanceof Date) return value
+  if (typeof value !== "object") return value
+  if ("result" in value) return value.result ?? ""
+  if ("text" in value) return value.text
+  if ("richText" in value) return value.richText.map((part) => part.text).join("")
+  return cell.text
+}
+
+async function readImportRows(file: File) {
+  const workbook = new ExcelJS.Workbook()
+  const extension = file.name.split(".").pop()?.toLowerCase()
+  const buffer = Buffer.from(await file.arrayBuffer())
+  let sheet: ExcelJS.Worksheet | undefined
+
+  if (extension === "csv") {
+    sheet = await workbook.csv.read(Readable.from(buffer))
+  } else {
+    await workbook.xlsx.read(Readable.from(buffer))
+    sheet = workbook.worksheets[0]
+  }
+
+  if (!sheet) return []
+  const headerRow = sheet.getRow(1)
+  const headers = Array.from({ length: headerRow.cellCount }, (_, index) =>
+    String(excelCellValue(headerRow.getCell(index + 1)) ?? "").trim()
+  )
+  const rows: Array<{ row: ImportRow; rowNumber: number }> = []
+
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return
+    const record: ImportRow = {}
+    headers.forEach((header, index) => {
+      if (header) record[header] = excelCellValue(row.getCell(index + 1))
+    })
+    if (Object.values(record).some((value) => String(value ?? "").trim())) {
+      rows.push({ row: record, rowNumber })
+    }
+  })
+
+  return rows
+}
+
 async function findExistingProduct(row: { slug: string; sku: string }) {
   if (row.sku) {
     const product = await prisma.product.findFirst({ where: { sku: row.sku } })
@@ -307,35 +354,29 @@ export async function POST(req: Request) {
   }
 
   const extension = file.name.split(".").pop()?.toLowerCase()
-  if (!extension || !["csv", "xls", "xlsx"].includes(extension)) {
+  if (!extension || !["csv", "xlsx"].includes(extension)) {
     return NextResponse.json(
-      { error: "Formato no soportado. Usa .xlsx, .xls o .csv" },
+      { error: "Formato no soportado. Usá .xlsx o .csv" },
       { status: 400 }
     )
   }
 
-  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" })
-  const sheetName = workbook.SheetNames[0]
-  const sheet = sheetName ? workbook.Sheets[sheetName] : undefined
-
-  if (!sheet) {
-    return NextResponse.json({ error: "El archivo no tiene hojas para importar" }, { status: 400 })
+  if (file.size > MAX_IMPORT_FILE_SIZE) {
+    return NextResponse.json(
+      { error: "El archivo no puede superar los 10 MB" },
+      { status: 413 }
+    )
   }
 
-  const sourceRows = XLSX.utils.sheet_to_json<ImportRow>(sheet, {
-    defval: "",
-    raw: true,
-  })
-
-  const rows = sourceRows
-    .map((row, index) => ({
-      row,
-      rowNumber:
-        typeof (row as ImportRow & { __rowNum__?: number }).__rowNum__ === "number"
-          ? (row as ImportRow & { __rowNum__: number }).__rowNum__ + 1
-          : index + 2,
-    }))
-    .filter(({ row }) => !isSummaryRow(row))
+  let rows: Array<{ row: ImportRow; rowNumber: number }>
+  try {
+    rows = (await readImportRows(file)).filter(({ row }) => !isSummaryRow(row))
+  } catch {
+    return NextResponse.json(
+      { error: "No se pudo leer el archivo. Verificá que sea un XLSX o CSV válido." },
+      { status: 400 }
+    )
+  }
 
   if (rows.length === 0) {
     return NextResponse.json({ error: "El archivo no tiene productos" }, { status: 400 })

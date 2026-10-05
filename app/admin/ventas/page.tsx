@@ -3,15 +3,18 @@
 
 import { useEffect, useMemo, useState } from "react"
 import {
+  Ban,
   ClipboardCheck,
   ExternalLink,
   FileText,
   Loader2,
   ReceiptText,
+  Trash2,
   X,
 } from "lucide-react"
 import { formatPrice } from "@/lib/data"
 import { defaultErpSettings, type ErpSettings } from "@/lib/erp-settings"
+import { CustomerPickerModal } from "@/components/customer-picker-modal"
 
 type Product = {
   id: number
@@ -36,6 +39,7 @@ type Customer = {
   vehicleBrand: string | null
   vehicleModel: string | null
   vehicleYear: number | null
+  hasCurrentAccount?: boolean
 }
 
 type Sale = {
@@ -48,6 +52,9 @@ type Sale = {
   paymentMethod: string
   status: string
   createdAt: string
+  voidReason?: string | null
+  voidedAt?: string | null
+  voidedBy?: { id: string; name: string } | null
   customer: Customer | null
   items: { productName: string; quantity: number }[]
   payments: { method: string; amount: number }[]
@@ -140,6 +147,10 @@ export default function SalesPage() {
   const [saleToInvoice, setSaleToInvoice] = useState<Sale | null>(null)
   const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>("INTERNAL")
   const [invoicing, setInvoicing] = useState(false)
+  const [voidingId, setVoidingId] = useState<number | null>(null)
+  const [saleToVoid, setSaleToVoid] = useState<Sale | null>(null)
+  const [voidReason, setVoidReason] = useState("")
+  const [voidError, setVoidError] = useState("")
 
   async function load() {
     const [productsResponse, customersResponse, salesResponse, settingsResponse] = await Promise.all([
@@ -335,6 +346,19 @@ export default function SalesPage() {
 
   function changeQuantity(productId: number, quantity: number) {
     setCart((current) => ({ ...current, [productId]: Math.max(0, quantity) }))
+  }
+
+  function removeProduct(productId: number) {
+    setCart((current) => {
+      const next = { ...current }
+      delete next[productId]
+      return next
+    })
+    setLinePrices((current) => {
+      const next = { ...current }
+      delete next[productId]
+      return next
+    })
   }
 
   function documentItems() {
@@ -537,6 +561,41 @@ export default function SalesPage() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  async function confirmVoidSale() {
+    if (!saleToVoid) return
+    const reason = voidReason.trim()
+    if (reason.length < 5) {
+      setVoidError("Escribí un motivo de al menos 5 caracteres.")
+      return
+    }
+
+    const sale = saleToVoid
+    setMessage("")
+    setVoidError("")
+    setVoidingId(sale.id)
+    try {
+      const response = await fetch("/api/admin/sales", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sale.id, reason }),
+      })
+      const data = (await response.json().catch(() => null)) as Sale | { error?: string } | null
+      if (!response.ok || !data || !("status" in data)) {
+        throw new Error(data && "error" in data ? data.error : "No se pudo anular la venta.")
+      }
+      setSales((current) => current.map((item) => (item.id === sale.id ? { ...item, ...data } : item)))
+      if (saleToInvoice?.id === sale.id) setSaleToInvoice(null)
+      setMessage(`Venta #${sale.id} anulada. El stock fue repuesto y los balances fueron actualizados.`)
+      setSaleToVoid(null)
+      setVoidReason("")
+      void load()
+    } catch (error) {
+      setVoidError(error instanceof Error ? error.message : "No se pudo anular la venta.")
+    } finally {
+      setVoidingId(null)
+    }
+  }
+
   return (
     <div className="w-full space-y-4">
       <header className="px-1">
@@ -658,7 +717,7 @@ export default function SalesPage() {
             <div className="border-b px-5 py-4">
               <h2 className="font-semibold">Últimas ventas</h2>
               <p className="text-xs text-muted-foreground">
-                Consultá o facturá una operación registrada.
+                Las ventas alimentan Caja y Reportes. Facturar crea el comprobante sin duplicar la operación.
               </p>
             </div>
             <div className="overflow-x-auto">
@@ -675,21 +734,52 @@ export default function SalesPage() {
                 </thead>
                 <tbody>
                   {sales.slice(0, 20).map((sale) => (
-                    <tr key={sale.id} className="border-t">
+                    <tr key={sale.id} className={`border-t ${sale.status === "VOID" ? "bg-slate-50/80 text-slate-400" : ""}`}>
                       <td className="p-3 font-semibold">#{sale.id}</td>
                       <td className="p-3">{new Date(sale.createdAt).toLocaleString("es-AR")}</td>
                       <td className="p-3">{sale.customer?.name || "Consumidor final"}</td>
                       <td className="p-3">{payLabels[sale.paymentMethod]}</td>
-                      <td className="p-3 text-right font-bold">{formatPrice(sale.total)}</td>
+                      <td className={`p-3 text-right font-bold ${sale.status === "VOID" ? "line-through" : ""}`}>{formatPrice(sale.total)}</td>
                       <td className="p-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => chooseSaleToInvoice(sale)}
-                          disabled={sale.status !== "COMPLETED"}
-                          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-muted disabled:opacity-40"
-                        >
-                          <ReceiptText className="h-3.5 w-3.5" /> Facturar
-                        </button>
+                        {sale.status === "COMPLETED" ? (
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => chooseSaleToInvoice(sale)}
+                              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold text-primary hover:bg-muted"
+                            >
+                              <ReceiptText className="h-3.5 w-3.5" /> Facturar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSaleToVoid(sale)
+                                setVoidReason("")
+                                setVoidError("")
+                              }}
+                              disabled={voidingId === sale.id}
+                              className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                            >
+                              {voidingId === sale.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ban className="h-3.5 w-3.5" />}
+                              Anular
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="ml-auto max-w-64 text-left">
+                            <span className="inline-flex rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Anulada</span>
+                            {sale.voidReason && (
+                              <p className="mt-1.5 break-words text-[11px] leading-relaxed text-slate-600">
+                                <span className="font-semibold">Motivo:</span> {sale.voidReason}
+                              </p>
+                            )}
+                            {sale.voidedAt && (
+                              <p className="mt-1 text-[10px] leading-relaxed text-slate-500">
+                                {new Date(sale.voidedAt).toLocaleString("es-AR")}
+                                {sale.voidedBy?.name ? ` · ${sale.voidedBy.name}` : ""}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -778,9 +868,20 @@ export default function SalesPage() {
                       </p>
                     )}
                   </div>
-                  <strong className="shrink-0 text-primary">
-                    {formatPrice(unitPrice * (cart[product.id] || 0))}
-                  </strong>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <strong className="text-primary">
+                      {formatPrice(unitPrice * (cart[product.id] || 0))}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => removeProduct(product.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-white text-red-600 transition hover:bg-red-50"
+                      aria-label={`Eliminar ${product.name} de la venta`}
+                      title="Eliminar producto"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-2 flex items-center justify-end gap-2">
                   <button type="button" onClick={() => changeQuantity(product.id, (cart[product.id] || 0) - 1)} className="h-8 w-8 rounded border" aria-label={`Quitar una unidad de ${product.name}`}>−</button>
@@ -877,17 +978,10 @@ export default function SalesPage() {
 
           <div className="space-y-4 border-b p-5">
             <h3 className="text-sm font-semibold">Cliente y vehículo</h3>
-            <label className="block text-xs font-medium text-muted-foreground">
+            <div className="block text-xs font-medium text-muted-foreground">
               Cliente registrado
-              <select className={`${inputClass} mt-1`} value={customerId} onChange={(event) => selectCustomer(event.target.value)}>
-                <option value="">Completar manualmente</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}{customer.vehiclePlate ? ` · ${customer.vehiclePlate}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <CustomerPickerModal customers={customers} selectedId={customerId} onSelect={selectCustomer} />
+            </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
               <label className="text-xs font-medium text-muted-foreground">Nombre o razón social<input className={`${inputClass} mt-1`} value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Consumidor final" /></label>
               <label className="text-xs font-medium text-muted-foreground">CUIT / DNI<input className={`${inputClass} mt-1`} value={customerTaxId} onChange={(event) => setCustomerTaxId(event.target.value)} /></label>
@@ -1143,6 +1237,93 @@ export default function SalesPage() {
           </div>
         </aside>
       </div>
+
+      {saleToVoid && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="void-sale-title"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-white/70 bg-white text-slate-950 shadow-2xl shadow-slate-950/25">
+            <div className="border-b border-slate-200/80 p-6 sm:p-7">
+              <div className="flex items-start gap-4">
+                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                  <Ban className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rose-600">Acción contable</p>
+                  <h2 id="void-sale-title" className="mt-1 text-xl font-bold tracking-tight text-slate-950">
+                    Primero se debe anular la venta
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    No se borra el historial. Se corregirán stock, Caja y balances, y quedarán registrados el motivo, el usuario, la fecha y la hora.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-5 p-6 sm:p-7">
+              <div className="flex items-center justify-between rounded-2xl bg-slate-100 px-4 py-3">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500">Venta</p>
+                  <p className="font-bold text-slate-950">#{saleToVoid.id}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-slate-500">Total</p>
+                  <p className="font-bold text-slate-950">{formatPrice(saleToVoid.total)}</p>
+                </div>
+              </div>
+
+              <label className="block text-sm font-semibold text-slate-800">
+                Motivo de la anulación <span className="text-rose-600">*</span>
+                <textarea
+                  autoFocus
+                  value={voidReason}
+                  onChange={(event) => {
+                    setVoidReason(event.target.value)
+                    if (voidError) setVoidError("")
+                  }}
+                  maxLength={500}
+                  rows={4}
+                  placeholder="Ej.: carga duplicada, producto incorrecto o devolución del cliente"
+                  className="mt-2 w-full resize-none rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                />
+                <span className="mt-1.5 flex items-center justify-between text-[11px] font-medium">
+                  <span className={voidError ? "text-rose-600" : "text-slate-500"}>
+                    {voidError || "Mínimo 5 caracteres."}
+                  </span>
+                  <span className="text-slate-400">{voidReason.length}/500</span>
+                </span>
+              </label>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSaleToVoid(null)
+                    setVoidReason("")
+                    setVoidError("")
+                  }}
+                  disabled={voidingId !== null}
+                  className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmVoidSale()}
+                  disabled={voidReason.trim().length < 5 || voidingId !== null}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {voidingId !== null && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Confirmar anulación
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

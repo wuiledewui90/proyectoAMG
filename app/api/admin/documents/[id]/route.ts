@@ -134,3 +134,39 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   })
   return NextResponse.json(serializeDocument(updated))
 }
+
+export async function DELETE(req: Request, { params }: RouteContext) {
+  const session = await getRequestAdminSession(req)
+  if (!session || session.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Solo un administrador puede eliminar comprobantes." },
+      { status: 403 }
+    )
+  }
+
+  const id = Number((await params).id)
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ error: "Comprobante inválido." }, { status: 400 })
+  }
+
+  const current = await prisma.erpDocument.findUnique({
+    where: { id },
+    select: { id: true, type: true, status: true },
+  })
+  if (!current) {
+    return NextResponse.json({ error: "Comprobante no encontrado." }, { status: 404 })
+  }
+
+  if (current.type === "INVOICE" && current.status !== "DRAFT") {
+    return NextResponse.json(
+      {
+        error:
+          "Una factura emitida, pagada o anulada debe conservarse para auditoría. Cambiá su estado a Anulada en lugar de eliminarla.",
+      },
+      { status: 409 }
+    )
+  }
+
+  await prisma.erpDocument.delete({ where: { id } })
+  return NextResponse.json({ ok: true })
+}

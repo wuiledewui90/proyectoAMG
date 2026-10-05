@@ -11,12 +11,19 @@ nul
 # Common ignores
 node_modules/
 .next/
-.env
+.env*
+!.env.example
+!.env.production.example
+!.env.docker.example
 .env.docker
 .env.production
-.env*.local
 .DS_Store
 /lib/generated/prisma
+*.tsbuildinfo
+*.log
+*.zip
+/hostinger-package/
+/backups/
 
 # Local Prisma SQLite database
 prisma/*.db

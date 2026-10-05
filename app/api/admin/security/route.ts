@@ -7,6 +7,7 @@ import {
   updateAdminSecurity,
   verifyAdminSessionToken,
 } from "@/lib/admin-session"
+import { validatePasswordPolicy } from "@/lib/security/password-policy"
 
 function readSessionCookie(req: Request) {
   return req.headers
@@ -36,11 +37,11 @@ export async function PUT(req: Request) {
     )
   }
 
-  if (newPassword && (newPassword.length < 8 || newPassword.length > 128)) {
-    return NextResponse.json(
-      { error: "La nueva contraseña debe tener entre 8 y 128 caracteres." },
-      { status: 400 }
-    )
+  if (newPassword) {
+    const passwordError = validatePasswordPolicy(newPassword, true)
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 })
+    }
   }
 
   if (newPin && !/^\d{4,8}$/.test(newPin)) {

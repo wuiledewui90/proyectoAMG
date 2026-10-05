@@ -18,6 +18,7 @@ function customerData(body: Record<string, unknown>) {
     vehicleBrand: optionalText(body.vehicleBrand),
     vehicleModel: optionalText(body.vehicleModel),
     vehicleYear: Number.isInteger(year) && year >= 1900 && year <= 2100 ? year : null,
+    currentAccountEnabled: body.currentAccountEnabled === true,
     notes: optionalText(body.notes),
   }
 }
@@ -40,9 +41,26 @@ export async function GET(req: Request) {
     },
     orderBy: { updatedAt: "desc" },
     take: 300,
-    include: { _count: { select: { sales: true, workOrders: true } } },
+    include: {
+      _count: { select: { sales: true, workOrders: true } },
+      sales: {
+        where: {
+          OR: [
+            { paymentMethod: "CURRENT_ACCOUNT" },
+            { payments: { some: { method: "CURRENT_ACCOUNT" } } },
+          ],
+        },
+        select: { id: true },
+        take: 1,
+      },
+    },
   })
-  return NextResponse.json(customers)
+  return NextResponse.json(
+    customers.map(({ sales, ...customer }) => ({
+      ...customer,
+      hasCurrentAccount: customer.currentAccountEnabled || sales.length > 0,
+    }))
+  )
 }
 
 export async function POST(req: Request) {

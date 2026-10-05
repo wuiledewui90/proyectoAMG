@@ -191,7 +191,7 @@ export function CatalogClient({ products }: Props) {
                 <span className="absolute inset-x-0 top-0 z-10 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-500 group-hover:scale-x-100" />
                 <div className="relative z-[1] aspect-square overflow-hidden border-b border-white/50 bg-white/20">
                   <Image
-                    src={product.images?.[0] || "/placeholder.svg"}
+                    src={product.thumbnailUrl ?? product.images?.[0] ?? "/placeholder.svg"}
                     alt={product.name}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"

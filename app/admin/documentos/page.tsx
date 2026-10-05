@@ -4,10 +4,8 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import {
-  ClipboardCheck,
   Eye,
   FilePlus2,
-  FileText,
   Plus,
   ReceiptText,
   Search,
@@ -15,6 +13,7 @@ import {
 } from "lucide-react"
 import { formatPrice } from "@/lib/data"
 import { defaultErpSettings, type ErpSettings } from "@/lib/erp-settings"
+import { CustomerPickerModal } from "@/components/customer-picker-modal"
 import {
   documentCode,
   documentStatusLabels,
@@ -34,6 +33,7 @@ type Customer = {
   vehicleBrand: string | null
   vehicleModel: string | null
   vehicleYear: number | null
+  hasCurrentAccount?: boolean
 }
 
 type Product = {
@@ -85,6 +85,8 @@ type FormLine = {
 
 const inputClass = "w-full rounded-md border bg-background px-3 py-2 text-sm"
 const emptyLine = (): FormLine => ({ productId: "", description: "", quantity: "1", unitPrice: "0" })
+const canDeleteDocument = (document: CommercialDocument) =>
+  document.type !== "INVOICE" || document.status === "DRAFT"
 
 function dateInput(daysFromToday = 0) {
   const date = new Date()
@@ -123,9 +125,16 @@ export default function DocumentsPage() {
   const [lines, setLines] = useState<FormLine[]>([emptyLine()])
   const [query, setQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("ALL")
+  const [monthFilter, setMonthFilter] = useState("ALL")
+  const [statusFilter, setStatusFilter] = useState("ALL")
+  const [sortOrder, setSortOrder] = useState<"NEWEST" | "OLDEST" | "TOTAL_DESC">("NEWEST")
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [message, setMessage] = useState("")
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [editorOpen, setEditorOpen] = useState(false)
   const [settings, setSettings] = useState<ErpSettings>(defaultErpSettings)
 
   async function load() {
@@ -151,6 +160,7 @@ export default function DocumentsPage() {
               ? "QUOTATION"
               : "QUOTE"
         setForm({ ...emptyForm(loadedSettings), type })
+        if (requestedType) setEditorOpen(true)
       }
     }
   }
@@ -169,6 +179,7 @@ export default function DocumentsPage() {
         return
       }
       setEditingId(document.id)
+      setEditorOpen(true)
       setForm({
         type: document.type,
         customerId: document.customerId ? String(document.customerId) : "",
@@ -216,16 +227,41 @@ export default function DocumentsPage() {
 
   const visibleDocuments = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    return documents.filter((document) => {
+    const filtered = documents.filter((document) => {
       const matchesType = typeFilter === "ALL" || document.type === typeFilter
+      const matchesMonth = monthFilter === "ALL" || document.issueDate.slice(0, 7) === monthFilter
+      const matchesStatus = statusFilter === "ALL" || document.status === statusFilter
       const matchesQuery =
         !normalized ||
         `${documentCode(document.type, document.id)} ${document.customerName} ${document.vehiclePlate || ""}`
           .toLowerCase()
           .includes(normalized)
-      return matchesType && matchesQuery
+      return matchesType && matchesMonth && matchesStatus && matchesQuery
     })
-  }, [documents, query, typeFilter])
+
+    return [...filtered].sort((left, right) => {
+      if (sortOrder === "TOTAL_DESC") return right.total - left.total
+      const difference = new Date(right.issueDate).getTime() - new Date(left.issueDate).getTime()
+      return sortOrder === "OLDEST" ? -difference : difference
+    })
+  }, [documents, monthFilter, query, sortOrder, statusFilter, typeFilter])
+
+  const availableMonths = useMemo(
+    () =>
+      Array.from(new Set(documents.map((document) => document.issueDate.slice(0, 7))))
+        .sort((left, right) => right.localeCompare(left))
+        .map((value) => ({
+          value,
+          label: new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(
+            new Date(`${value}-01T12:00:00`)
+          ),
+        })),
+    [documents]
+  )
+
+  const visibleDeletableDocuments = visibleDocuments.filter(canDeleteDocument)
+  const allVisibleSelected =
+    visibleDeletableDocuments.length > 0 && visibleDeletableDocuments.every((document) => selectedIds.has(document.id))
 
   function selectCustomer(value: string) {
     const customer = customers.find((item) => item.id === Number(value))
@@ -242,6 +278,51 @@ export default function DocumentsPage() {
         ? [customer.vehicleBrand, customer.vehicleModel, customer.vehicleYear].filter(Boolean).join(" · ")
         : "",
     }))
+  }
+
+  function startNewInvoice() {
+    setEditingId(null)
+    setForm({ ...emptyForm(settings), type: "INVOICE" })
+    setLines([emptyLine()])
+    setMessage("")
+    setEditorOpen(true)
+    window.history.replaceState(null, "", "/admin/documentos?nuevo=factura#nuevo-comprobante")
+    window.requestAnimationFrame(() => {
+      document.getElementById("nuevo-comprobante")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }
+
+  function closeEditor() {
+    setEditorOpen(false)
+    setEditingId(null)
+    setMessage("")
+    window.history.replaceState(null, "", "/admin/documentos")
+  }
+
+  function toggleDocumentSelection(id: number) {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAllVisible() {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (allVisibleSelected) visibleDeletableDocuments.forEach((document) => next.delete(document.id))
+      else visibleDeletableDocuments.forEach((document) => next.add(document.id))
+      return next
+    })
+  }
+
+  function clearDocumentFilters() {
+    setQuery("")
+    setTypeFilter("ALL")
+    setMonthFilter("ALL")
+    setStatusFilter("ALL")
+    setSortOrder("NEWEST")
   }
 
   function updateLine(index: number, data: Partial<FormLine>) {
@@ -296,17 +377,105 @@ export default function DocumentsPage() {
     setDocuments((current) => current.map((item) => (item.id === document.id ? data : item)))
   }
 
+  async function deleteDocument(document: CommercialDocument) {
+    if (!canDeleteDocument(document)) {
+      setMessage("Las facturas emitidas o pagadas deben marcarse como Anuladas; no se eliminan porque forman parte del historial contable.")
+      return
+    }
+    const code = documentCode(document.type, document.id)
+    const confirmed = window.confirm(
+      `¿Eliminar definitivamente ${code}?\n\nEsta acción también eliminará sus ítems y no se puede deshacer.`
+    )
+    if (!confirmed) return
+
+    setMessage("")
+    setDeletingId(document.id)
+    try {
+      const response = await fetch(`/api/admin/documents/${document.id}`, {
+        method: "DELETE",
+      })
+      const data = (await response.json().catch(() => null)) as { error?: string } | null
+      if (!response.ok) {
+        setMessage(data?.error || "No se pudo eliminar el comprobante.")
+        return
+      }
+
+      setDocuments((current) => current.filter((item) => item.id !== document.id))
+      setSelectedIds((current) => {
+        const next = new Set(current)
+        next.delete(document.id)
+        return next
+      })
+      if (editingId === document.id) {
+        setEditingId(null)
+        setForm(emptyForm(settings))
+        setLines([emptyLine()])
+      }
+      setMessage(`${code} fue eliminado correctamente.`)
+    } catch {
+      setMessage("No se pudo conectar con el servidor para eliminar el comprobante.")
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  async function deleteSelectedDocuments() {
+    const ids = Array.from(selectedIds)
+    if (!ids.length) return
+
+    const confirmed = window.confirm(
+      `¿Eliminar definitivamente ${ids.length} comprobante${ids.length === 1 ? "" : "s"} seleccionado${ids.length === 1 ? "" : "s"}?\n\nEsta acción no se puede deshacer.`
+    )
+    if (!confirmed) return
+
+    setBulkDeleting(true)
+    setMessage("")
+    try {
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          const response = await fetch(`/api/admin/documents/${id}`, { method: "DELETE" })
+          return { id, ok: response.ok }
+        })
+      )
+      const removedIds = new Set(results.filter((result) => result.ok).map((result) => result.id))
+      const failedIds = results.filter((result) => !result.ok).map((result) => result.id)
+
+      setDocuments((current) => current.filter((document) => !removedIds.has(document.id)))
+      setSelectedIds(new Set(failedIds))
+      setMessage(
+        failedIds.length
+          ? `Se eliminaron ${removedIds.size} comprobantes. ${failedIds.length} no pudieron eliminarse.`
+          : `${removedIds.size} comprobante${removedIds.size === 1 ? " fue eliminado" : "s fueron eliminados"} correctamente.`
+      )
+    } catch {
+      setMessage("No se pudo completar la eliminación masiva. Revisá la conexión e intentá nuevamente.")
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-5">
-      <header className="rounded-xl border bg-card p-5">
-        <p className="text-xs font-bold uppercase tracking-widest text-primary">Documentación comercial</p>
-        <h1 className="mt-1 text-2xl font-bold">Presupuestos, cotizaciones y facturas</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Prepará comprobantes detallados, hacé seguimiento y entregalos impresos o en PDF.
-        </p>
+      <header className="flex flex-col gap-4 rounded-xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">Documentación comercial</p>
+          <h1 className="mt-1 text-2xl font-bold">Presupuestos, cotizaciones y facturas</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Consultá los comprobantes emitidos o generá una nueva factura.
+          </p>
+        </div>
+        {!editorOpen && (
+          <button
+            type="button"
+            onClick={startNewInvoice}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-sm transition hover:brightness-105"
+          >
+            <ReceiptText className="h-4 w-4" /> Generar nueva factura
+          </button>
+        )}
       </header>
 
-      <form onSubmit={submit} className="space-y-5 rounded-xl border bg-card p-5">
+      {editorOpen && <form id="nuevo-comprobante" onSubmit={submit} className="space-y-5 rounded-xl border bg-card p-5 scroll-mt-28">
         <div className="flex flex-col gap-3 border-b pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -317,48 +486,22 @@ export default function DocumentsPage() {
               <p className="text-xs text-muted-foreground">{editingId ? "Modificá los datos y guardá los cambios." : "Los datos quedan guardados como fueron emitidos."}</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              disabled={editingId !== null}
-              onClick={() => setForm((current) => ({ ...current, type: "QUOTE" }))}
-              className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed ${form.type === "QUOTE" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              onClick={closeEditor}
+              className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold hover:bg-muted"
             >
-              <FileText className="h-4 w-4" /> Presupuesto
+              Volver al listado
             </button>
-            <button
-              type="button"
-              disabled={editingId !== null}
-              onClick={() => setForm((current) => ({ ...current, type: "QUOTATION" }))}
-              className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed ${form.type === "QUOTATION" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-            >
-              <ClipboardCheck className="h-4 w-4" /> Cotización
-            </button>
-            <button
-              type="button"
-              disabled={editingId !== null}
-              onClick={() => setForm((current) => ({ ...current, type: "INVOICE" }))}
-              className={`inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed ${form.type === "INVOICE" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-            >
-              <ReceiptText className="h-4 w-4" /> Factura
-            </button>
-          </div>
         </div>
 
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Cliente y vehículo</h3>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <label className="text-xs font-medium text-muted-foreground">
+            <div className="text-xs font-medium text-muted-foreground">
               Cliente registrado
-              <select className={`${inputClass} mt-1`} value={form.customerId} onChange={(event) => selectCustomer(event.target.value)}>
-                <option value="">Completar manualmente</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}{customer.vehiclePlate ? ` · ${customer.vehiclePlate}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <CustomerPickerModal customers={customers} selectedId={form.customerId} onSelect={selectCustomer} />
+            </div>
             <label className="text-xs font-medium text-muted-foreground">
               Nombre o razón social (opcional)
               <input className={`${inputClass} mt-1`} value={form.customerName} onChange={(event) => setForm({ ...form, customerName: event.target.value })} placeholder="Consumidor final" />
@@ -475,37 +618,73 @@ export default function DocumentsPage() {
           </aside>
         </div>
         {message && <p className="rounded-md bg-muted px-3 py-2 text-sm">{message}</p>}
-      </form>
+      </form>}
 
       <section className="overflow-hidden rounded-xl border bg-card">
-        <div className="flex flex-col gap-3 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-4 border-b p-4">
           <div>
             <h2 className="font-semibold">Comprobantes emitidos ({visibleDocuments.length})</h2>
-            <p className="text-xs text-muted-foreground">Actualizá el estado o abrí la hoja de entrega.</p>
+            <p className="text-xs text-muted-foreground">Filtrá por período, tipo o estado para encontrar rápidamente cada comprobante.</p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[150px_180px_150px_160px_minmax(220px,1fr)_auto]">
             <select className="rounded-md border bg-background px-3 py-2 text-sm" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
               <option value="ALL">Todos</option>
               <option value="QUOTE">Presupuestos</option>
               <option value="QUOTATION">Cotizaciones</option>
               <option value="INVOICE">Facturas</option>
             </select>
+            <select className="rounded-md border bg-background px-3 py-2 text-sm capitalize" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}>
+              <option value="ALL">Todos los meses</option>
+              {availableMonths.map((month) => <option key={month.value} value={month.value}>{month.label}</option>)}
+            </select>
+            <select className="rounded-md border bg-background px-3 py-2 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="ALL">Todos los estados</option>
+              {Object.entries(documentStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <select className="rounded-md border bg-background px-3 py-2 text-sm" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as "NEWEST" | "OLDEST" | "TOTAL_DESC")}>
+              <option value="NEWEST">Más recientes</option>
+              <option value="OLDEST">Más antiguos</option>
+              <option value="TOTAL_DESC">Mayor importe</option>
+            </select>
             <label className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input className="rounded-md border bg-background py-2 pl-9 pr-3 text-sm" placeholder="Buscar cliente, patente o Nº" value={query} onChange={(event) => setQuery(event.target.value)} />
+              <input className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm" placeholder="Buscar cliente, patente o Nº" value={query} onChange={(event) => setQuery(event.target.value)} />
             </label>
+            <button type="button" onClick={clearDocumentFilters} className="rounded-md border px-3 py-2 text-sm font-semibold hover:bg-muted">Limpiar</button>
           </div>
         </div>
+        {selectedIds.size > 0 && (
+          <div className="flex flex-col gap-3 border-b border-red-100 bg-red-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{selectedIds.size} comprobante{selectedIds.size === 1 ? "" : "s"} seleccionado{selectedIds.size === 1 ? "" : "s"}</p>
+              <p className="text-xs text-slate-500">Podés seguir marcando o eliminar la selección completa.</p>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setSelectedIds(new Set())} className="rounded-md border bg-white px-3 py-2 text-xs font-semibold">Quitar selección</button>
+              <button type="button" disabled={bulkDeleting} onClick={() => void deleteSelectedDocuments()} className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                <Trash2 className="h-4 w-4" /> {bulkDeleting ? "Eliminando…" : "Eliminar seleccionados"}
+              </button>
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-muted/50 text-left text-muted-foreground">
-              <tr><th className="p-3">Comprobante</th><th className="p-3">Fecha</th><th className="p-3">Cliente</th><th className="p-3">Estado</th><th className="p-3 text-right">Total</th><th className="p-3 text-right">Acción</th></tr>
+              <tr>
+                <th className="w-12 p-3 text-center">
+                  <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Seleccionar todos los resultados visibles" className="h-4 w-4 accent-primary" />
+                </th>
+                <th className="p-3">Comprobante</th><th className="p-3">Fecha</th><th className="p-3">Cliente</th><th className="p-3">Estado</th><th className="p-3 text-right">Total</th><th className="p-3 text-right">Acción</th>
+              </tr>
             </thead>
             <tbody>
               {visibleDocuments.map((document) => {
                 const statuses = document.type === "INVOICE" ? invoiceStatuses : quoteStatuses
                 return (
-                  <tr key={document.id} className="border-t">
+                  <tr key={document.id} className={`border-t ${selectedIds.has(document.id) ? "bg-primary/[0.04]" : ""}`}>
+                    <td className="p-3 text-center">
+                      <input type="checkbox" disabled={!canDeleteDocument(document)} checked={selectedIds.has(document.id)} onChange={() => toggleDocumentSelection(document.id)} aria-label={`Seleccionar ${documentCode(document.type, document.id)}`} className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-35" />
+                    </td>
                     <td className="p-3"><p className="font-semibold">{documentCode(document.type, document.id)}</p><p className="text-xs text-muted-foreground">{documentTypeLabels[document.type]}</p></td>
                     <td className="p-3">{new Date(document.issueDate).toLocaleDateString("es-AR")}</td>
                     <td className="p-3"><p className="font-medium">{document.customerName}</p>{document.vehiclePlate && <p className="text-xs text-muted-foreground">{document.vehiclePlate}</p>}</td>
@@ -515,11 +694,33 @@ export default function DocumentsPage() {
                       </select>
                     </td>
                     <td className="p-3 text-right font-bold">{formatPrice(document.total)}</td>
-                    <td className="p-3 text-right"><Link href={`/admin/documentos/${document.id}`} className="inline-flex items-center gap-2 rounded-md border px-3 py-2 font-semibold hover:bg-muted"><Eye className="h-4 w-4" /> Ver / imprimir</Link></td>
+                    <td className="p-3 text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <Link href={`/admin/documentos/${document.id}`} className="inline-flex items-center gap-2 rounded-md border px-3 py-2 font-semibold hover:bg-muted">
+                          <Eye className="h-4 w-4" /> Ver / imprimir
+                        </Link>
+                        {canDeleteDocument(document) ? (
+                          <button
+                            type="button"
+                            disabled={deletingId === document.id}
+                            onClick={() => void deleteDocument(document)}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-red-200 text-red-600 transition hover:bg-red-50 disabled:cursor-wait disabled:opacity-50"
+                            aria-label={`Eliminar ${documentCode(document.type, document.id)}`}
+                            title="Eliminar borrador definitivamente"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <span className="inline-flex h-10 items-center rounded-md bg-slate-100 px-3 text-[11px] font-semibold text-slate-500" title="Para conservar el historial contable, cambiá el estado a Anulada">
+                            Conservar / anular
+                          </span>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
-              {!visibleDocuments.length && <tr><td colSpan={6} className="p-10 text-center text-muted-foreground">No hay comprobantes que coincidan.</td></tr>}
+              {!visibleDocuments.length && <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">No hay comprobantes que coincidan con los filtros.</td></tr>}
             </tbody>
           </table>
         </div>

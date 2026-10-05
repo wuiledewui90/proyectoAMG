@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Ban, FileDown, FileUp, ImageUp, Loader2, Pencil, Plus, Save, Search, Star, Trash2, X } from "lucide-react"
 
 import { brands, categories, formatPrice } from "@/lib/data"
+import { AdminMobileExpandableText } from "@/components/admin-mobile-expandable-text"
 
 type ApiProduct = {
   id: number
@@ -19,6 +20,7 @@ type ApiProduct = {
   slug: string
   images: string[]
   imageUrl: string | null
+  thumbnailUrl?: string
   price: number
   stock: number
   isActive: boolean
@@ -77,10 +79,10 @@ const emptyEditor: EditorState = {
 }
 
 const editorControlClass =
-  "h-10 w-full rounded-md border-2 border-slate-300 bg-white px-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+  "h-11 w-full rounded-2xl border border-slate-200 bg-white/85 px-4 text-sm text-slate-950 shadow-[0_4px_14px_rgba(15,23,42,.04)] outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
 
 const editorTextareaClass =
-  "min-h-24 w-full rounded-md border-2 border-slate-300 bg-white p-3 text-sm text-foreground shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+  "min-h-28 w-full rounded-2xl border border-slate-200 bg-white/85 p-4 text-sm text-slate-950 shadow-[0_4px_14px_rgba(15,23,42,.04)] outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10"
 
 function toValidId(value: unknown): number | null {
   const raw = String(value ?? "").trim()
@@ -126,7 +128,7 @@ function AdminProductosContent() {
   const [isActive, setIsActive] = useState(searchParams.get("isActive") ?? "")
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") ?? "")
   const [selectedBrand, setSelectedBrand] = useState(searchParams.get("brand") ?? "")
-  const [orderMode, setOrderMode] = useState<"updated" | "category">("updated")
+  const [orderMode, setOrderMode] = useState<"updated" | "category" | "stock">("updated")
 
   const [data, setData] = useState<ListResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -154,8 +156,11 @@ function AdminProductosContent() {
 
   useEffect(() => {
     let cancel = false
-    setLoading(true)
-    setError("")
+    queueMicrotask(() => {
+      if (cancel) return
+      setLoading(true)
+      setError("")
+    })
 
     fetch(`/api/products?${queryString}`, { cache: "no-store" })
       .then(async (r) => {
@@ -188,9 +193,11 @@ function AdminProductosContent() {
         if (categoryCompare !== 0) return categoryCompare
         return a.name.localeCompare(b.name, "es")
       })
+    } else if (orderMode === "stock") {
+      items.sort((a, b) => b.stock - a.stock || a.name.localeCompare(b.name, "es"))
     }
     return items
-  }, [data?.items, orderMode])
+  }, [data, orderMode])
 
   const categoryOptions = Array.from(
     new Set([...categories, ...(data?.availableCategories ?? [])])
@@ -433,26 +440,42 @@ function AdminProductosContent() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-5">
-      <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold leading-tight">Productos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {data ? `${data.total} productos cargados` : "Listado de productos de la base de datos"}
-          </p>
+    <div className="relative mx-auto w-full max-w-[1500px] space-y-6 pb-10 text-slate-950">
+      <div className="pointer-events-none absolute -left-24 -top-24 -z-10 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-52 -z-10 h-80 w-80 rounded-full bg-violet-400/10 blur-3xl" />
+
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[22px] border border-white/80 bg-white/75 shadow-[0_12px_35px_rgba(15,23,42,.1)] backdrop-blur-xl">
+            <Image src="/images/admin-icons/productos.webp" alt="" width={192} height={192} className="h-12 w-12 object-contain" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Inventario</p>
+            <h1 className="mt-0.5 text-3xl font-semibold leading-tight tracking-[-0.045em] sm:text-4xl">Productos</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {data ? `${data.total} productos cargados` : "Listado de productos de la base de datos"}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Catálogo vinculado
+              </span>
+              <span>Productos en MySQL · imágenes asociadas por código</span>
+            </div>
+          </div>
         </div>
-        <div className="grid gap-2 sm:flex sm:items-center">
+        <div className="grid gap-2 sm:flex sm:items-center max-lg:hidden">
           <input
             ref={importInputRef}
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.csv"
             className="hidden"
             onChange={(e) => void handleImportProducts(e.target.files?.[0] ?? null)}
           />
           <button
             onClick={() => importInputRef.current?.click()}
             disabled={importing}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-60 sm:w-auto"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/90 bg-white/75 px-5 text-sm font-semibold text-slate-700 shadow-[0_8px_24px_rgba(15,23,42,.07)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60 sm:w-auto"
           >
             {importing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -466,27 +489,48 @@ function AdminProductosContent() {
             onClick={() => {
               window.location.href = "/api/products/export"
             }}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition-colors hover:bg-muted sm:w-auto"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/90 bg-white/75 px-5 text-sm font-semibold text-slate-700 shadow-[0_8px_24px_rgba(15,23,42,.07)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white sm:w-auto"
           >
             <FileDown className="h-4 w-4" />
             Exportar Excel
           </button>
           <button
             onClick={handleNew}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(15,23,42,.2)] transition hover:-translate-y-0.5 hover:bg-slate-800 sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             Nuevo producto
           </button>
         </div>
+      </header>
+
+      <div className="grid grid-cols-3 rounded-2xl border border-white/80 bg-white/80 p-1 shadow-sm backdrop-blur-xl lg:hidden">
+        {([
+          ["updated", "Todos"],
+          ["category", "Categorías"],
+          ["stock", "Stock"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setOrderMode(value)}
+            className={`admin-mobile-tap min-h-10 rounded-xl px-2 text-xs font-semibold transition ${
+              orderMode === value
+                ? "bg-[#071b33] text-white shadow-sm"
+                : "text-slate-500"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="grid gap-3 rounded-lg border bg-card p-4 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_170px_200px_180px_160px]">
+      <section className="grid gap-3 rounded-[28px] border border-white/80 bg-white/75 p-4 shadow-[0_18px_55px_rgba(15,23,42,.07)] backdrop-blur-2xl sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(240px,1fr)_170px_200px_180px_160px]">
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
-            className="h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/80 pl-10 pr-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             placeholder="Buscar por nombre, SKU o slug"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -497,7 +541,7 @@ function AdminProductosContent() {
         <label className="space-y-1 text-sm">
           <span className="text-xs font-medium text-muted-foreground">Estado</span>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             value={isActive}
             onChange={(e) => setIsActive(e.target.value)}
           >
@@ -510,7 +554,7 @@ function AdminProductosContent() {
         <label className="space-y-1 text-sm">
           <span className="text-xs font-medium text-muted-foreground">Categoría</span>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
@@ -526,7 +570,7 @@ function AdminProductosContent() {
         <label className="space-y-1 text-sm">
           <span className="text-xs font-medium text-muted-foreground">Marca</span>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
           >
@@ -542,28 +586,32 @@ function AdminProductosContent() {
         <label className="space-y-1 text-sm">
           <span className="text-xs font-medium text-muted-foreground">Orden</span>
           <select
-            className="h-10 w-full rounded-md border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
+            className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
             value={orderMode}
-            onChange={(e) => setOrderMode(e.target.value === "category" ? "category" : "updated")}
+            onChange={(e) => {
+              const value = e.target.value
+              setOrderMode(value === "category" || value === "stock" ? value : "updated")
+            }}
           >
             <option value="updated">Recientes</option>
             <option value="category">Categoria</option>
+            <option value="stock">Mayor stock</option>
           </select>
         </label>
-      </div>
+      </section>
 
       {loading && (
-        <div className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-white/80 bg-white/75 p-4 text-sm text-slate-500 shadow-sm backdrop-blur-xl">
           Cargando productos...
         </div>
       )}
       {error && (
-        <p className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+        <p className="rounded-2xl border border-red-200/70 bg-red-50/90 p-4 text-sm text-red-600 shadow-sm">
           {error}
         </p>
       )}
       {importResult && (
-        <div className="rounded-lg border bg-card p-4 text-sm">
+        <div className="rounded-2xl border border-white/80 bg-white/80 p-4 text-sm shadow-sm backdrop-blur-xl">
           <p className="font-medium">
             Importacion finalizada: {importResult.created} creados, {importResult.updated}{" "}
             actualizados, {importResult.failed} con error.
@@ -584,15 +632,18 @@ function AdminProductosContent() {
       )}
 
       {editing && (
-        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-5">
+        <section className="rounded-[28px] border border-white/80 bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,.1)] backdrop-blur-2xl sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">{isNew ? "Nuevo producto" : "Editar producto"}</h2>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Editor</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight">{isNew ? "Nuevo producto" : "Editar producto"}</h2>
+            </div>
             <button
               onClick={() => {
                 setEditing(null)
                 setIsNew(false)
               }}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-950"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
@@ -645,7 +696,7 @@ function AdminProductosContent() {
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
                       disabled={imageUploading}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition-colors hover:bg-muted disabled:opacity-60"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold transition hover:bg-slate-50 disabled:opacity-60"
                     >
                       {imageUploading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -715,7 +766,7 @@ function AdminProductosContent() {
                 ))}
               </select>
             </Field>
-            <label className="flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm md:mt-6">
+            <label className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 text-sm md:mt-6">
               <input
                 type="checkbox"
                 checked={editing.isActive}
@@ -723,7 +774,7 @@ function AdminProductosContent() {
               />
               Activo
             </label>
-            <label className="flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm md:mt-6">
+            <label className="flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 text-sm md:mt-6">
               <input
                 type="checkbox"
                 checked={editing.isFeatured}
@@ -751,7 +802,7 @@ function AdminProductosContent() {
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button
               onClick={handleSave}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(15,23,42,.18)] transition hover:bg-slate-800"
             >
               <Save className="h-4 w-4" />
               Guardar
@@ -761,18 +812,18 @@ function AdminProductosContent() {
                 setEditing(null)
                 setIsNew(false)
               }}
-              className="h-10 rounded-md border px-4 text-sm transition-colors hover:bg-muted"
+              className="h-11 rounded-full border border-slate-200 bg-white px-6 text-sm font-medium transition hover:bg-slate-50"
             >
               Cancelar
             </button>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className="hidden overflow-hidden rounded-lg border bg-card lg:block">
+      <div className="hidden overflow-hidden rounded-[28px] border border-white/80 bg-white/80 shadow-[0_18px_55px_rgba(15,23,42,.07)] backdrop-blur-2xl lg:block">
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="border-b bg-muted/50 text-left text-muted-foreground">
+            <tr className="border-b border-slate-200/70 bg-slate-50/70 text-left text-xs text-slate-400">
               <th className="w-16 px-4 py-3 text-center font-medium">N.º</th>
               <th className="w-24 px-4 py-3 font-medium">Imagen</th>
               <th className="px-4 py-3 font-medium">Producto</th>
@@ -784,7 +835,7 @@ function AdminProductosContent() {
           </thead>
           <tbody>
             {orderedItems.map((product, index) => (
-              <tr key={product.id} className="border-b last:border-0">
+              <tr key={product.id} className="border-b border-slate-100 transition last:border-0 hover:bg-slate-50/80">
                 <td className="px-4 py-3 text-center font-semibold text-muted-foreground">
                   {(data?.page ?? page) * (data?.limit ?? limit) - (data?.limit ?? limit) + index + 1}
                 </td>
@@ -845,7 +896,7 @@ function AdminProductosContent() {
 
       <div className="grid gap-3 lg:hidden">
         {orderedItems.map((product, index) => (
-          <article key={product.id} className="overflow-hidden rounded-lg border bg-card p-3">
+          <article key={product.id} className="overflow-hidden rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-[0_12px_38px_rgba(15,23,42,.07)] backdrop-blur-xl">
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-primary">
               Artículo #{(data?.page ?? page) * (data?.limit ?? limit) - (data?.limit ?? limit) + index + 1}
             </p>
@@ -853,9 +904,12 @@ function AdminProductosContent() {
               <ProductImage product={product} size="md" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="line-clamp-2 min-w-0 text-sm font-semibold leading-snug">
-                    {product.name}
-                  </h2>
+                  <AdminMobileExpandableText
+                    value={product.name}
+                    label="Nombre del producto"
+                    lines={2}
+                    className="text-sm font-semibold leading-snug text-slate-900"
+                  />
                   {product.isFeatured && (
                     <Star
                       className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500"
@@ -864,9 +918,11 @@ function AdminProductosContent() {
                   )}
                   <StatusBadge active={product.isActive} />
                 </div>
-                <p className="mt-1 truncate text-xs text-muted-foreground">
-                  {productSubtitle(product)}
-                </p>
+                <AdminMobileExpandableText
+                  value={productSubtitle(product)}
+                  label="Datos del producto"
+                  className="mt-1 text-xs text-muted-foreground"
+                />
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Precio</p>
@@ -882,7 +938,7 @@ function AdminProductosContent() {
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
                 onClick={() => handleEdit(product)}
-                className="inline-flex h-9 items-center justify-center gap-1 rounded-md border text-xs font-medium"
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-full border border-slate-200 bg-white text-xs font-medium"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Editar
@@ -890,14 +946,14 @@ function AdminProductosContent() {
               <button
                 onClick={() => handleSoftDelete(product.id)}
                 disabled={!product.isActive}
-                className="inline-flex h-9 items-center justify-center gap-1 rounded-md border text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 items-center justify-center gap-1 rounded-full border border-slate-200 bg-white text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Ban className="h-3.5 w-3.5" />
                 Pausar
               </button>
               <button
                 onClick={() => handleHardDelete(product.id)}
-                className="col-span-2 inline-flex h-9 items-center justify-center gap-1 rounded-md border text-xs font-medium text-destructive"
+                className="col-span-2 inline-flex h-9 items-center justify-center gap-1 rounded-full border border-rose-200 bg-rose-50 text-xs font-medium text-rose-600"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Borrar
@@ -907,7 +963,7 @@ function AdminProductosContent() {
         ))}
 
         {!loading && data?.items?.length === 0 && (
-          <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+          <div className="rounded-[24px] border border-white/80 bg-white/80 p-8 text-center text-sm text-slate-400 shadow-sm">
             No hay productos.
           </div>
         )}
@@ -915,7 +971,7 @@ function AdminProductosContent() {
 
       {data && data.total > 0 && (
         <nav
-          className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-3 rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-[0_12px_38px_rgba(15,23,42,.06)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between"
           aria-label="Paginación de productos"
         >
           <p className="text-sm text-muted-foreground">
@@ -929,7 +985,7 @@ function AdminProductosContent() {
               type="button"
               onClick={() => navigateToPage(data.page - 1)}
               disabled={data.page <= 1}
-              className="h-9 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-full border border-slate-200 bg-white px-4 text-sm font-medium transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Anterior
             </button>
@@ -941,10 +997,10 @@ function AdminProductosContent() {
                 onClick={() => navigateToPage(pageNumber)}
                 aria-current={pageNumber === data.page ? "page" : undefined}
                 aria-label={`Ir a la página ${pageNumber}`}
-                className={`h-9 min-w-9 rounded-md border px-2 text-sm font-semibold transition-colors ${
+                className={`h-9 min-w-9 rounded-full border px-2 text-sm font-semibold transition-colors ${
                   pageNumber === data.page
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
+                    ? "border-slate-950 bg-slate-950 text-white"
+                    : "border-slate-200 bg-white hover:bg-slate-50"
                 }`}
               >
                 {pageNumber}
@@ -955,13 +1011,22 @@ function AdminProductosContent() {
               type="button"
               onClick={() => navigateToPage(data.page + 1)}
               disabled={data.page >= data.totalPages}
-              className="h-9 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-full border border-slate-200 bg-white px-4 text-sm font-medium transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Siguiente
             </button>
           </div>
         </nav>
       )}
+
+      <button
+        type="button"
+        onClick={handleNew}
+        className="admin-mobile-tap fixed bottom-[calc(5.7rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#0878f9] text-white shadow-[0_14px_32px_rgba(8,120,249,.34)] lg:hidden"
+        aria-label="Nuevo producto"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </div>
   )
 }
@@ -981,18 +1046,18 @@ function productSubtitle(product: ApiProduct) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="text-sm font-medium">{label}</label>
+      <label className="text-sm font-medium text-slate-700">{label}</label>
       {children}
     </div>
   )
 }
 
 function ProductImage({ product, size }: { product: ApiProduct; size: "sm" | "md" }) {
-  const image = product.imageUrl ?? product.images?.[0] ?? "/placeholder.svg"
+  const image = product.thumbnailUrl ?? product.imageUrl ?? product.images?.[0] ?? "/placeholder.svg"
   const sizeClass = size === "sm" ? "h-14 w-14" : "h-20 w-20"
 
   return (
-    <div className={`relative shrink-0 overflow-hidden rounded-md border bg-white ${sizeClass}`}>
+    <div className={`relative shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${sizeClass}`}>
       <Image src={image} alt={product.name} fill sizes="96px" className="object-contain p-1" />
     </div>
   )
@@ -1010,7 +1075,7 @@ function ProductImagePreview({
   const src = image || "/placeholder.svg"
 
   return (
-    <div className="relative h-40 w-full overflow-hidden rounded-md border bg-white md:w-40">
+    <div className="relative h-40 w-full overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,.07)] md:w-40">
       {src.startsWith("blob:") ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={name} className="h-full w-full object-contain p-2" />
@@ -1030,7 +1095,7 @@ function StatusBadge({ active }: { active: boolean }) {
   return (
     <span
       className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-        active ? "bg-green-50 text-green-700" : "bg-muted text-muted-foreground"
+        active ? "bg-emerald-500/10 text-emerald-700" : "bg-slate-100 text-slate-500"
       }`}
     >
       {active ? "Activo" : "Inactivo"}
@@ -1055,7 +1120,7 @@ function ActionButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-100 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {children}
     </button>

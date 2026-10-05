@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import * as service from "@/lib/products/product-service"
 import { serializeProduct } from "@/lib/products/product-serialize"
+import { preferSupabaseProductImage } from "@/lib/products/product-supabase-images"
 import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session"
 
 type RouteContext = {
@@ -62,7 +63,7 @@ export async function PUT(req: Request, context: RouteContext) {
 
   try {
     const product = await service.update(parsed.id, body)
-    return NextResponse.json(serializeProduct(product))
+    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
   } catch (err) {
     if (err instanceof service.NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: err.status })
@@ -93,7 +94,7 @@ export async function GET(req: Request, context: RouteContext) {
 
   try {
     const product = await service.getById(parsed.id)
-    return NextResponse.json(serializeProduct(product))
+    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
   } catch (err) {
     if (err instanceof service.NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: err.status })
@@ -123,7 +124,7 @@ export async function DELETE(req: Request, context: RouteContext) {
     const product = hard
       ? await service.hardDelete(parsed.id)
       : await service.softDelete(parsed.id)
-    return NextResponse.json(serializeProduct(product))
+    return NextResponse.json(await preferSupabaseProductImage(serializeProduct(product)))
   } catch (err) {
     if (err instanceof service.NotFoundError) {
       return NextResponse.json({ error: err.message }, { status: err.status })

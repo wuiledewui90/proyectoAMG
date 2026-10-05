@@ -4,76 +4,17 @@ import React, { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import {
-  BarChart3,
-  ClipboardList,
-  FileText,
-  Home,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  MessageSquare,
-  Package,
-  Receipt,
-  Settings,
-  ShieldCheck,
-  ShoppingCart,
-  UserCog,
-  Users,
-  Wrench,
-  X,
-} from "lucide-react"
+import { Home, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AdminAppSetup } from "@/components/admin-app-install"
-
-const linkGroups = [
-  {
-    label: "Inicio",
-    links: [{ href: "/admin", label: "Resumen", icon: LayoutDashboard }],
-  },
-  {
-    label: "Operación del taller",
-    links: [
-      { href: "/admin/taller", label: "Órdenes de taller", icon: Wrench },
-      { href: "/admin/ventas", label: "Ventas", icon: ShoppingCart },
-      { href: "/admin/documentos", label: "Presupuestos y facturas", icon: FileText },
-      { href: "/admin/ordenes", label: "Pedidos web", icon: ClipboardList },
-    ],
-  },
-  {
-    label: "Gestión",
-    links: [
-      { href: "/admin/productos", label: "Productos", icon: Package },
-      { href: "/admin/clientes", label: "Clientes", icon: Users },
-      { href: "/admin/gastos", label: "Gastos", icon: Receipt },
-      { href: "/admin/reportes", label: "Reportes", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "Comunicación",
-    links: [{ href: "/admin/mensajes", label: "Mensajes", icon: MessageSquare }],
-  },
-  {
-    label: "Administración",
-    links: [
-      { href: "/admin/usuarios", label: "Usuarios", icon: UserCog },
-      { href: "/admin/seguridad", label: "Seguridad", icon: ShieldCheck },
-      { href: "/admin/configuracion", label: "Configuración", icon: Settings },
-    ],
-  },
-]
-
-const mechanicLinkGroups = [
-  {
-    label: "Mi trabajo",
-    links: [{ href: "/admin/mis-tareas", label: "Mis tareas", icon: Wrench }],
-  },
-]
+import { AdminMobileShell } from "@/components/admin-mobile-shell"
+import { AdminNavIcon, adminLinkGroups, mechanicLinkGroups } from "@/components/admin-navigation"
+import { MobileWelcomeOverlay } from "@/components/mobile-welcome-overlay"
+import { AdminQuickAccess } from "@/components/admin-quick-access"
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [menuOpen, setMenuOpen] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [sessionRole, setSessionRole] = useState<string | null>(null)
 
@@ -104,7 +45,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   function renderLinks(onClick?: () => void) {
-    const visibleGroups = sessionRole === "TECHNICIAN" ? mechanicLinkGroups : linkGroups
+    const visibleGroups = sessionRole === "TECHNICIAN" ? mechanicLinkGroups : adminLinkGroups
 
     return visibleGroups.map((group, groupIndex) => {
       const containsActiveLink = group.links.some((link) => isActive(link.href))
@@ -143,8 +84,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="overflow-hidden">
               <div className="ml-3 space-y-1 border-l pl-2 pt-1">
                 {group.links.map((link) => {
-                  const Icon = link.icon
-
                   return (
                     <Link
                       key={link.href}
@@ -155,7 +94,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       href={link.href}
                       onClick={onClick}
                     >
-                      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <AdminNavIcon
+                        link={link}
+                        className={cn(
+                          "shrink-0",
+                          link.image
+                            ? "h-7 w-7 object-contain drop-shadow-[0_3px_5px_rgba(15,23,42,.22)]"
+                            : "h-4 w-4"
+                        )}
+                      />
                       <span>{link.label}</span>
                     </Link>
                   )
@@ -171,66 +118,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="admin-panel min-h-screen bg-background print:min-h-0 print:bg-white">
       <AdminAppSetup />
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur print:hidden lg:hidden">
-        <span className="text-sm font-semibold">Radiadores AMG</span>
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md border"
-          aria-label="Abrir menu"
-        >
-          <Menu className="h-4 w-4" />
-        </button>
-      </div>
+      <MobileWelcomeOverlay />
+      <div className="admin-authenticated-content">
+        <AdminMobileShell
+          groups={sessionRole === "TECHNICIAN" ? mechanicLinkGroups : adminLinkGroups}
+          pathname={pathname}
+          onLogout={handleLogout}
+        />
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="absolute inset-0 bg-black/40"
-            aria-label="Cerrar menu"
-          />
-          <aside className="relative flex h-full w-64 flex-col border-r bg-background p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <Image
-                src="/images/documents/amg-logo-document.png"
-                alt="AMG Radiadores"
-                width={1768}
-                height={768}
-                className="h-auto w-32 object-contain object-left"
-              />
-              <button
-                onClick={() => setMenuOpen(false)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border"
-                aria-label="Cerrar menu"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 text-sm">{renderLinks(() => setMenuOpen(false))}</nav>
-
-            <div className="mt-auto space-y-1.5 pt-2">
-              <Link
-                href="/"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-md border px-2 py-1.5 text-xs font-medium hover:bg-muted"
-              >
-                <Home className="h-4 w-4" />
-                Volver a la pagina principal
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center justify-center gap-2 rounded-md border px-2 py-1.5 text-xs hover:bg-red-50 hover:text-red-600"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                Cerrar sesion
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      <div className="flex min-h-screen">
+        <div className="flex min-h-screen">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r bg-card p-3 print:hidden lg:flex lg:flex-col">
           <div className="mb-4">
             <Image
@@ -263,16 +159,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <main
-          className={cn(
-            "min-w-0 flex-1 print:p-0",
-            pathname === "/admin/ventas"
-              ? "px-2 py-4 sm:px-3 lg:p-3"
-              : "px-4 py-5 sm:px-6 lg:p-6"
-          )}
-        >
-          {children}
-        </main>
+          <main
+            className={cn(
+              "min-w-0 flex-1 print:p-0",
+              pathname === "/admin/ventas"
+                ? "px-3 py-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-3 lg:p-3"
+                : "px-4 py-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:p-6"
+            )}
+          >
+            <AdminQuickAccess pathname={pathname} />
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   )
