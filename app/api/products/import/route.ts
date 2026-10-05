@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import ExcelJS from "exceljs"
 import { Readable } from "node:stream"
@@ -267,7 +267,7 @@ function getImportErrorMessage(err: unknown) {
     return err.issues.map((issue) => issue.message).join(", ")
   }
 
-  if (err instanceof PrismaClientKnownRequestError && err.code === "P2000") {
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2000") {
     const column = err.meta?.column_name
     if (column === "description") {
       return "La descripcion es demasiado larga para la base de datos. Ejecuta la migracion nueva y vuelve a importar."

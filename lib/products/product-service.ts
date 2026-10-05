@@ -1,4 +1,4 @@
-import { Decimal, PrismaClientKnownRequestError } from "@prisma/client/runtime/library"
+import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { productCreateSchema, productUpdateSchema } from "@/lib/products/product-schemas"
 import * as repo from "@/lib/products/product-repository"
@@ -54,10 +54,10 @@ export async function create(input: unknown) {
     name: parsed.name,
     description: normalizeOptionalString(parsed.description),
     sku: normalizeOptionalString(parsed.sku),
-    price: new Decimal(parsed.price),
+    price: new Prisma.Decimal(parsed.price),
     stock: parsed.stock ?? 0,
     minimumStock: parsed.minimumStock ?? 0,
-    cost: new Decimal(parsed.cost ?? 0),
+    cost: new Prisma.Decimal(parsed.cost ?? 0),
     stockType: normalizeOptionalString(parsed.stockType),
     stockCategory: normalizeOptionalString(parsed.stockCategory),
     brands: normalizeOptionalString(parsed.brands),
@@ -78,7 +78,7 @@ export async function create(input: unknown) {
   try {
     return await repo.createProduct(data)
   } catch (err) {
-    if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       throw new ConflictError("SKU o slug ya existe")
     }
     if (err instanceof z.ZodError) throw err
@@ -104,10 +104,10 @@ export async function update(id: number, input: unknown) {
       ? { description: normalizeOptionalString(parsed.description) }
       : {}),
     ...(parsed.sku !== undefined ? { sku: normalizeOptionalString(parsed.sku) } : {}),
-    ...(parsed.price !== undefined ? { price: new Decimal(parsed.price) } : {}),
+    ...(parsed.price !== undefined ? { price: new Prisma.Decimal(parsed.price) } : {}),
     ...(parsed.stock !== undefined ? { stock: parsed.stock } : {}),
     ...(parsed.minimumStock !== undefined ? { minimumStock: parsed.minimumStock } : {}),
-    ...(parsed.cost !== undefined ? { cost: new Decimal(parsed.cost) } : {}),
+    ...(parsed.cost !== undefined ? { cost: new Prisma.Decimal(parsed.cost) } : {}),
     ...(parsed.stockType !== undefined
       ? { stockType: normalizeOptionalString(parsed.stockType) }
       : {}),
@@ -142,10 +142,10 @@ export async function update(id: number, input: unknown) {
   try {
     return await repo.updateProduct(id, data)
   } catch (err) {
-    if (err instanceof PrismaClientKnownRequestError && err.code === "P2025") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
       throw new NotFoundError("Producto no encontrado")
     }
-    if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       throw new ConflictError("SKU o slug ya existe")
     }
     if (err instanceof z.ZodError) throw err
@@ -157,7 +157,7 @@ export async function softDelete(id: number) {
   try {
     return await repo.softDeleteProduct(id)
   } catch (err) {
-    if (err instanceof PrismaClientKnownRequestError && err.code === "P2025") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
       throw new NotFoundError("Producto no encontrado")
     }
     throw err
@@ -168,7 +168,7 @@ export async function hardDelete(id: number) {
   try {
     return await repo.deleteProduct(id)
   } catch (err) {
-    if (err instanceof PrismaClientKnownRequestError && err.code === "P2025") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
       throw new NotFoundError("Producto no encontrado")
     }
     throw err

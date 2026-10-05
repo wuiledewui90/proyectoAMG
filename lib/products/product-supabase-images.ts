@@ -9,6 +9,8 @@ import {
 export async function preferSupabaseProductImages<T extends SerializedProduct>(
   products: T[]
 ) {
+  if (products.length === 0) return products
+
   try {
     const imagesByCode = await getSupabaseProductImagesByCode()
     return products.map((product) => {
