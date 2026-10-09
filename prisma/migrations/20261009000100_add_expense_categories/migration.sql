@@ -1,0 +1,17 @@
+CREATE TABLE `ErpExpenseCategory` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(80) NOT NULL,
+  `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updatedAt` DATETIME(3) NOT NULL,
+
+  UNIQUE INDEX `ErpExpenseCategory_name_key`(`name`),
+  PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+INSERT INTO `ErpExpenseCategory` (`name`, `createdAt`, `updatedAt`) VALUES
+  ('Repuestos', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)),
+  ('Insumos', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)),
+  ('Servicios', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)),
+  ('Herramientas', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)),
+  ('Impuestos', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)),
+  ('Otros', CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3));

@@ -493,6 +493,15 @@ model erpExpense {
   @@map("ErpExpense")
 }
 
+model erpExpenseCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique(map: "ErpExpenseCategory_name_key") @db.VarChar(80)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ErpExpenseCategory")
+}
+
 model stockMovement {
   id            Int               @id @default(autoincrement())
   productId     Int
