@@ -1,0 +1,490 @@
+.trigger {
+  position: relative;
+  display: inline-flex;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(55, 161, 255, 0.82);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 22%, rgba(64, 166, 255, 0.18), transparent 42%),
+    rgba(4, 22, 43, 0.84);
+  box-shadow:
+    0 0 0 1px rgba(21, 100, 182, 0.25),
+    0 0 19px rgba(34, 137, 235, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: white;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 360ms ease, box-shadow 360ms ease, transform 200ms ease;
+}
+
+.trigger::after {
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(105, 191, 255, 0.12);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+
+.trigger:hover {
+  border-color: #6cc0ff;
+  box-shadow:
+    0 0 0 1px rgba(45, 151, 255, 0.38),
+    0 0 25px rgba(45, 151, 255, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.trigger:active {
+  transform: scale(0.96);
+}
+
+.trigger:focus-visible,
+.closeButton:focus-visible,
+.navItem:focus-visible,
+.contactLink:focus-visible,
+.socialLink:focus-visible {
+  outline: 2px solid #72c2ff;
+  outline-offset: 3px;
+}
+
+.triggerOpen {
+  border-color: #72c2ff;
+  animation: triggerPulse 380ms ease-out;
+}
+
+.triggerLine {
+  position: absolute;
+  left: 14px;
+  width: 20px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.45);
+  transform-origin: center;
+  transition: top 360ms cubic-bezier(0.16, 1, 0.3, 1), transform 360ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms ease;
+}
+
+.triggerLineTop { top: 17px; }
+.triggerLineMiddle { top: 24px; }
+.triggerLineBottom { top: 31px; }
+
+.triggerOpen .triggerLineTop {
+  top: 24px;
+  transform: rotate(45deg);
+}
+
+.triggerOpen .triggerLineMiddle {
+  opacity: 0;
+  transform: scaleX(0.25);
+}
+
+.triggerOpen .triggerLineBottom {
+  top: 24px;
+  transform: rotate(-45deg);
+}
+
+.overlay {
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  background: rgba(0, 5, 13, 0.68);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.overlay[data-state="open"] { animation: overlayIn 340ms ease-out both; }
+.overlay[data-state="closed"] { animation: overlayOut 300ms ease-in both; }
+
+.panel {
+  position: fixed;
+  z-index: 71;
+  top: 0;
+  right: 0;
+  display: flex;
+  width: min(85vw, 380px);
+  height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  border-left: 1px solid rgba(62, 167, 255, 0.76);
+  border-radius: 28px 0 0 28px;
+  background:
+    radial-gradient(circle at 82% 5%, rgba(31, 133, 231, 0.24), transparent 26%),
+    radial-gradient(circle at 4% 72%, rgba(18, 89, 165, 0.14), transparent 30%),
+    linear-gradient(155deg, rgba(7, 27, 51, 0.97), rgba(2, 12, 25, 0.985));
+  box-shadow:
+    -30px 0 70px rgba(0, 0, 0, 0.58),
+    -5px 0 26px rgba(29, 127, 221, 0.18),
+    inset 1px 0 0 rgba(140, 207, 255, 0.1);
+  color: white;
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  outline: none;
+}
+
+.panel::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(93, 176, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(93, 176, 255, 0.028) 1px, transparent 1px);
+  background-size: 22px 22px;
+  content: "";
+  mask-image: linear-gradient(145deg, #000, transparent 70%);
+  -webkit-mask-image: linear-gradient(145deg, #000, transparent 70%);
+  pointer-events: none;
+}
+
+.panel[data-state="open"] { animation: panelIn 380ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.panel[data-state="closed"] { animation: panelOut 320ms cubic-bezier(0.7, 0, 0.84, 0) both; }
+
+.ambientLight {
+  position: absolute;
+  top: 84px;
+  left: 0;
+  width: 1px;
+  height: 38%;
+  background: linear-gradient(180deg, transparent, #53b6ff 38%, rgba(214, 37, 55, 0.72) 76%, transparent);
+  box-shadow: 0 0 17px rgba(64, 171, 255, 0.72);
+  pointer-events: none;
+}
+
+.panelHeader {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 82px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid rgba(137, 197, 255, 0.12);
+  padding: 16px 17px 14px 22px;
+}
+
+.panelLogo {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.panelLogo:focus-visible {
+  outline: 2px solid #72c2ff;
+  outline-offset: 4px;
+}
+
+.closeButton {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(77, 178, 255, 0.82);
+  border-radius: 999px;
+  background: rgba(5, 29, 55, 0.82);
+  box-shadow: 0 0 18px rgba(35, 148, 245, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.11);
+  color: white;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.closeButton:hover {
+  border-color: #8bd0ff;
+  box-shadow: 0 0 24px rgba(35, 148, 245, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transform: rotate(5deg);
+}
+
+.scrollArea {
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 17px max(22px, env(safe-area-inset-bottom));
+  scrollbar-color: rgba(81, 169, 247, 0.46) transparent;
+  scrollbar-width: thin;
+}
+
+.sectionLabel {
+  margin: 0 7px 10px;
+  color: rgba(142, 195, 243, 0.62);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.navList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navItem {
+  display: grid;
+  min-height: 50px;
+  grid-template-columns: 34px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-bottom-color: rgba(142, 193, 237, 0.1);
+  border-radius: 13px;
+  padding: 7px 11px 7px 9px;
+  color: rgba(239, 247, 255, 0.78);
+  opacity: 0;
+  transform: translate3d(18px, 0, 0);
+  transition: color 220ms ease, border-color 220ms ease, background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.panel[data-state="open"] .navItem {
+  animation: navItemIn 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.navItem:hover {
+  border-color: rgba(72, 165, 249, 0.34);
+  background: rgba(31, 117, 204, 0.12);
+  color: white;
+  transform: translate3d(2px, 0, 0);
+}
+
+.navItemActive {
+  border-color: rgba(75, 176, 255, 0.72);
+  background:
+    linear-gradient(90deg, rgba(20, 107, 201, 0.42), rgba(15, 72, 134, 0.19)),
+    rgba(11, 42, 76, 0.5);
+  box-shadow: 0 0 21px rgba(28, 137, 238, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.navIcon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(115, 188, 252, 0.14);
+  border-radius: 10px;
+  background: rgba(102, 178, 244, 0.05);
+  color: rgba(228, 242, 255, 0.92);
+}
+
+.navItemActive .navIcon {
+  border-color: rgba(116, 199, 255, 0.45);
+  background: rgba(64, 160, 245, 0.16);
+  color: white;
+  box-shadow: 0 0 12px rgba(54, 158, 248, 0.18);
+}
+
+.navLabel {
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navArrow,
+.contactArrow {
+  width: 15px;
+  height: 15px;
+  color: rgba(150, 199, 242, 0.5);
+  transition: color 220ms ease, transform 220ms ease;
+}
+
+.navItem:hover .navArrow,
+.navItemActive .navArrow,
+.contactLink:hover .contactArrow {
+  color: #84caff;
+  transform: translateX(2px);
+}
+
+.contactBlock {
+  margin-top: 23px;
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+}
+
+.panel[data-state="open"] .contactBlock {
+  animation: contactIn 420ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+}
+
+.contactLinks {
+  overflow: hidden;
+  border: 1px solid rgba(115, 184, 245, 0.14);
+  border-radius: 16px;
+  background: rgba(0, 10, 22, 0.3);
+}
+
+.contactLink {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: 38px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  color: white;
+  transition: background 220ms ease;
+}
+
+.contactLink + .contactLink { border-top: 1px solid rgba(126, 188, 242, 0.1); }
+.contactLink:hover { background: rgba(51, 137, 215, 0.1); }
+
+.contactLink strong,
+.contactLink small {
+  display: block;
+}
+
+.contactLink strong {
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.contactLink small {
+  margin-top: 2px;
+  color: rgba(183, 213, 239, 0.5);
+  font-size: 0.61rem;
+  letter-spacing: 0.025em;
+}
+
+.contactIcon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: white;
+}
+
+.whatsAppIcon {
+  background: linear-gradient(145deg, #2bdc79, #13944d);
+  box-shadow: 0 0 15px rgba(37, 211, 102, 0.25);
+}
+
+.phoneIcon {
+  background: linear-gradient(145deg, #288cff, #1459b6);
+  box-shadow: 0 0 15px rgba(39, 139, 255, 0.25);
+}
+
+.socialRow {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.socialLink {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(123, 189, 248, 0.22);
+  border-radius: 999px;
+  background: rgba(8, 32, 58, 0.58);
+  color: rgba(235, 247, 255, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition: color 220ms ease, border-color 220ms ease, background 220ms ease, transform 220ms ease;
+}
+
+.socialLink:hover {
+  border-color: rgba(104, 193, 255, 0.72);
+  background: rgba(25, 104, 180, 0.32);
+  color: white;
+  transform: translateY(-2px);
+}
+
+@keyframes triggerPulse {
+  0% { box-shadow: 0 0 0 rgba(54, 164, 255, 0); }
+  55% { box-shadow: 0 0 30px rgba(54, 164, 255, 0.58); }
+  100% { box-shadow: 0 0 19px rgba(34, 137, 235, 0.32); }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlayOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes panelIn {
+  from { transform: translate3d(102%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes panelOut {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(102%, 0, 0); }
+}
+
+@keyframes navItemIn {
+  from {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes contactIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trigger,
+  .overlay,
+  .panel {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .panelHeader { padding-left: 18px; }
+  .scrollArea { padding-right: 13px; padding-left: 13px; }
+  .panelLogo img { width: 116px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger,
+  .triggerLine,
+  .closeButton,
+  .navItem,
+  .navArrow,
+  .contactArrow,
+  .contactBlock,
+  .socialLink,
+  .overlay,
+  .panel {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .panel[data-state="open"] .navItem,
+  .panel[data-state="open"] .contactBlock {
+    opacity: 1;
+    transform: none;
+  }
+}

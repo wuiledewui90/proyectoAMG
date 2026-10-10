@@ -1,5 +1,6 @@
 import "server-only"
 
+import { unstable_cache } from "next/cache"
 import { getSupabaseServerConfig } from "@/lib/supabase/config"
 import { supabaseServer } from "@/lib/supabase/server"
 
@@ -54,10 +55,22 @@ async function listRootImageObjects() {
   return objects
 }
 
+// Storage changes much less frequently than the product screens are opened.
+// Keeping this list in Next's data cache avoids one remote request for every
+// page of 100 products loaded by Ventas and Taller.
+const getCachedRootImageObjects = unstable_cache(
+  listRootImageObjects,
+  ["supabase-product-storage-objects-v1"],
+  {
+    revalidate: 900,
+    tags: ["supabase-product-images"],
+  },
+)
+
 export async function getSupabaseStorageImageIndex(): Promise<StorageImageIndex> {
   const { storageBucket } = getSupabaseServerConfig()
   const imageIndex: StorageImageIndex = new Map()
-  const objectNames = await listRootImageObjects()
+  const objectNames = await getCachedRootImageObjects()
 
   for (const objectName of objectNames) {
     const { data } = supabaseServer.storage.from(storageBucket).getPublicUrl(objectName)

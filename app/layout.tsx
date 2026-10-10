@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { CartProvider } from "@/lib/cart-context"
 import { SiteChrome } from "@/components/site-chrome"
+import { MobileKeyboardDismiss } from "@/components/mobile-keyboard-dismiss"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} font-sans antialiased`}>
+        <MobileKeyboardDismiss />
         <CartProvider>
           <SiteChrome>{children}</SiteChrome>
         </CartProvider>

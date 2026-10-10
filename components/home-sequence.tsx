@@ -37,13 +37,16 @@ export function HomeSequence({ children }: HomeSequenceProps) {
     document.documentElement.dataset.homeIntroStarted = "true"
 
     if (shouldPlayIntro) {
+      document.documentElement.classList.remove("home-intro-skipped")
       document.documentElement.classList.add("home-intro-active")
     } else {
       document.documentElement.classList.remove("home-intro-active")
+      document.documentElement.classList.add("home-intro-skipped")
     }
 
     return () => {
       document.documentElement.classList.remove("home-intro-active")
+      document.documentElement.classList.remove("home-intro-skipped")
     }
   }, [shouldPlayIntro])
 

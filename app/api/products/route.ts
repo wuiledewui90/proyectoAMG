@@ -5,7 +5,6 @@ import * as service from "@/lib/products/product-service"
 import { serializeProduct, serializeProducts } from "@/lib/products/product-serialize"
 import {
   preferSupabaseProductImage,
-  preferSupabaseProductImages,
 } from "@/lib/products/product-supabase-images"
 import { getRequestAdminSession } from "@/lib/admin-request"
 
@@ -39,7 +38,7 @@ export async function GET(req: Request) {
 
   const { search, category, brand, isActive, page, limit } = parsed.data
   const { total, items } = await service.list({ search, category, brand, isActive, page, limit })
-  const serializedItems = (await preferSupabaseProductImages(serializeProducts(items)))
+  const serializedItems = serializeProducts(items)
     .map((product) => session.role === "ADMIN" ? product : { ...product, cost: null })
 
   if (!wantsPaged) {

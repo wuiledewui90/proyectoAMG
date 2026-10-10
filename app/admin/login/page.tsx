@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
     <div className="admin-login-page relative flex min-h-screen items-center justify-center overflow-hidden p-6">
       <div className="admin-login-mobile-layer absolute inset-0 hidden" aria-hidden="true">
         <Image
-          src="/images/login/amg-login-mobile.png"
+          src="/images/login/amg-login-mobile.webp"
           alt=""
           fill
           priority
@@ -101,7 +101,7 @@ export default function AdminLoginPage() {
       <div className="admin-login-mobile-overlay absolute inset-0 hidden" aria-hidden="true" />
       <div className="admin-login-desktop-visual" aria-hidden="true">
         <Image
-          src="/images/login/amg-login-mobile.png"
+          src="/images/login/amg-login-mobile.webp"
           alt=""
           fill
           priority

@@ -92,10 +92,10 @@ export function MobileWelcomeOverlay() {
     >
       <section className="mobile-welcome-card">
         <Image
-          src="/images/documents/amg-logo-document.png"
+          src="/images/documents/amg-logo-ui.webp"
           alt="AMG Radiadores"
-          width={1768}
-          height={768}
+          width={600}
+          height={300}
           priority
           sizes="190px"
           className="mobile-welcome-logo"

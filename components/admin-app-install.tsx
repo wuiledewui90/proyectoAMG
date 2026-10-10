@@ -12,9 +12,13 @@ export function AdminAppSetup() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return
 
-    void navigator.serviceWorker.register("/management-sw.js", {
-      scope: "/admin/",
-    })
+    void navigator.serviceWorker
+      .register("/management-sw.js", {
+        scope: "/admin/",
+        updateViaCache: "none",
+      })
+      .then((registration) => registration.update())
+      .catch(() => undefined)
   }, [])
 
   return null

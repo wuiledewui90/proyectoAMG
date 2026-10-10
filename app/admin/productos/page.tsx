@@ -185,6 +185,9 @@ function AdminProductosContent() {
   const searchParams = useSearchParams()
   const importInputRef = useRef<HTMLInputElement | null>(null)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
+  const editorDialogRef = useRef<HTMLElement | null>(null)
+  const editorNameRef = useRef<HTMLInputElement | null>(null)
+  const initialEditorRef = useRef("")
 
   const page = Number(searchParams.get("page") ?? "1")
   const limit = Number(searchParams.get("limit") ?? "20")
@@ -212,6 +215,47 @@ function AdminProductosContent() {
 
   const [editing, setEditing] = useState<EditorState | null>(null)
   const [isNew, setIsNew] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [editorError, setEditorError] = useState("")
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const editorOpen = editing !== null
+
+  useEffect(() => {
+    if (!editorOpen) return
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    editorNameRef.current?.focus()
+
+    function keepFocusInEditor(event: KeyboardEvent) {
+      if (event.key !== "Tab") return
+      const focusable = editorDialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), a[href]'
+      )
+      if (!focusable?.length) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!editorDialogRef.current?.contains(document.activeElement)) {
+        event.preventDefault()
+        first.focus()
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener("keydown", keepFocusInEditor)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener("keydown", keepFocusInEditor)
+      previouslyFocused?.focus()
+    }
+  }, [editorOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -330,8 +374,12 @@ function AdminProductosContent() {
   }
 
   function handleNew() {
-    setEditing({ ...emptyEditor })
+    const nextEditor = { ...emptyEditor }
+    initialEditorRef.current = JSON.stringify(nextEditor)
+    setEditing(nextEditor)
     setIsNew(true)
+    setEditorError("")
+    setConfirmDiscard(false)
     setImageUploadError("")
     setImagePreviewUrl("")
   }
@@ -343,7 +391,7 @@ function AdminProductosContent() {
       return
     }
 
-    setEditing({
+    const nextEditor: EditorState = {
       id,
       name: product.name,
       slug: product.slug,
@@ -362,8 +410,12 @@ function AdminProductosContent() {
       imageUrl: product.imageUrl ?? product.images?.[0] ?? "/images/radiador-1.jpg",
       isActive: product.isActive,
       isFeatured: product.isFeatured,
-    })
+    }
+    initialEditorRef.current = JSON.stringify(nextEditor)
+    setEditing(nextEditor)
     setIsNew(false)
+    setEditorError("")
+    setConfirmDiscard(false)
     setImageUploadError("")
     setImagePreviewUrl("")
   }
@@ -375,7 +427,23 @@ function AdminProductosContent() {
       return
     }
     handleEdit(await response.json() as ApiProduct)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  function closeEditor() {
+    if (saving || imageUploading) return
+    if (editing && JSON.stringify(editing) !== initialEditorRef.current) {
+      setConfirmDiscard(true)
+      return
+    }
+    discardEditor()
+  }
+
+  function discardEditor() {
+    if (saving || imageUploading) return
+    setEditing(null)
+    setIsNew(false)
+    setEditorError("")
+    setConfirmDiscard(false)
   }
 
   async function handleUploadProductImage(file: File | null) {
@@ -415,7 +483,8 @@ function AdminProductosContent() {
   }
 
   async function handleSave() {
-    if (!editing) return
+    if (!editing || saving || imageUploading) return
+    setEditorError("")
 
     const price = parseNonNegativeNumber(editing.price)
     const cost = editing.cost.trim() ? parseNonNegativeNumber(editing.cost) : 0
@@ -423,22 +492,22 @@ function AdminProductosContent() {
     const minimumStock = parseNonNegativeInteger(editing.minimumStock)
 
     if (price === null) {
-      alert("Ingresa un precio valido.")
+      setEditorError("Ingresá un precio válido.")
       return
     }
 
     if (stock === null) {
-      alert("Ingresa un stock valido, sin decimales.")
+      setEditorError("Ingresá un stock válido, sin decimales.")
       return
     }
 
     if (cost === null || minimumStock === null) {
-      alert("Ingresá un costo y un stock mínimo válidos, sin valores negativos.")
+      setEditorError("Ingresá un costo y un stock mínimo válidos, sin valores negativos.")
       return
     }
 
     if (!isNew && stock !== editing.originalStock && editing.stockAdjustmentReason.trim().length < 5) {
-      alert("Indicá un motivo de al menos 5 caracteres para ajustar el stock.")
+      setEditorError("Indicá un motivo de al menos 5 caracteres para ajustar el stock.")
       return
     }
 
@@ -470,29 +539,36 @@ function AdminProductosContent() {
     if (!isNew) {
       const id = toValidId(editing.id)
       if (!id) {
-        alert("ID invalido para actualizar.")
+        setEditorError("ID inválido para actualizar.")
         return
       }
       url = `/api/products/${id}`
       method = "PUT"
     }
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
+    setSaving(true)
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => null)
-      alert(err?.error ?? `Error ${res.status}`)
-      return
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        setEditorError(typeof err?.error === "string" ? err.error : `Error ${res.status}`)
+        return
+      }
+
+      setEditing(null)
+      setIsNew(false)
+      setReloadKey((key) => key + 1)
+      router.refresh()
+    } catch {
+      setEditorError("No se pudo guardar el producto. Revisá la conexión e intentá de nuevo.")
+    } finally {
+      setSaving(false)
     }
-
-    setEditing(null)
-    setIsNew(false)
-    setReloadKey((key) => key + 1)
-    router.refresh()
   }
 
   async function handleSoftDelete(id: number) {
@@ -857,27 +933,38 @@ function AdminProductosContent() {
       )}
 
       {canManageProducts && editing && (
-        <section className="rounded-[28px] border border-white/80 bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,.1)] backdrop-blur-2xl sm:p-6">
-          <div className="flex items-center justify-between gap-3">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/55 p-2 backdrop-blur-md sm:p-5">
+        <section
+          ref={editorDialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-busy={saving}
+          aria-labelledby="product-editor-title"
+          aria-describedby="product-editor-description"
+          className="flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_30px_110px_rgba(15,23,42,.38)] sm:max-h-[calc(100dvh-2.5rem)]"
+        >
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200/80 px-5 py-4 sm:px-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Editor</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight">{isNew ? "Nuevo producto" : "Editar producto"}</h2>
+              <h2 id="product-editor-title" className="mt-1 text-xl font-semibold tracking-tight">{isNew ? "Nuevo producto" : "Editar producto"}</h2>
+              <p id="product-editor-description" className="mt-1 text-xs text-slate-500">{isNew ? "Completá los datos y guardá el nuevo producto." : "Revisá los cambios antes de guardarlos."}</p>
             </div>
             <button
-              onClick={() => {
-                setEditing(null)
-                setIsNew(false)
-              }}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-950"
+              type="button"
+              onClick={closeEditor}
+              disabled={saving || imageUploading}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-950 disabled:opacity-50"
               aria-label="Cerrar"
             >
               <X className="h-4 w-4" />
             </button>
-          </div>
+          </header>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          <fieldset disabled={saving} className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Field label="Nombre">
               <input
+                ref={editorNameRef}
                 className={editorControlClass}
                 placeholder="Ej: Radiador Toyota Corolla"
                 value={editing.name}
@@ -1064,27 +1151,43 @@ function AdminProductosContent() {
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
               />
             </div>
+          </fieldset>
           </div>
 
-          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <footer className="shrink-0 border-t border-slate-200/80 bg-white/95 px-5 py-4 sm:px-6">
+          {editorError && <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700" role="alert">{editorError}</p>}
+          {confirmDiscard ? (
+            <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between" role="alert">
+              <p className="text-sm font-medium text-amber-950">Hay cambios sin guardar. ¿Querés descartarlos?</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button type="button" onClick={() => setConfirmDiscard(false)} className="h-10 rounded-full border border-amber-200 bg-white px-4 text-sm font-semibold text-amber-950">Seguir editando</button>
+                <button type="button" onClick={discardEditor} className="h-10 rounded-full bg-amber-900 px-4 text-sm font-semibold text-white">Descartar cambios</button>
+              </div>
+            </div>
+          ) : (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <button
-              onClick={handleSave}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(15,23,42,.18)] transition hover:bg-slate-800"
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={saving || imageUploading}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(15,23,42,.18)] transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Save className="h-4 w-4" />
-              Guardar
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {saving ? "Guardando…" : isNew ? "Crear producto" : "Guardar cambios"}
             </button>
             <button
-              onClick={() => {
-                setEditing(null)
-                setIsNew(false)
-              }}
-              className="h-11 rounded-full border border-slate-200 bg-white px-6 text-sm font-medium transition hover:bg-slate-50"
+              type="button"
+              onClick={closeEditor}
+              disabled={saving || imageUploading}
+              className="h-11 rounded-full border border-slate-200 bg-white px-6 text-sm font-medium transition hover:bg-slate-50 disabled:opacity-50"
             >
               Cancelar
             </button>
           </div>
+          )}
+          </footer>
         </section>
+        </div>
       )}
 
       <div className="hidden overflow-hidden rounded-[28px] border border-white/80 bg-white/80 shadow-[0_18px_55px_rgba(15,23,42,.07)] backdrop-blur-2xl lg:block">

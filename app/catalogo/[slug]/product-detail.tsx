@@ -8,10 +8,10 @@ import {
   ChevronLeft,
   Minus,
   Plus,
-  MessageCircle,
   Check,
 } from "lucide-react"
 import { CartIcon3D } from "@/components/cart-icon"
+import { WhatsAppIcon } from "@/components/whatsapp-icon"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
 import { useCart } from "@/lib/cart-context"
 import { getWhatsAppUrl } from "@/lib/whatsapp"
@@ -196,7 +196,9 @@ export function ProductDetail({ product }: { product: SerializedProduct }) {
             rel="noopener noreferrer"
             className="group mt-4 inline-flex items-center gap-2 rounded-md border border-primary bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg active:translate-y-0"
           >
-            <MessageCircle className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-[#25D366] text-white shadow-sm transition-transform duration-200 group-hover:scale-110" aria-hidden="true">
+              <WhatsAppIcon className="h-4 w-4" />
+            </span>
             Consultar por WhatsApp
           </a>
         </div>

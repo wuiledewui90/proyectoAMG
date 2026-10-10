@@ -245,10 +245,10 @@ export function AdminMobileShell({
 
         <Link href="/admin" className="absolute left-1/2 -translate-x-1/2" aria-label="Ir al resumen">
           <Image
-            src="/images/documents/amg-logo-document.png"
+            src="/images/documents/amg-logo-ui.webp"
             alt="AMG Radiadores"
-            width={1768}
-            height={768}
+            width={600}
+            height={300}
             priority
             className="h-auto w-[108px] object-contain"
           />
@@ -292,7 +292,7 @@ export function AdminMobileShell({
         >
           <div className="flex items-center justify-between border-b border-white/10 px-5 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
             <span className="rounded-xl bg-white/95 px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,.18)]">
-              <Image src="/images/documents/amg-logo-document.png" alt="AMG Radiadores" width={1768} height={768} className="h-auto w-32 object-contain" priority />
+              <Image src="/images/documents/amg-logo-ui.webp" alt="AMG Radiadores" width={600} height={300} className="h-auto w-32 object-contain" priority />
             </span>
             <button type="button" onClick={() => setDrawerOpen(false)} className="admin-mobile-tap grid h-10 w-10 place-items-center rounded-full bg-white/10" aria-label="Cerrar menú">
               <X className="h-5 w-5" />

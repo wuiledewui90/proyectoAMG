@@ -30,7 +30,7 @@ export function SiteFooter() {
           <div>
             <Link href="/" className="inline-flex" aria-label="Radiadores AMG, inicio">
               <Image
-                src="/images/logo-navbar-amg.png"
+                src="/images/logo-navbar-amg.webp"
                 alt="Radiadores AMG"
                 width={2172}
                 height={724}
@@ -52,7 +52,7 @@ export function SiteFooter() {
             rel="noopener noreferrer"
             className="group inline-flex min-h-10 w-fit items-center gap-2 border-b-2 border-primary text-xs font-extrabold uppercase tracking-[0.1em] transition hover:text-primary"
           >
-            Hablar con el taller
+            Comunicate con nosotros
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </a>
         </div>

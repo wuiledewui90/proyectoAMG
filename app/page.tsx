@@ -1,11 +1,11 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, MapPin, Package } from "lucide-react"
+import { DesktopHeroVideo } from "@/components/desktop-hero-video"
 import { HomeSequence } from "@/components/home-sequence"
 import { getPublicFeaturedProducts } from "@/lib/catalog/public-products"
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const revalidate = 300
 
 export default async function HomePage() {
   const products = await getPublicFeaturedProducts()
@@ -14,21 +14,10 @@ export default async function HomePage() {
     <>
       <HomeSequence>
       <section className="home-hero-enter relative min-h-svh overflow-hidden bg-[#060708] text-white">
-        <video
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-100 motion-reduce:hidden"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          poster="/placeholder.svg"
-          aria-hidden="true"
-        >
-          <source src="/videos/amgvideo-web.mp4" type="video/mp4" />
-        </video>
+        <DesktopHeroVideo />
 
         <div
-          className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,8,.7)_0%,rgba(4,6,8,.5)_34%,rgba(4,6,8,.08)_63%,rgba(4,6,8,.18)_100%)]"
+          className="absolute inset-0 hidden bg-[linear-gradient(90deg,rgba(4,6,8,.7)_0%,rgba(4,6,8,.5)_34%,rgba(4,6,8,.08)_63%,rgba(4,6,8,.18)_100%)] md:block"
           aria-hidden="true"
         />
         <div
@@ -40,9 +29,9 @@ export default async function HomePage() {
           aria-hidden="true"
         />
 
-        <div className="relative z-10 mx-auto w-full max-w-[90rem] px-5 pb-10 pt-24 sm:px-8 sm:pb-12 sm:pt-28 lg:px-12 lg:pb-8 lg:pt-24 xl:px-16">
-          <div className="max-w-[42rem]">
-            <p className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/65 sm:text-xs">
+        <div className="relative z-10 mx-auto w-full max-w-[90rem] px-5 pb-10 pt-[calc(34px+56.25vw)] sm:px-8 sm:pb-12 md:pt-28 lg:px-12 lg:pb-8 lg:pt-24 xl:px-16">
+          <div className="max-w-[42rem] translate-y-[calc(60px-56.25vw)] md:translate-y-0">
+            <p className="hero-message-final mb-3 text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/65 sm:text-xs">
               Radiadores y refrigeración
             </p>
             <div className="grid">
@@ -50,6 +39,9 @@ export default async function HomePage() {
                 aria-hidden="true"
                 className="hero-message-intro col-start-1 row-start-1 font-display text-balance font-black uppercase leading-[0.9] tracking-[-0.05em]"
               >
+                <span className="mb-4 block font-sans text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/65 sm:text-xs">
+                  Radiadores y refrigeración
+                </span>
                 <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] text-white">
                   Cuidá tu motor
                 </span>
@@ -57,35 +49,34 @@ export default async function HomePage() {
                   antes de que
                 </span>
                 <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] text-[#b9c1c7]">
-                  sea tarde.
+                  sea <span className="hero-intro-accent">tarde.</span>
                 </span>
               </p>
 
-              <h1 className="hero-message-final col-start-1 row-start-1 font-display text-balance font-black uppercase leading-[0.9] tracking-[-0.05em]">
-                <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] text-white">
+              <h1 className="hero-message-final col-start-1 row-start-1 font-display text-balance font-black uppercase leading-[0.9] tracking-[-0.05em] text-white">
+                <span className="block text-2xl text-white md:text-[clamp(2.15rem,4.2vw,4.2rem)]">
                   El repuesto
                 </span>
-                <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] text-[#b9c1c7]">
+                <span className="block text-2xl text-white md:text-[clamp(2.15rem,4.2vw,4.2rem)]">
                   que tu vehículo
                 </span>
-                <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] text-[#b9c1c7]">
+                <span className="block text-2xl text-white md:text-[clamp(2.15rem,4.2vw,4.2rem)]">
                   necesita.
                 </span>
               </h1>
             </div>
 
-            <p className="hero-reveal hero-after-message-copy mt-4 max-w-xl border-l border-[#b42232]/80 pl-4 text-sm leading-relaxed text-white/72 sm:pl-5 sm:text-base">
+            <p className="hero-reveal hero-after-message-copy mt-4 max-w-xl text-sm leading-relaxed text-white/72 sm:text-base">
               Venta, diagnóstico y reparación de radiadores para autos,
-              camionetas y maquinaria. Soluciones confiables para que sigas en
-              movimiento.
+              camionetas y maquinaria.
             </p>
 
             <div className="hero-reveal hero-after-message-actions mt-5 flex flex-col gap-2.5 min-[430px]:flex-row">
               <Link
-                href="/servicios"
+                href="/catalogo"
                 className="group inline-flex min-h-10 items-center justify-center gap-2.5 rounded-xl bg-[#b42232] px-5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-white transition duration-300 hover:bg-[#c3c8cc] hover:text-[#08090a]"
               >
-                Nuestros servicios
+                Catálogo
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <a
@@ -101,29 +92,26 @@ export default async function HomePage() {
           </div>
 
           {products.length > 0 && (
-            <section id="destacados" className="mt-7 border-t border-white/15 pt-4 sm:mt-8 sm:pt-5">
-              <div className="hero-reveal hero-featured-heading mb-3 flex items-center justify-between gap-4">
+            <section
+              id="destacados"
+              className="mt-4 translate-y-[calc(60px-56.25vw)] pt-0 sm:mt-8 sm:pt-5 md:translate-y-0"
+            >
+              <div className="hero-reveal hero-featured-heading mb-3">
                 <h2 className="font-display text-base font-black uppercase tracking-[-0.02em] text-white sm:text-lg">
                   Productos destacados
                 </h2>
-                <Link
-                  href="/catalogo"
-                  className="catalog-link-pulse group inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] transition hover:text-white"
-                >
-                  Ver catálogo
-                  <ArrowRight className="h-3.5 w-3.5 text-primary transition-transform group-hover:translate-x-1" />
-                </Link>
               </div>
 
-              <div className="-mx-5 grid touch-auto snap-x snap-mandatory grid-flow-col auto-cols-[66%] gap-2 overflow-x-auto overscroll-x-contain px-5 pb-2 [scrollbar-width:none] sm:-mx-8 sm:auto-cols-[37%] sm:gap-2.5 sm:px-8 lg:mx-0 lg:snap-none lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
+              <div className="-mx-5 grid touch-auto snap-x snap-mandatory grid-flow-col auto-cols-[40%] gap-2 overflow-x-auto overscroll-x-contain px-5 pb-2 [scrollbar-width:none] sm:-mx-8 sm:auto-cols-[23%] sm:gap-2.5 sm:px-8 lg:mx-0 lg:snap-none lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
                 {products.map((product, index) => (
                   <Link
                     key={product.id}
                     href={`/catalogo/${product.slug}`}
-                    className="hero-product-card group snap-start overflow-hidden border border-white/15 bg-[#071019]/75 p-2 backdrop-blur-sm transition-colors duration-500 hover:border-primary/70 hover:bg-[#0d1824] sm:p-2.5"
-                    style={{ animationDelay: `${4900 + index * 500}ms` }}
+                    className="hero-product-card featured-product-card group relative snap-start overflow-hidden rounded-[18px] border border-[#335b88]/55 p-2 transition duration-500 hover:-translate-y-1 hover:border-[#5f9fe5]/80 sm:p-2.5"
+                    style={{ animationDelay: `${7400 + index * 500}ms` }}
                   >
-                    <div className="relative aspect-video overflow-hidden bg-white/5">
+                    <span className="featured-product-corner" aria-hidden="true" />
+                    <div className="featured-product-image relative z-10 aspect-video overflow-hidden rounded-[12px] border border-white/10 bg-[#071426]">
                       {product.images[0] ? (
                         <Image
                           src={product.thumbnailUrl ?? product.images[0]}
@@ -135,14 +123,22 @@ export default async function HomePage() {
                       ) : (
                         <Package className="absolute inset-0 m-auto h-7 w-7 text-white/35" />
                       )}
+                      <span className="absolute inset-0 bg-[linear-gradient(180deg,transparent_42%,rgba(2,9,20,.72)_100%)]" aria-hidden="true" />
                     </div>
-                    <p className="mt-2 truncate text-[8px] font-bold uppercase tracking-[0.13em] text-primary sm:text-[9px]">
-                      {product.category}
-                    </p>
-                    <h3 className="mt-1 line-clamp-2 min-h-[2rem] font-display text-[11px] font-black uppercase leading-tight text-white sm:text-xs">
-                      {product.name}
-                    </h3>
-                    <p className="mt-1.5 text-[10px] font-bold text-white/75 sm:text-[11px]">Ver producto</p>
+                    <div className="relative z-10 px-0.5 pb-0.5 pt-2">
+                      <p className="truncate text-[7px] font-black uppercase tracking-[0.16em] text-[#69a8eb] sm:text-[8px]">
+                        {product.category}
+                      </p>
+                      <h3 className="mt-1 line-clamp-2 min-h-[2rem] font-display text-[10px] font-black uppercase leading-tight text-white sm:text-[11px]">
+                        {product.name}
+                      </h3>
+                      <span className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-[8px] font-extrabold uppercase tracking-[0.12em] text-white/65 sm:text-[9px]">
+                        Explorar
+                        <span className="featured-product-arrow grid h-6 w-6 place-items-center rounded-full border border-[#4b82bc]/60 bg-[#0a2848] text-[#8fc5ff] transition duration-300 group-hover:border-[#d32739]/80 group-hover:bg-[#a7192a] group-hover:text-white">
+                          <ArrowRight className="h-3 w-3" />
+                        </span>
+                      </span>
+                    </div>
                   </Link>
                 ))}
               </div>

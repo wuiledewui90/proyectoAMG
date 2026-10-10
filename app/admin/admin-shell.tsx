@@ -11,6 +11,7 @@ import { AdminMobileShell } from "@/components/admin-mobile-shell"
 import { AdminNavIcon, adminLinkGroups, mechanicLinkGroups } from "@/components/admin-navigation"
 import { MobileWelcomeOverlay } from "@/components/mobile-welcome-overlay"
 import { AdminQuickAccess } from "@/components/admin-quick-access"
+import { AdminOfflineSupport, clearAdminOfflineDrafts } from "@/components/admin-offline-support"
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -36,8 +37,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" })
-    router.replace("/admin/login")
+    try {
+      const response = await fetch("/api/admin/logout", { method: "POST" })
+      if (!response.ok) return
+      clearAdminOfflineDrafts()
+      router.replace("/admin/login")
+    } catch {
+      // El aviso global explica que cerrar sesión necesita conexión.
+    }
   }
 
   function isActive(href: string) {
@@ -118,6 +125,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="admin-panel min-h-screen bg-background print:min-h-0 print:bg-white">
       <AdminAppSetup />
+      <AdminOfflineSupport />
       <MobileWelcomeOverlay />
       <div className="admin-authenticated-content">
         <AdminMobileShell
@@ -130,10 +138,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r bg-card p-3 print:hidden lg:flex lg:flex-col">
           <div className="mb-4">
             <Image
-              src="/images/documents/amg-logo-document.png"
+              src="/images/documents/amg-logo-ui.webp"
               alt="AMG Radiadores"
-              width={1768}
-              height={768}
+              width={600}
+              height={300}
               className="h-auto w-36 max-w-full object-contain object-left"
               priority
             />

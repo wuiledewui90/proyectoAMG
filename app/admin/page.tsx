@@ -13,7 +13,10 @@ import {
   Truck,
   Wallet,
 } from "lucide-react"
-import { InventoryCategoryChart, RevenueTrendChart } from "@/components/admin-dashboard-charts"
+import {
+  AdminDesktopInventoryChart,
+  AdminDesktopRevenueChart,
+} from "@/components/admin-desktop-charts"
 import { AdminMobileExpandableText } from "@/components/admin-mobile-expandable-text"
 import { prisma } from "@/lib/db/prisma"
 import { formatPrice } from "@/lib/data"
@@ -257,7 +260,7 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <RevenueTrendChart data={trendData.map(({ label, ventas, gastos }) => ({ label, ventas, gastos }))} />
+            <AdminDesktopRevenueChart data={trendData.map(({ label, ventas, gastos }) => ({ label, ventas, gastos }))} />
           </div>
         </section>
 
@@ -267,7 +270,7 @@ export default async function AdminDashboardPage() {
           <p className="mt-1 text-sm text-slate-500">Valor disponible en productos activos.</p>
           <div className="mt-4">
             {categoryChartData.length > 0 ? (
-              <InventoryCategoryChart data={categoryChartData} total={formatPrice(inventoryValue)} />
+              <AdminDesktopInventoryChart data={categoryChartData} total={formatPrice(inventoryValue)} />
             ) : (
               <div className="flex h-64 items-center justify-center text-sm text-slate-400">Sin inventario disponible</div>
             )}

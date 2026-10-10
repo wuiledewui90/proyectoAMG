@@ -43,18 +43,11 @@ export default function WorkshopPage() {
   const [customerForm,setCustomerForm] = useState(emptyCustomer)
 
   async function load() {
-    const [ordersResponse,customersResponse,usersResponse,productsResponse] = await Promise.all([fetch("/api/admin/work-orders",{cache:"no-store"}),fetch("/api/admin/customers",{cache:"no-store"}),fetch("/api/admin/users",{cache:"no-store"}),fetch("/api/products?limit=100&page=1",{cache:"no-store"})])
+    const [ordersResponse,customersResponse,usersResponse,productsResponse] = await Promise.all([fetch("/api/admin/work-orders",{cache:"no-store"}),fetch("/api/admin/customers",{cache:"no-store"}),fetch("/api/admin/users",{cache:"no-store"}),fetch("/api/admin/product-picker",{cache:"no-store"})])
     if (ordersResponse.ok) setOrders(await ordersResponse.json())
     if (customersResponse.ok) setCustomers(await customersResponse.json())
     if (usersResponse.ok) setUsers(await usersResponse.json())
-    if (productsResponse.ok) {
-      const firstPage = await productsResponse.json()
-      if (Array.isArray(firstPage)) setProducts(firstPage)
-      else {
-        const extraPages = firstPage.totalPages > 1 ? await Promise.all(Array.from({length:firstPage.totalPages-1},(_,index)=>fetch(`/api/products?limit=100&page=${index+2}`,{cache:"no-store"}).then((response)=>response.ok?response.json():{items:[]}))) : []
-        setProducts([...(firstPage.items||[]),...extraPages.flatMap((page)=>page.items||[])])
-      }
-    }
+    if (productsResponse.ok) setProducts(await productsResponse.json())
   }
 
   useEffect(()=>{ void load() },[])

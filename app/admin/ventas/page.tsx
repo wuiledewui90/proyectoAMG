@@ -30,11 +30,6 @@ type Product = {
   stockCategory: string | null
 }
 
-type ProductPage = {
-  items: Product[]
-  totalPages: number
-}
-
 type Customer = {
   id: number
   name: string
@@ -127,29 +122,8 @@ function catalogCategory(product: Product) {
 }
 
 async function loadAllActiveProducts() {
-  const pageSize = 100
-  const firstResponse = await fetch(
-    `/api/products?isActive=true&limit=${pageSize}&page=1`,
-    { cache: "no-store" }
-  )
-  if (!firstResponse.ok) return null
-
-  const firstPage = (await firstResponse.json()) as ProductPage
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, async (_, index) => {
-      const response = await fetch(
-        `/api/products?isActive=true&limit=${pageSize}&page=${index + 2}`,
-        { cache: "no-store" }
-      )
-      return response.ok ? ((await response.json()) as ProductPage) : null
-    })
-  )
-
-  if (remainingPages.some((page) => page === null)) return null
-  return [
-    ...firstPage.items,
-    ...remainingPages.flatMap((page) => page?.items || []),
-  ]
+  const response = await fetch("/api/admin/product-picker", { cache: "no-store" })
+  return response.ok ? ((await response.json()) as Product[]) : null
 }
 
 export default function SalesPage() {
@@ -964,7 +938,7 @@ export default function SalesPage() {
                   }}
                   className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground lg:hidden"
                 >
-                  + Agregar ítem
+                  Buscar producto
                 </button>
               </div>
             </div>

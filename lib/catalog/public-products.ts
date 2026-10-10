@@ -1,6 +1,7 @@
 import "server-only"
 
 import { cache } from "react"
+import { unstable_cache } from "next/cache"
 import {
   getCatalogProducts,
   getFeaturedProducts,
@@ -29,9 +30,16 @@ export const getPublicCatalogProducts = cache(async () => {
   return (await preferSupabaseProductImages(serializeProducts(products))).map(publicProduct)
 })
 
-export async function getPublicFeaturedProducts(limit = 4) {
+const getCachedPublicFeaturedProducts = unstable_cache(async (limit: number) => {
   const products = await getFeaturedProducts(limit)
   return (await preferSupabaseProductImages(serializeProducts(products))).map(publicProduct)
+}, ["public-featured-products-v1"], {
+  revalidate: 300,
+  tags: ["public-products"],
+})
+
+export async function getPublicFeaturedProducts(limit = 4) {
+  return getCachedPublicFeaturedProducts(limit)
 }
 
 export async function getPublicProductBySlug(slug: string) {
