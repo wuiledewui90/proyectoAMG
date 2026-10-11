@@ -786,11 +786,11 @@ export default function SalesPage() {
                         type="button"
                         onClick={() => add(product)}
                         disabled={!isService(product) && !product.stock}
-                        className="rounded-lg border p-4 text-left transition hover:border-primary disabled:opacity-40"
+                        className="w-full min-w-0 overflow-hidden rounded-lg border p-4 text-left transition hover:border-primary disabled:opacity-40"
                       >
-                        <div className="flex justify-between gap-3">
-                          <span className="font-semibold">{product.name}</span>
-                          <span className="font-bold text-primary">
+                        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                          <span className="min-w-0 break-words font-semibold leading-snug [overflow-wrap:anywhere]">{product.name}</span>
+                          <span className="whitespace-nowrap font-bold text-primary">
                             {formatPrice(product.price)}
                           </span>
                         </div>
@@ -1483,9 +1483,9 @@ export default function SalesPage() {
                       </button>
                       {openCatalogCategories[category] && <div className="mt-3 space-y-2">
                           {items.map((product) => (
-                          <button key={product.id} type="button" onClick={() => addFromMobileCatalog(product)} disabled={!isService(product) && !product.stock} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/55 p-4 text-left shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-xl transition active:scale-[.99] disabled:opacity-40">
-                              <span className="min-w-0"><strong className="block text-sm leading-snug">{product.name}</strong><small className="mt-1 block text-xs text-muted-foreground">{isService(product) ? "Servicio" : `Stock ${product.stock}`}</small></span>
-                              <strong className="shrink-0 text-sm text-primary">{formatPrice(product.price)}</strong>
+                          <button key={product.id} type="button" onClick={() => addFromMobileCatalog(product)} disabled={!isService(product) && !product.stock} className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 overflow-hidden rounded-2xl border border-white/70 bg-white/55 p-4 text-left shadow-[0_8px_24px_rgba(15,23,42,.08)] backdrop-blur-xl transition active:scale-[.99] disabled:opacity-40">
+                              <span className="min-w-0"><strong className="block break-words text-sm leading-snug [overflow-wrap:anywhere]">{product.name}</strong><small className="mt-1 block text-xs text-muted-foreground">{isService(product) ? "Servicio" : `Stock ${product.stock}`}</small></span>
+                              <strong className="whitespace-nowrap text-sm text-primary">{formatPrice(product.price)}</strong>
                             </button>
                           ))}
                         </div>}

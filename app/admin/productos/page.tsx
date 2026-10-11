@@ -1284,13 +1284,15 @@ function AdminProductosContent() {
             <div className="flex gap-3">
               <ProductImage product={product} size="md" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <AdminMobileExpandableText
-                    value={product.name}
-                    label="Nombre del producto"
-                    lines={2}
-                    className="text-sm font-semibold leading-snug text-slate-900"
-                  />
+                <div className="flex min-w-0 items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <AdminMobileExpandableText
+                      value={product.name}
+                      label="Nombre del producto"
+                      lines={2}
+                      className="break-words text-sm font-semibold leading-snug text-slate-900 [overflow-wrap:anywhere]"
+                    />
+                  </div>
                   {product.isFeatured && (
                     <Star
                       className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500"
@@ -1307,7 +1309,7 @@ function AdminProductosContent() {
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Precio</p>
-                    <p className="font-semibold">{formatPrice(product.price)}</p>
+                    <p className="break-words font-semibold [overflow-wrap:anywhere]">{formatPrice(product.price)}</p>
                     {canManageProducts && <p className={`text-xs ${Number(product.cost) > 0 ? "text-slate-500" : "font-semibold text-amber-700"}`}>
                       {Number(product.cost) > 0 ? `Costo ${formatPrice(Number(product.cost))}` : isServiceProduct(product) ? "Servicio" : "Costo pendiente"}
                     </p>}

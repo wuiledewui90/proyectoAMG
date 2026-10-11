@@ -222,9 +222,9 @@ export default function WorkshopPage() {
                 <span className="grid h-7 w-7 place-items-center rounded-full border border-slate-200 text-lg leading-none text-slate-500" aria-hidden="true">{expanded?"−":"+"}</span>
               </button>
               {expanded&&<div className="grid gap-2 border-t border-slate-100 p-3 sm:grid-cols-2">
-                {items.map((product)=><button key={product.id} type="button" disabled={product.stock<=0} onClick={()=>chooseProduct(product)} className="flex min-h-20 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-45">
-                  <span className="min-w-0"><strong className="block text-sm leading-snug text-slate-900">{product.name}</strong><small className="mt-1 block text-xs text-slate-500">{product.sku?`${product.sku} · `:""}{product.stock>0?`Stock ${product.stock}`:"Sin stock"}</small></span>
-                  <strong className="shrink-0 text-sm text-blue-700">{formatPrice(product.price)}</strong>
+                {items.map((product)=><button key={product.id} type="button" disabled={product.stock<=0} onClick={()=>chooseProduct(product)} className="grid min-h-20 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-45">
+                  <span className="min-w-0"><strong className="block break-words text-sm leading-snug text-slate-900 [overflow-wrap:anywhere]">{product.name}</strong><small className="mt-1 block break-words text-xs text-slate-500 [overflow-wrap:anywhere]">{product.sku?`${product.sku} · `:""}{product.stock>0?`Stock ${product.stock}`:"Sin stock"}</small></span>
+                  <strong className="whitespace-nowrap text-sm text-blue-700">{formatPrice(product.price)}</strong>
                 </button>)}
               </div>}
             </section>
