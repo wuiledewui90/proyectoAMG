@@ -42,25 +42,25 @@ export default async function HomePage() {
                 <span className="mb-4 block font-sans text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/65 sm:text-xs">
                   Radiadores y refrigeración
                 </span>
-                <span className="block text-[clamp(1.29rem,2.52vw,2.52rem)] leading-[1.08] text-white">
+                <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] leading-[1.08] text-white">
                   Cuidá tu motor
                 </span>
-                <span className="block text-[clamp(1.29rem,2.52vw,2.52rem)] leading-[1.08] text-[#b9c1c7]">
+                <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] leading-[1.08] text-[#b9c1c7]">
                   antes de que
                 </span>
-                <span className="block text-[clamp(1.29rem,2.52vw,2.52rem)] leading-[1.08] text-[#b9c1c7]">
+                <span className="block text-[clamp(2.15rem,4.2vw,4.2rem)] leading-[1.08] text-[#b9c1c7]">
                   sea <span className="hero-intro-accent">tarde.</span>
                 </span>
               </p>
 
               <h1 className="hero-message-final col-start-1 row-start-1 flex flex-col gap-1.5 font-display text-balance font-black uppercase leading-none tracking-[-0.045em] text-white">
-                <span className="block text-[0.9rem] leading-[1.08] text-white md:text-[clamp(1.29rem,2.52vw,2.52rem)]">
+                <span className="block text-2xl leading-[1.08] text-white md:text-[clamp(2.15rem,4.2vw,4.2rem)]">
                   El repuesto
                 </span>
-                <span className="block text-[0.9rem] leading-[1.08] text-white md:text-[clamp(1.29rem,2.52vw,2.52rem)]">
+                <span className="block text-2xl leading-[1.08] text-white md:text-[clamp(2.15rem,4.2vw,4.2rem)]">
                   que tu vehículo
                 </span>
-                <span className="block text-[0.9rem] leading-[1.08] text-white md:text-[clamp(1.29rem,2.52vw,2.52rem)]">
+                <span className="block text-2xl leading-[1.08] text-white md:text-[clamp(2.15rem,4.2vw,4.2rem)]">
                   necesita.
                 </span>
               </h1>

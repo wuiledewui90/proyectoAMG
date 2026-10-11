@@ -47,7 +47,7 @@ export function ContactForm() {
       <div className="flex min-h-[28rem] flex-col items-start justify-center border-l-4 border-primary bg-muted/55 p-8 sm:p-12">
         <div className="flex h-14 w-14 items-center justify-center bg-primary text-primary-foreground"><Check className="h-7 w-7" /></div>
         <p className="mt-7 text-xs font-bold uppercase tracking-[0.22em] text-primary">Consulta recibida</p>
-        <h2 className="font-display mt-2 text-4xl font-black uppercase tracking-[-0.03em] text-foreground">Mensaje enviado.</h2>
+        <h2 className="font-display mt-2 text-[1.35rem] font-black uppercase tracking-[-0.03em] text-foreground">Mensaje enviado.</h2>
         <p className="mt-4 max-w-md leading-7 text-muted-foreground">Gracias por contactarnos. Te responderemos a la brevedad.</p>
       </div>
     )
@@ -57,7 +57,7 @@ export function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="border-b border-border pb-7">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Solicitar asesoramiento</p>
-        <h2 className="font-display mt-3 text-3xl font-black uppercase tracking-[-0.025em] text-foreground sm:text-4xl">Dejanos tu consulta</h2>
+        <h2 className="font-display mt-3 text-lg font-black uppercase tracking-[-0.025em] text-foreground sm:text-[1.35rem]">Dejanos tu consulta</h2>
       </div>
 
       <div className="sr-only" aria-hidden="true">

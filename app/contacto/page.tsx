@@ -44,7 +44,7 @@ export default function ContactoPage() {
           <Reveal className="metal-surface relative overflow-hidden p-7 text-white sm:p-10 lg:col-span-5" delay={140}>
             <div className="absolute right-0 top-0 h-1 w-28 bg-primary" />
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Datos directos</p>
-            <h2 className="font-display mt-4 text-3xl font-black uppercase tracking-[-0.025em] sm:text-4xl">Estamos para ayudarte.</h2>
+            <h2 className="font-display mt-4 text-lg font-black uppercase tracking-[-0.025em] sm:text-[1.35rem]">Estamos para ayudarte.</h2>
 
             <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
               {contactItems.map((item) => (

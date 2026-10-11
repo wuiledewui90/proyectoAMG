@@ -55,7 +55,7 @@ export default function SobreNosotrosPage() {
         <div className="mx-auto grid max-w-[90rem] gap-14 px-5 sm:px-8 lg:grid-cols-12 lg:px-12 xl:px-16">
           <Reveal className="lg:col-span-5">
             <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Experiencia aplicada</p>
-            <h2 className="font-display mt-4 text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] sm:text-5xl">
+            <h2 className="font-display mt-4 text-[1.35rem] font-black uppercase leading-[1.05] tracking-[-0.04em] sm:text-[1.8rem]">
               Conocemos el calor. Sabemos cómo controlarlo.
             </h2>
           </Reveal>
@@ -83,7 +83,7 @@ export default function SobreNosotrosPage() {
           {metrics.map((item, index) => (
             <Reveal key={item.title} delay={index * 90} className="metal-surface p-7 sm:p-8">
               <item.icon className="h-5 w-5 text-primary" />
-              <p className="font-display mt-8 text-2xl font-black uppercase tracking-[-0.025em]">{item.title}</p>
+              <p className="font-display mt-8 text-[0.9rem] font-black uppercase tracking-[-0.025em]">{item.title}</p>
               <p className="mt-2 text-sm text-white/52">{item.desc}</p>
             </Reveal>
           ))}
@@ -94,13 +94,13 @@ export default function SobreNosotrosPage() {
         <div className="mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12 xl:px-16">
           <Reveal className="mb-12 border-b border-foreground/15 pb-7">
             <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Por qué elegirnos</p>
-            <h2 className="font-display mt-4 text-4xl font-black uppercase tracking-[-0.04em] sm:text-5xl">Confianza que se construye trabajando.</h2>
+            <h2 className="font-display mt-4 text-[1.35rem] font-black uppercase leading-[1.05] tracking-[-0.04em] sm:text-[1.8rem]">Confianza que se construye trabajando.</h2>
           </Reveal>
           <div className="grid gap-px bg-foreground/12 md:grid-cols-3">
             {reasons.map((item, index) => (
               <Reveal key={item.title} delay={index * 100} className="bg-white p-7 sm:p-9">
                 <span className="font-display text-4xl font-black text-primary/22">0{index + 1}</span>
-                <h3 className="font-display mt-5 text-xl font-black uppercase">{item.title}</h3>
+                <h3 className="font-display mt-5 text-xs font-black uppercase">{item.title}</h3>
                 <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
               </Reveal>
             ))}

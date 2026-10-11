@@ -92,7 +92,7 @@ export default function ServiciosPage() {
               className="relative border-b border-border px-5 py-9 last:border-b-0 sm:border-b-0 sm:border-r sm:px-8 sm:last:border-r-0 lg:px-12"
             >
               <span className="font-display text-4xl font-black text-primary/22">{step.number}</span>
-              <h2 className="mt-2 font-display text-xl font-black uppercase tracking-[-0.02em] text-foreground">
+              <h2 className="mt-2 font-display text-xs font-black uppercase tracking-[-0.02em] text-foreground">
                 {step.title}
               </h2>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -110,7 +110,7 @@ export default function ServiciosPage() {
               <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.22em] text-primary">
                 Capacidades del taller
               </p>
-              <h2 className="font-display max-w-3xl text-4xl font-black uppercase leading-[0.95] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
+              <h2 className="font-display max-w-3xl text-[1.35rem] font-black uppercase leading-[1.05] tracking-[-0.04em] text-foreground sm:text-[1.8rem] lg:text-4xl">
                 Servicio técnico sin improvisaciones.
               </h2>
             </div>
@@ -138,7 +138,7 @@ export default function ServiciosPage() {
                       {String(index + 1).padStart(2, "0")}
                     </span>
                   </div>
-                  <h3 className="mt-9 max-w-md font-display text-2xl font-black uppercase leading-tight tracking-[-0.025em] text-foreground sm:text-3xl">
+                  <h3 className="mt-9 max-w-md font-display text-[0.9rem] font-black uppercase leading-tight tracking-[-0.025em] text-foreground sm:text-lg">
                     {service.title}
                   </h3>
                   <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
@@ -171,7 +171,7 @@ export default function ServiciosPage() {
             <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-white/70">
               ¿Tu vehículo levanta temperatura?
             </p>
-            <h2 className="font-display mt-3 max-w-3xl text-3xl font-black uppercase leading-tight tracking-[-0.035em] sm:text-5xl">
+            <h2 className="font-display mt-3 max-w-3xl text-lg font-black uppercase leading-tight tracking-[-0.035em] sm:text-[1.8rem]">
               No esperes a que el motor se detenga.
             </h2>
           </div>
