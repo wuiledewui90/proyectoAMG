@@ -17,6 +17,21 @@ import {
 } from "@/lib/products/product-supabase-images"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
 
+export type CatalogProductCard = {
+  id: number
+  slug: string
+  name: string
+  brand: string | null
+  brands: string | null
+  model: string | null
+  compatibility: string | null
+  category: string | null
+  price: number
+  stock: number
+  isActive: boolean
+  image: string
+}
+
 function publicProduct(product: SerializedProduct): SerializedProduct {
   // El costo y la ubicación del depósito son datos internos del ERP. Los
   // productos públicos se serializan en HTML y deben excluir esos valores.
@@ -29,6 +44,32 @@ export const getPublicCatalogProducts = cache(async () => {
   const products = await getCatalogProducts()
   return (await preferSupabaseProductImages(serializeProducts(products))).map(publicProduct)
 })
+
+const getCachedPublicCatalogCards = unstable_cache(async (): Promise<CatalogProductCard[]> => {
+  const products = await getPublicCatalogProducts()
+
+  return products.map((product) => ({
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    brand: product.brand,
+    brands: product.brands,
+    model: product.model,
+    compatibility: product.compatibility,
+    category: product.category,
+    price: product.price,
+    stock: product.stock,
+    isActive: product.isActive,
+    image: product.thumbnailUrl ?? product.images?.[0] ?? "/placeholder.svg",
+  }))
+}, ["public-catalog-cards-v1"], {
+  revalidate: 60,
+  tags: ["public-products"],
+})
+
+export async function getPublicCatalogCards() {
+  return getCachedPublicCatalogCards()
+}
 
 const getCachedPublicFeaturedProducts = unstable_cache(async (limit: number) => {
   const products = await getFeaturedProducts(limit)

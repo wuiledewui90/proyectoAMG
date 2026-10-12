@@ -6,7 +6,7 @@ import Link from "next/link"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { ArrowRight, Check, Search, SlidersHorizontal, X } from "lucide-react"
 import { Reveal } from "@/components/reveal"
-import type { SerializedProduct } from "@/lib/products/product-serialize"
+import type { CatalogProductCard } from "@/lib/catalog/public-products"
 
 // Si querés mantener el formatPrice de lib/data, lo podés importar.
 // Pero para “desacoplar” del hardcode, lo hago local:
@@ -15,13 +15,13 @@ function formatPriceARS(value: number) {
 }
 
 type Props = {
-  products: SerializedProduct[]
+  products: CatalogProductCard[]
 }
 
 type FilterMode = "brand" | "category"
 type ProductFilter = { mode: FilterMode; value: string }
 
-function carBrands(product: SerializedProduct) {
+function carBrands(product: CatalogProductCard) {
   return (product.brands?.trim() || product.brand?.trim() || "")
     .split(/[,;]+/)
     .map((brand) => brand.trim())
@@ -40,11 +40,13 @@ function uniqueOptions(values: string[]) {
 }
 
 export function CatalogClient({ products }: Props) {
+  const pageSize = 24
   const [search, setSearch] = useState("")
   const [filterOpen, setFilterOpen] = useState(false)
   const [appliedFilter, setAppliedFilter] = useState<ProductFilter | null>(null)
   const [draftMode, setDraftMode] = useState<FilterMode>("brand")
   const [draftValue, setDraftValue] = useState("")
+  const [visibleCount, setVisibleCount] = useState(pageSize)
 
   const { brands, categories } = useMemo(() => {
     const activeProducts = products.filter((product) => product.isActive)
@@ -77,6 +79,8 @@ export function CatalogClient({ products }: Props) {
           : product.category?.trim().toLocaleLowerCase("es") === selectedValue
       })
   }, [products, search, appliedFilter])
+
+  const visibleProducts = filtered.slice(0, visibleCount)
 
   const hasSearch = Boolean(search.trim())
   const hasProducts = products.some((product) => product.isActive)
@@ -118,14 +122,20 @@ export function CatalogClient({ products }: Props) {
               type="text"
               placeholder="Buscar por nombre, marca, modelo..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setVisibleCount(pageSize)
+              }}
               className="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-11 text-sm text-slate-900 shadow-inner shadow-slate-950/[.02] placeholder:text-slate-400 focus:border-[#8ba8c7] focus:outline-none focus:ring-4 focus:ring-[#315b86]/10"
               aria-label="Buscar productos"
             />
             {hasSearch && (
               <button
                 type="button"
-                onClick={() => setSearch("")}
+                onClick={() => {
+                  setSearch("")
+                  setVisibleCount(pageSize)
+                }}
                 className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
                 aria-label="Limpiar búsqueda"
               >
@@ -155,7 +165,10 @@ export function CatalogClient({ products }: Props) {
         {appliedFilter && (
           <button
             type="button"
-            onClick={() => setAppliedFilter(null)}
+            onClick={() => {
+              setAppliedFilter(null)
+              setVisibleCount(pageSize)
+            }}
             className="mt-3 inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-[#9ec5ef] bg-white/85 px-3.5 text-xs font-semibold text-[#12406f] transition hover:border-[#438fe0] hover:bg-white"
             aria-label={`Quitar filtro ${appliedFilter.mode === "brand" ? "de marca" : "de categoría"}: ${appliedFilter.value}`}
           >
@@ -184,7 +197,7 @@ export function CatalogClient({ products }: Props) {
           </div>
         ) : (
           <div className="mt-7 grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5">
-            {filtered.map((product) => (
+            {visibleProducts.map((product, index) => (
               <Link
                 key={product.id}
                 href={`/catalogo/${product.slug}`}
@@ -192,9 +205,10 @@ export function CatalogClient({ products }: Props) {
               >
                 <div className="relative aspect-[16/11] overflow-hidden border-b border-slate-200/80 bg-[linear-gradient(145deg,#ffffff,#edf1f5)]">
                   <Image
-                    src={product.thumbnailUrl ?? product.images?.[0] ?? "/placeholder.svg"}
+                    src={product.image}
                     alt={product.name}
                     fill
+                    loading={index < 4 ? "eager" : "lazy"}
                     sizes="(max-width: 519px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
                     className="object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
                   />
@@ -230,6 +244,21 @@ export function CatalogClient({ products }: Props) {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {filtered.length > visibleProducts.length && (
+          <div className="mt-8 flex flex-col items-center gap-3 text-center">
+            <p className="text-xs font-medium text-slate-500">
+              Mostrando {visibleProducts.length} de {filtered.length} productos
+            </p>
+            <button
+              type="button"
+              onClick={() => setVisibleCount((count) => Math.min(count + pageSize, filtered.length))}
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-300 bg-white px-6 text-sm font-bold text-[#183a5c] shadow-sm transition hover:-translate-y-0.5 hover:border-[#8ca8c1] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315b86] focus-visible:ring-offset-2"
+            >
+              Mostrar más productos
+            </button>
           </div>
         )}
         </div>
@@ -307,6 +336,7 @@ export function CatalogClient({ products }: Props) {
                 type="button"
                 onClick={() => {
                   setAppliedFilter(null)
+                  setVisibleCount(pageSize)
                   setFilterOpen(false)
                 }}
                 className="min-h-11 rounded-xl border border-[#c7d9ec] bg-white px-5 text-sm font-semibold text-[#365675] transition hover:bg-[#edf6ff]"
@@ -318,6 +348,7 @@ export function CatalogClient({ products }: Props) {
                 disabled={!draftValue}
                 onClick={() => {
                   setAppliedFilter({ mode: draftMode, value: draftValue })
+                  setVisibleCount(pageSize)
                   setFilterOpen(false)
                 }}
                 className="min-h-11 rounded-xl bg-[#0c3974] px-5 text-sm font-semibold text-white shadow-[0_10px_26px_rgba(13,72,143,.22)] transition hover:bg-[#155299] disabled:cursor-not-allowed disabled:opacity-45"
