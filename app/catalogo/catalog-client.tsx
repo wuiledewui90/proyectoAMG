@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { Check, Search, SlidersHorizontal, X } from "lucide-react"
+import { ArrowRight, Check, Search, SlidersHorizontal, X } from "lucide-react"
 import { Reveal } from "@/components/reveal"
 import type { SerializedProduct } from "@/lib/products/product-serialize"
 
@@ -102,16 +102,16 @@ export function CatalogClient({ products }: Props) {
         </div>
       </section>
 
-      <section className="relative isolate overflow-hidden bg-[#edf1f4] px-5 py-10 sm:px-8 lg:px-12 lg:py-12 xl:px-16">
+      <section className="relative isolate overflow-hidden bg-[#f4f5f7] px-5 py-10 sm:px-8 lg:px-12 lg:py-14 xl:px-16">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute -left-40 top-20 h-96 w-96 rounded-full bg-primary/12 blur-[110px]" />
-          <div className="absolute -right-28 bottom-0 h-[28rem] w-[28rem] rounded-full bg-[#0b2a69]/14 blur-[120px]" />
-          <div className="absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-white/80 blur-[100px]" />
+          <div className="absolute -left-40 top-20 h-96 w-96 rounded-full bg-[#dce7f2]/70 blur-[120px]" />
+          <div className="absolute -right-28 bottom-0 h-[28rem] w-[28rem] rounded-full bg-[#e5e9ee]/80 blur-[130px]" />
+          <div className="absolute left-1/2 top-1/3 h-72 w-72 -translate-x-1/2 rounded-full bg-white blur-[110px]" />
         </div>
 
         <div className="relative mx-auto max-w-[90rem]">
         {/* Search and filters */}
-        <div className="flex flex-col gap-3 border border-foreground/12 bg-white p-4 shadow-[0_16px_40px_rgba(9,12,15,.05)] min-[360px]:flex-row min-[360px]:items-center">
+        <div className="flex flex-col gap-3 rounded-[22px] border border-white/90 bg-white/80 p-3 shadow-[0_16px_45px_rgba(15,23,42,.07)] backdrop-blur-xl min-[360px]:flex-row min-[360px]:items-center sm:p-4">
           <div className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -119,7 +119,7 @@ export function CatalogClient({ products }: Props) {
               placeholder="Buscar por nombre, marca, modelo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="min-h-12 w-full border border-input bg-card py-2.5 pl-10 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-11 text-sm text-slate-900 shadow-inner shadow-slate-950/[.02] placeholder:text-slate-400 focus:border-[#8ba8c7] focus:outline-none focus:ring-4 focus:ring-[#315b86]/10"
               aria-label="Buscar productos"
             />
             {hasSearch && (
@@ -142,8 +142,8 @@ export function CatalogClient({ products }: Props) {
             aria-controls="catalog-filter-dialog"
             className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
               appliedFilter
-                ? "border-[#438fe0] bg-[#0c3974] text-white shadow-[0_8px_24px_rgba(13,72,143,.22)] hover:bg-[#124b92]"
-                : "border-[#a8c9ed] bg-[#edf6ff] text-[#103b70] hover:border-[#438fe0] hover:bg-[#deefff]"
+                ? "border-[#183a5c] bg-[#183a5c] text-white shadow-[0_8px_24px_rgba(24,58,92,.18)] hover:bg-[#234e78]"
+                : "border-slate-200 bg-white text-[#203a55] hover:border-[#9bb0c5] hover:bg-slate-50"
             }`}
             aria-label={appliedFilter ? `Cambiar filtro: ${appliedFilter.value}` : "Abrir filtros del catálogo"}
           >
@@ -164,8 +164,8 @@ export function CatalogClient({ products }: Props) {
           </button>
         )}
 
-        <div className="relative mt-6 h-px w-full bg-[linear-gradient(90deg,transparent_0%,rgba(38,111,189,.55)_24%,rgba(93,188,255,.95)_50%,rgba(38,111,189,.55)_76%,transparent_100%)] shadow-[0_0_12px_rgba(57,151,240,.35)]" aria-hidden="true">
-          <span className="absolute left-1/2 top-1/2 h-1.5 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#61bcff]/45 blur-sm" />
+        <div className="relative mt-6 h-px w-full bg-[linear-gradient(90deg,transparent_0%,rgba(100,116,139,.22)_24%,rgba(71,85,105,.4)_50%,rgba(100,116,139,.22)_76%,transparent_100%)]" aria-hidden="true">
+          <span className="absolute left-1/2 top-1/2 h-1 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-400/20 blur-sm" />
         </div>
 
         {/* Products grid */}
@@ -183,49 +183,48 @@ export function CatalogClient({ products }: Props) {
             </p>
           </div>
         ) : (
-          <div className="mt-7 grid grid-cols-2 gap-2 min-[360px]:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-6">
+          <div className="mt-7 grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5">
             {filtered.map((product) => (
               <Link
                 key={product.id}
                 href={`/catalogo/${product.slug}`}
-                className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#6da8ed]/30 bg-[linear-gradient(145deg,#102b4b_0%,#071727_58%,#030b15_100%)] text-white shadow-[0_14px_34px_rgba(5,20,42,.22),inset_0_1px_0_rgba(255,255,255,.13)] transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-[#73b9ff]/75 hover:shadow-[0_22px_44px_rgba(5,20,42,.32),0_0_24px_rgba(51,145,255,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7fc7ff] focus-visible:ring-offset-2"
+                className="group relative flex min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-200/90 bg-white/90 text-slate-950 shadow-[0_12px_34px_rgba(15,23,42,.07),inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1.5 hover:border-[#9eb5ca] hover:shadow-[0_24px_55px_rgba(15,23,42,.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315b86] focus-visible:ring-offset-2"
               >
-                <span
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_0%_0%,rgba(83,172,255,.22),transparent_55%)]"
-                  aria-hidden="true"
-                />
-                <span className="pointer-events-none absolute inset-x-3 top-0 z-10 h-px bg-gradient-to-r from-transparent via-[#8ed1ff]/80 to-transparent" aria-hidden="true" />
-                <div className="relative z-[1] aspect-[4/3] overflow-hidden border-b border-[#8ab7ec]/25 bg-[linear-gradient(145deg,#f8fbff,#dce8f5)]">
+                <div className="relative aspect-[16/11] overflow-hidden border-b border-slate-200/80 bg-[linear-gradient(145deg,#ffffff,#edf1f5)]">
                   <Image
                     src={product.thumbnailUrl ?? product.images?.[0] ?? "/placeholder.svg"}
                     alt={product.name}
                     fill
-                    sizes="(max-width: 359px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 17vw"
-                    className="object-contain p-1.5 transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 519px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
+                    className="object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
                   />
+                  <span className="absolute left-3 top-3 max-w-[55%] truncate rounded-full border border-white/90 bg-white/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-600 shadow-sm backdrop-blur-md sm:text-[10px]" title={product.category ?? undefined}>
+                    {product.category || "Repuesto"}
+                  </span>
+                  <span className={`absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-semibold shadow-sm backdrop-blur-md sm:text-[10px] ${product.stock > 0 ? "border-emerald-100 bg-emerald-50/95 text-emerald-700" : "border-rose-100 bg-rose-50/95 text-rose-700"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${product.stock > 0 ? "bg-emerald-500" : "bg-rose-500"}`} aria-hidden="true" />
+                    {product.stock > 0 ? "Disponible" : "Sin stock"}
+                  </span>
+                  <span className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-slate-950/[.05] to-transparent" aria-hidden="true" />
                 </div>
 
-                <div className="relative z-[1] flex min-w-0 flex-1 flex-col gap-1.5 p-2 sm:p-2.5">
-                  <p className="truncate text-[8px] font-bold uppercase tracking-[0.1em] text-[#8ac9ff] sm:text-[9px]" title={product.category ?? undefined}>
-                    {product.category || "Repuesto"}
-                  </p>
-                  <h3 className="font-display line-clamp-2 min-h-[2.4em] text-[10px] font-black uppercase leading-[1.2] tracking-[-0.01em] text-white sm:text-xs">
+                <div className="flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+                  <h3 className="line-clamp-2 min-h-[2.8em] break-words text-[15px] font-semibold leading-[1.4] tracking-[-0.015em] text-slate-900 [overflow-wrap:anywhere] sm:text-base">
                     {product.name}
                   </h3>
-                  <p className="truncate text-[8px] text-[#b7c9dc] sm:text-[9px]">
+                  <p className="mt-1.5 truncate text-[11px] text-slate-500 sm:text-xs">
                     {[product.brand, product.model].filter(Boolean).join(" · ") || "Radiadores AMG"}
                   </p>
-                  <div className="mt-auto border-t border-white/10 pt-2">
-                    <p className="text-[11px] font-bold leading-tight text-white [overflow-wrap:anywhere] sm:text-sm" title={formatPriceARS(product.price)}>
-                      {formatPriceARS(product.price)}
-                    </p>
-                    <span
-                      className={`mt-1.5 flex items-center gap-1 text-[8px] font-medium sm:text-[9px] ${
-                        product.stock > 0 ? "text-[#8ceac2]" : "text-[#ffb4bd]"
-                      }`}
-                    >
-                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${product.stock > 0 ? "bg-[#55e3aa]" : "bg-[#ff7e90]"}`} aria-hidden="true" />
-                      {product.stock > 0 ? "En stock" : "Sin stock"}
+                  <div className="mt-5 flex items-end justify-between gap-3 border-t border-slate-200/80 pt-4">
+                    <div className="min-w-0">
+                      <span className="block text-[9px] font-semibold uppercase tracking-[0.13em] text-slate-400">Precio</span>
+                      <p className="mt-0.5 break-words text-lg font-bold leading-tight tracking-[-0.025em] text-slate-950 [overflow-wrap:anywhere]" title={formatPriceARS(product.price)}>
+                        {formatPriceARS(product.price)}
+                      </p>
+                    </div>
+                    <span className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full bg-[#102a44] px-3.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white transition duration-300 group-hover:bg-[#b51f30] sm:px-4">
+                      Ver y comprar
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                     </span>
                   </div>
                 </div>
