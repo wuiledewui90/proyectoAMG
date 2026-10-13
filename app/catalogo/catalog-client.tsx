@@ -39,6 +39,11 @@ function uniqueOptions(values: string[]) {
   return [...options.values()].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }))
 }
 
+function isServicesCategory(value: string | null | undefined) {
+  const normalized = value?.trim().toLocaleLowerCase("es") ?? ""
+  return normalized === "servicio" || normalized === "servicios"
+}
+
 export function CatalogClient({ products }: Props) {
   const pageSize = 24
   const [search, setSearch] = useState("")
@@ -59,9 +64,12 @@ export function CatalogClient({ products }: Props) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
     const selectedValue = appliedFilter?.value.toLocaleLowerCase("es")
+    const servicesFilterSelected =
+      appliedFilter?.mode === "category" && isServicesCategory(appliedFilter.value)
 
     return products
       .filter((p) => p.isActive)
+      .filter((product) => !isServicesCategory(product.category) || servicesFilterSelected)
       .filter((p) => {
         if (!q) return true
         return (
