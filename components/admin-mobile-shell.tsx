@@ -355,7 +355,7 @@ export function AdminMobileShell({
 
       <div className={cn("fixed inset-0 z-[80] hidden max-lg:block", moreOpen ? "pointer-events-auto" : "pointer-events-none")} aria-hidden={!moreOpen}>
         <button type="button" onClick={() => setMoreOpen(false)} className={cn("absolute inset-0 bg-slate-950/35 backdrop-blur-sm transition-opacity duration-200", moreOpen ? "opacity-100" : "opacity-0")} aria-label="Cerrar más opciones" />
-        <section className={cn("absolute inset-x-0 bottom-0 isolate flex max-h-[calc(100dvh-.75rem)] flex-col overflow-hidden rounded-t-[28px] border-t border-slate-200 bg-white px-5 pb-[calc(.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-24px_60px_rgba(15,23,42,.18)] transition-transform duration-250", moreOpen ? "translate-y-0" : "translate-y-full")}>
+        <section className={cn("admin-mobile-more-sheet absolute inset-x-0 bottom-0 isolate flex max-h-[calc(100dvh-.75rem)] flex-col overflow-hidden rounded-t-[28px] border-t border-slate-200 bg-white px-5 pb-[calc(.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-24px_60px_rgba(15,23,42,.18)] transition-transform duration-250", moreOpen ? "translate-y-0" : "translate-y-full")}>
           <div className="mx-auto h-1.5 w-10 shrink-0 rounded-full bg-slate-300" />
           <div className="mt-4 flex shrink-0 items-center justify-between">
             <div><p className="text-[11px] font-semibold tracking-[0.12em] text-slate-400">Navegación</p><h2 className="text-xl font-semibold tracking-tight">Más módulos</h2></div>
