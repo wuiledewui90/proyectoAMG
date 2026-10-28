@@ -60,7 +60,7 @@ export default function ServiciosPage() {
               <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-primary">
                 Taller especializado
               </p>
-              <h1 className="font-display max-w-5xl text-[clamp(1.8rem,4.2vw,4.2rem)] font-black uppercase leading-[0.9] tracking-[-0.055em]">
+              <h1 className="font-display max-w-5xl text-[clamp(1.08rem,2.52vw,2.52rem)] font-black uppercase leading-[0.9] tracking-[-0.055em]">
                 El sistema térmico, resuelto de punta a punta.
               </h1>
             </Reveal>

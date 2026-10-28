@@ -38,7 +38,7 @@ export default function SobreNosotrosPage() {
         <div className="relative mx-auto grid max-w-[90rem] items-end gap-10 px-5 sm:px-8 lg:grid-cols-12 lg:px-12 xl:px-16">
           <Reveal className="lg:col-span-8">
             <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Nuestra historia</p>
-            <h1 className="font-display text-[clamp(1.8rem,4.2vw,4.2rem)] font-black uppercase leading-[0.9] tracking-[-0.055em]">
+            <h1 className="font-display text-[clamp(1.08rem,2.52vw,2.52rem)] font-black uppercase leading-[0.9] tracking-[-0.055em]">
               Tres décadas cuidando motores.
             </h1>
           </Reveal>

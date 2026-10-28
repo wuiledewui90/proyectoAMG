@@ -55,7 +55,7 @@ export function SiteHeader() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "relative py-6 text-xs font-bold uppercase tracking-[0.13em] text-white transition-colors hover:text-white",
+                    "relative py-6 text-xs font-normal uppercase tracking-[0.13em] text-white transition-colors hover:text-white",
                     active && "text-white"
                   )}
                 >

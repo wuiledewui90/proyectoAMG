@@ -288,7 +288,7 @@
 .navLabel {
   overflow: hidden;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.015em;
   text-overflow: ellipsis;
   white-space: nowrap;

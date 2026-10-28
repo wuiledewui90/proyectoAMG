@@ -107,7 +107,7 @@ export function CatalogClient({ products }: Props) {
         <div className="relative mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12 xl:px-16">
           <Reveal>
             <p className="mb-5 text-xs font-extrabold uppercase tracking-[0.22em] text-primary">Catálogo</p>
-            <h1 className="font-display w-[80%] max-w-5xl text-[1.08rem] font-black uppercase leading-[0.9] tracking-[-0.055em] sm:w-auto sm:text-[clamp(1.8rem,4.2vw,3.9rem)]">
+            <h1 className="font-display w-[80%] max-w-5xl text-[1.08rem] font-black uppercase leading-[0.9] tracking-[-0.055em] sm:w-auto sm:text-[clamp(1.08rem,2.52vw,2.34rem)]">
               Encontrá el repuesto indicado para tu vehículo.
             </h1>
           </Reveal>

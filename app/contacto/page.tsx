@@ -25,7 +25,7 @@ export default function ContactoPage() {
         <div className="relative mx-auto max-w-[90rem] px-5 pb-20 pt-36 sm:px-8 lg:px-12 lg:pb-28">
           <Reveal>
             <p className="mb-5 text-xs font-bold uppercase tracking-[0.28em] text-primary">Contacto</p>
-            <h1 className="font-display max-w-5xl text-[clamp(1.8rem,4.2vw,3.9rem)] font-black uppercase leading-[0.9] tracking-[-0.045em]">
+            <h1 className="font-display max-w-5xl text-[clamp(1.08rem,2.52vw,2.34rem)] font-black uppercase leading-[0.9] tracking-[-0.045em]">
               Hablemos de tu vehículo.
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-7 text-secondary-foreground/65 sm:text-lg">
